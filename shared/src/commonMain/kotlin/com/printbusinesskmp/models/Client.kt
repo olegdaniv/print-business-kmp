@@ -1,6 +1,7 @@
 package com.printbusinesskmp.models
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -10,5 +11,5 @@ data class Client(
     val phone: String,
     val email: String? = null,
     val totalOrders: Int = 0,
-    val createdAt: Instant
+    @Contextual val createdAt: Instant
 )

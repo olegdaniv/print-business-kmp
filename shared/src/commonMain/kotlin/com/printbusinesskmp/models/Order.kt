@@ -1,6 +1,7 @@
 package com.printbusinesskmp.models
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -9,9 +10,9 @@ data class Order(
     val clientId: String,
     val items: List<OrderItem>,
     val status: OrderStatus,
-    val createdAt: Instant,
-    val updatedAt: Instant,
-    val completedAt: Instant? = null,
+    @Contextual val createdAt: Instant,
+    @Contextual val updatedAt: Instant,
+    @Contextual val completedAt: Instant? = null,
     val totalCost: Double,
     val totalPrice: Double,
     val totalProfit: Double,
