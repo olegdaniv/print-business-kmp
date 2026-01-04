@@ -1,61 +1,146 @@
-This is a Kotlin Multiplatform project targeting Web, Server.
+# PrintBusinessKmp
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-    folder is the appropriate location.
+A **Kotlin Multiplatform (KMP)** project for managing a print business, targeting Web and Server platforms.
 
-* [/server](./server/src/main/kotlin) is for the Ktor server application.
+## Project Structure
 
-* [/shared](./shared/src) is for the code that will be shared between all targets in the project.
-  The most important subfolder is [commonMain](./shared/src/commonMain/kotlin). If preferred, you
-  can add code to the platform-specific folders here too.
+This project consists of three main modules:
 
-### Build and Run Server
+- **backend**: Ktor server application (JVM target, runs on port 8080)
+- **webApp**: Compose Multiplatform web application (JS and Wasm targets, runs on port 8081)
+- **shared**: Shared business logic, models, and constants (JVM, JS, and Wasm targets)
 
-To build and run the development version of the server, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :server:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :server:run
-  ```
+```
+backend/       - Ktor server with REST API
+webApp/        - Compose Multiplatform UI (JS/Wasm browsers)
+shared/        - Shared code including models, constants, and utilities
+```
 
-### Build and Run Web Application
+## Technologies
 
-To build and run the development version of the web app, use the run configuration from the run widget
-in your IDE's toolbar or run it directly from the terminal:
-- for the Wasm target (faster, modern browsers):
-  - on macOS/Linux
-    ```shell
-    ./gradlew :composeApp:wasmJsBrowserDevelopmentRun
-    ```
-  - on Windows
-    ```shell
-    .\gradlew.bat :composeApp:wasmJsBrowserDevelopmentRun
-    ```
-- for the JS target (slower, supports older browsers):
-  - on macOS/Linux
-    ```shell
-    ./gradlew :composeApp:jsBrowserDevelopmentRun
-    ```
-  - on Windows
-    ```shell
-    .\gradlew.bat :composeApp:jsBrowserDevelopmentRun
-    ```
+- **Kotlin**: 2.3.0
+- **Ktor**: 3.3.3 (server framework)
+- **Compose Multiplatform**: 1.9.3 (web UI)
+- **kotlinx.serialization**: 1.10.0-RC (JSON serialization)
+- **Exposed**: 0.58.0 (database ORM)
+- **H2**: 2.3.232 (embedded database)
 
----
+## Quick Start
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
-[Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
-[Kotlin/Wasm](https://kotl.in/wasm/)…
+### Prerequisites
 
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
-If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
+- JDK 17 or higher
+- Node.js (for web app development)
+
+### Run the Application
+
+1. **Start the Backend Server** (port 8080):
+   ```bash
+   ./gradlew :backend:run
+   ```
+
+2. **Start the Web Application** (port 8081):
+
+   For Wasm target (faster, modern browsers):
+   ```bash
+   ./gradlew :webApp:wasmJsBrowserDevelopmentRun
+   ```
+
+   For JS target (broader browser support):
+   ```bash
+   ./gradlew :webApp:jsBrowserDevelopmentRun
+   ```
+
+3. Open your browser and navigate to http://localhost:8081/
+
+## Build Commands
+
+### Backend (Ktor Server)
+
+```bash
+# Run development server
+./gradlew :backend:run
+
+# Build backend
+./gradlew :backend:build
+
+# Run backend tests
+./gradlew :backend:test
+```
+
+### Web Application
+
+```bash
+# Run Wasm target (faster, modern browsers only)
+./gradlew :webApp:wasmJsBrowserDevelopmentRun
+
+# Run JS target (broader browser support)
+./gradlew :webApp:jsBrowserDevelopmentRun
+
+# Build for production
+./gradlew :webApp:wasmJsBrowserDistribution  # Wasm
+./gradlew :webApp:jsBrowserDistribution       # JS
+
+# Run web app tests
+./gradlew :webApp:wasmJsTest  # or :webApp:jsTest
+```
+
+### Shared Module
+
+```bash
+# Run shared module tests (all platforms)
+./gradlew :shared:allTests
+
+# Run platform-specific tests
+./gradlew :shared:jvmTest
+./gradlew :shared:jsTest
+./gradlew :shared:wasmJsTest
+
+# Build shared module
+./gradlew :shared:build
+```
+
+### Project-Wide
+
+```bash
+# Build all modules
+./gradlew build
+
+# Run all tests across all modules
+./gradlew test
+
+# Clean build artifacts
+./gradlew clean
+```
+
+## Features
+
+- Client management (CRUD operations)
+- Order management with items
+- Cost and profit calculations
+- Invoice generation tracking
+- REST API with CORS support
+- Responsive web UI using Compose Multiplatform
+
+## API Endpoints
+
+The backend exposes the following REST API endpoints:
+
+- `GET /` - Server status
+- `GET /health` - Health check
+- `GET /api/clients` - List all clients
+- `GET /api/clients/{id}` - Get client by ID
+- `POST /api/clients` - Create new client
+- `PUT /api/clients/{id}` - Update client
+- `DELETE /api/clients/{id}` - Delete client
+- `GET /api/orders` - List all orders
+- `GET /api/orders/{id}` - Get order by ID
+- `POST /api/orders` - Create new order
+- `PUT /api/orders/{id}/status` - Update order status
+
+## Learn More
+
+- [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)
+- [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform)
+- [Ktor](https://ktor.io/)
+- [Kotlin/Wasm](https://kotl.in/wasm/)

@@ -75,7 +75,7 @@ fun ClientFormScreen(
 
                 onNavigate(Screen.Clients)
             } catch (e: Exception) {
-                errorMessage = "Failed to save client: ${e.message}"
+                errorMessage = e.toString()
                 isSaving = false
             }
         }
