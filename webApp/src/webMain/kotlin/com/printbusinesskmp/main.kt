@@ -8,11 +8,10 @@ import kotlinx.browser.window
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     window.onload = {
-        val root = document.getElementById("root") ?: error("Root element not found")
         val loading = document.getElementById("loading")
         loading?.remove()
 
-        ComposeViewport(root) {
+        ComposeViewport("root") {
             App()
         }
     }
