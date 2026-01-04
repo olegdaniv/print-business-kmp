@@ -165,7 +165,10 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                     readOnly = true,
                                     placeholder = { Text("Select a client") },
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                                    modifier = Modifier.fillMaxWidth().menuAnchor(
+                                        type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                        enabled = true,
+                                    ),
                                     colors = OutlinedTextFieldDefaults.colors(
                                         focusedContainerColor = Color.White,
                                         unfocusedContainerColor = Color.White
@@ -479,7 +482,8 @@ private fun AddItemDialog(
                             onValueChange = {},
                             readOnly = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                            modifier = Modifier.fillMaxWidth()
+                                .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                         )
                         ExposedDropdownMenu(
                             expanded = expanded,

@@ -8,7 +8,7 @@ import kotlinx.browser.window
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     window.onload = {
-        val root = document.getElementById("root")?.toString() ?: error("Root element not found")
+        val root = document.getElementById("root") ?: error("Root element not found")
         val loading = document.getElementById("loading")
         loading?.remove()
 
