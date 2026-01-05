@@ -3,6 +3,7 @@ package com.printbusinesskmp
 import com.printbusinesskmp.database.DatabaseFactory
 import com.printbusinesskmp.routes.configureClientRoutes
 import com.printbusinesskmp.routes.configureOrderRoutes
+import com.printbusinesskmp.routes.configurePricingRoutes
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -61,5 +62,6 @@ fun Application.module() {
 
         configureClientRoutes()
         configureOrderRoutes()
+        configurePricingRoutes()
     }
 }

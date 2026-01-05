@@ -82,4 +82,20 @@ object ApiClient {
             setBody(UpdateStatusRequest(status = status.name))
         }.body()
     }
+
+    // Pricing API functions
+    suspend fun calculatePricing(request: PricingRequest): PricingResponse {
+        return client.post("$BASE_URL/api/pricing/calculate") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun getMaterialCosts(): MaterialCosts {
+        return client.get("$BASE_URL/api/pricing/materials").body()
+    }
+
+    suspend fun getTaxInfo(): TaxInfo {
+        return client.get("$BASE_URL/api/pricing/tax-info").body()
+    }
 }

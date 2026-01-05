@@ -79,6 +79,12 @@ private fun Sidebar(
             isSelected = currentScreen is Screen.Orders || currentScreen is Screen.OrderDetail || currentScreen is Screen.NewOrder,
             onClick = { onNavigate(Screen.Orders) }
         )
+
+        SidebarItem(
+            text = "Pricing Calculator",
+            isSelected = currentScreen is Screen.PricingCalculator,
+            onClick = { onNavigate(Screen.PricingCalculator) }
+        )
     }
 }
 
