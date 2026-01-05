@@ -3,8 +3,11 @@ package com.printbusinesskmp.repository
 import com.printbusinesskmp.database.DatabaseFactory.dbQuery
 import com.printbusinesskmp.database.tables.ClientsTable
 import com.printbusinesskmp.models.Client
+import com.printbusinesskmp.models.ClientCreateRequest
+import com.printbusinesskmp.models.ClientUpdateRequest
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import java.time.Instant
 import java.util.*
 
 class ClientRepository {
@@ -19,27 +22,29 @@ class ClientRepository {
             .singleOrNull()
     }
 
-    suspend fun addClient(client: Client): Client = dbQuery {
-        val insertId = client.id.ifEmpty { UUID.randomUUID().toString() }
+    suspend fun addClient(request: ClientCreateRequest): Client = dbQuery {
+        val insertId = UUID.randomUUID().toString()
 
         ClientsTable.insert {
             it[id] = insertId
-            it[name] = client.name
-            it[phone] = client.phone
-            it[email] = client.email
-            it[totalOrders] = client.totalOrders
-            it[createdAt] = java.time.Instant.now()
+            it[name] = request.name
+            it[phone] = request.phone
+            it[email] = request.email
+            it[totalOrders] = 0
+            it[createdAt] = Instant.now()
         }
 
-        clientById(insertId)!!
+        // Query directly within same transaction to avoid nested transaction issue
+        ClientsTable.selectAll().where { ClientsTable.id eq insertId }
+            .map { toClient(it) }
+            .single()
     }
 
-    suspend fun updateClient(id: String, client: Client): Client? = dbQuery {
+    suspend fun updateClient(id: String, request: ClientUpdateRequest): Client? = dbQuery {
         ClientsTable.update({ ClientsTable.id eq id }) {
-            it[name] = client.name
-            it[phone] = client.phone
-            it[email] = client.email
-            it[totalOrders] = client.totalOrders
+            it[name] = request.name
+            it[phone] = request.phone
+            it[email] = request.email
         }
         clientById(id)
     }

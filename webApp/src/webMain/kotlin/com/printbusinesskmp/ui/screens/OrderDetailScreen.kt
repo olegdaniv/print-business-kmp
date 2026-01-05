@@ -77,7 +77,10 @@ fun OrderDetailScreen(
                 color = Color.Red,
                 fontSize = 16.sp
             )
-        } else if (order != null) {
+        }
+
+        val currentOrder = order
+        if (currentOrder != null) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -97,19 +100,19 @@ fun OrderDetailScreen(
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
 
-                            InfoRow("Order ID", "#${order!!.id}")
+                            InfoRow("Order ID", "#${currentOrder.id}")
                             InfoRow("Client", client?.name ?: "Unknown")
                             InfoRow("Status", "")
                             Box(modifier = Modifier.padding(start = 120.dp, top = 4.dp)) {
-                                StatusBadge(status = order!!.status.name)
+                                StatusBadge(status = currentOrder.status.name)
                             }
-                            InfoRow("Created", FormatUtils.formatDateTime(order!!.createdAt))
-                            InfoRow("Updated", FormatUtils.formatDateTime(order!!.updatedAt))
-                            order!!.completedAt?.let {
+                            InfoRow("Created", FormatUtils.formatDateTime(currentOrder.createdAt))
+                            InfoRow("Updated", FormatUtils.formatDateTime(currentOrder.updatedAt))
+                            currentOrder.completedAt?.let {
                                 InfoRow("Completed", FormatUtils.formatDateTime(it))
                             }
 
-                            if (order!!.notes != null) {
+                            if (currentOrder.notes != null) {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = "Notes:",
@@ -118,7 +121,7 @@ fun OrderDetailScreen(
                                     color = Color(0xFF64748B)
                                 )
                                 Text(
-                                    text = order!!.notes ?: "",
+                                    text = currentOrder.notes ?: "",
                                     fontSize = 14.sp,
                                     color = Color(0xFF1E293B),
                                     modifier = Modifier.padding(top = 4.dp)
@@ -126,7 +129,7 @@ fun OrderDetailScreen(
                             }
 
                             // Status Update
-                            if (order!!.status != OrderStatus.COMPLETED && order!!.status != OrderStatus.CANCELLED) {
+                            if (currentOrder.status != OrderStatus.COMPLETED && currentOrder.status != OrderStatus.CANCELLED) {
                                 Spacer(modifier = Modifier.height(16.dp))
                                 HorizontalDivider()
                                 Spacer(modifier = Modifier.height(16.dp))
@@ -155,12 +158,16 @@ fun OrderDetailScreen(
                                                 }
                                             },
                                             colors = ButtonDefaults.buttonColors(
-                                                containerColor = if (status == order!!.status) Color(0xFF3B82F6) else Color(0xFFE2E8F0)
+                                                containerColor = if (status == currentOrder.status) Color(0xFF3B82F6) else Color(
+                                                    0xFFE2E8F0
+                                                )
                                             )
                                         ) {
                                             Text(
                                                 text = status.name.replace("_", " "),
-                                                color = if (status == order!!.status) Color.White else Color(0xFF64748B),
+                                                color = if (status == currentOrder.status) Color.White else Color(
+                                                    0xFF64748B
+                                                ),
                                                 fontSize = 12.sp
                                             )
                                         }
@@ -179,14 +186,14 @@ fun OrderDetailScreen(
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(
-                                text = "Order Items (${order!!.items.size})",
+                                text = "Order Items (${currentOrder.items.size})",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF1E293B),
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
 
-                            order!!.items.forEach { item ->
+                            currentOrder.items.forEach { item ->
                                 Card(
                                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))
@@ -265,7 +272,9 @@ fun OrderDetailScreen(
                                                     text = "Profit: ${FormatUtils.formatCurrency(item.profit)}",
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.SemiBold,
-                                                    color = if (item.profit >= 0) Color(0xFF16A34A) else Color(0xFFEF4444)
+                                                    color = if (item.profit >= 0) Color(0xFF16A34A) else Color(
+                                                        0xFFEF4444
+                                                    )
                                                 )
                                             }
                                         }
@@ -291,14 +300,14 @@ fun OrderDetailScreen(
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
 
-                            SummaryRow("Total Cost", FormatUtils.formatCurrency(order!!.totalCost))
-                            SummaryRow("Total Price", FormatUtils.formatCurrency(order!!.totalPrice))
+                            SummaryRow("Total Cost", FormatUtils.formatCurrency(currentOrder.totalCost))
+                            SummaryRow("Total Price", FormatUtils.formatCurrency(currentOrder.totalPrice))
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                             SummaryRow(
                                 "Total Profit",
-                                FormatUtils.formatCurrency(order!!.totalProfit),
+                                FormatUtils.formatCurrency(currentOrder.totalProfit),
                                 isProfit = true,
-                                profitValue = order!!.totalProfit
+                                profitValue = currentOrder.totalProfit
                             )
                         }
                     }
@@ -349,7 +358,9 @@ private fun SummaryRow(
             text = value,
             fontSize = if (isProfit) 18.sp else 14.sp,
             fontWeight = if (isProfit) FontWeight.Bold else FontWeight.Medium,
-            color = if (isProfit && profitValue >= 0) Color(0xFF16A34A) else if (isProfit) Color(0xFFEF4444) else Color(0xFF1E293B)
+            color = if (isProfit && profitValue >= 0) Color(0xFF16A34A) else if (isProfit) Color(0xFFEF4444) else Color(
+                0xFF1E293B
+            )
         )
     }
 }

@@ -63,7 +63,8 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
     }
 
     fun handleSave() {
-        if (selectedClientId == null) {
+        val clientId = selectedClientId
+        if (clientId == null) {
             errorMessage = "Please select a client"
             return
         }
@@ -95,7 +96,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
 
                 val order = Order.create(
                     id = "",
-                    clientId = selectedClientId!!,
+                    clientId = clientId,
                     items = items,
                     status = OrderStatus.NEW,
                     createdAt = now,

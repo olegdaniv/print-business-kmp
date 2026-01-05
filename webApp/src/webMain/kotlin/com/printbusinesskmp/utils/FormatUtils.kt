@@ -10,7 +10,7 @@ object FormatUtils {
         val rounded = (amount * 100).toInt() / 100.0
         val intPart = rounded.toInt()
         val decimalPart = ((rounded - intPart) * 100).toInt()
-        return "₴$intPart.${decimalPart.toString().padStart(2, '0')}"
+        return "$intPart.${decimalPart.toString().padStart(2, '0')} UAH"
     }
 
     fun formatDate(instant: Instant): String {

@@ -67,7 +67,10 @@ class OrderRepository {
             }
         }
 
-        orderById(insertId)!!
+        // Query directly within same transaction to avoid nested transaction issue
+        val orderRow = OrdersTable.selectAll().where { OrdersTable.id eq insertId }.single()
+        val items = getOrderItems(insertId)
+        toOrder(orderRow, items)
     }
 
     suspend fun updateOrder(id: String, order: Order): Order? = dbQuery {

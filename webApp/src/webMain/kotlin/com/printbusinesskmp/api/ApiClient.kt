@@ -42,17 +42,17 @@ object ApiClient {
         return client.get("$BASE_URL/api/clients/$id").body()
     }
 
-    suspend fun createClient(client: Client): Client {
+    suspend fun createClient(request: ClientCreateRequest): Client {
         return this.client.post("$BASE_URL/api/clients") {
             contentType(ContentType.Application.Json)
-            setBody(client)
+            setBody(request)
         }.body()
     }
 
-    suspend fun updateClient(id: String, client: Client): Client {
+    suspend fun updateClient(id: String, request: ClientUpdateRequest): Client {
         return this.client.put("$BASE_URL/api/clients/$id") {
             contentType(ContentType.Application.Json)
-            setBody(client)
+            setBody(request)
         }.body()
     }
 

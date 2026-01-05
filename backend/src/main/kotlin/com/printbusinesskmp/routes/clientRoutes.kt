@@ -1,9 +1,9 @@
 package com.printbusinesskmp.routes
 
-import com.printbusinesskmp.models.Client
+import com.printbusinesskmp.models.ClientCreateRequest
+import com.printbusinesskmp.models.ClientUpdateRequest
 import com.printbusinesskmp.repository.ClientRepository
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -53,13 +53,14 @@ fun Route.configureClientRoutes() {
         // POST /api/clients - Create new client
         post {
             try {
-                val client = call.receive<Client>()
-                val created = clientRepository.addClient(client)
+                val request = call.receive<ClientCreateRequest>()
+                val created = clientRepository.addClient(request)
                 call.respond(HttpStatusCode.Created, created)
             } catch (e: Exception) {
+                e.printStackTrace()
                 call.respond(
                     HttpStatusCode.InternalServerError,
-                    mapOf("error" to (e.message ?: "Unknown error"))
+                    mapOf("error" to (e.message ?: "Unknown error"), "type" to e.javaClass.simpleName)
                 )
             }
         }
@@ -72,8 +73,8 @@ fun Route.configureClientRoutes() {
                     mapOf("error" to "Missing client ID")
                 )
 
-                val client = call.receive<Client>()
-                val updated = clientRepository.updateClient(id, client)
+                val request = call.receive<ClientUpdateRequest>()
+                val updated = clientRepository.updateClient(id, request)
 
                 if (updated != null) {
                     call.respond(HttpStatusCode.OK, updated)

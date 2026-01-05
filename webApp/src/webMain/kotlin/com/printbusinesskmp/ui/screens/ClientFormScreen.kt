@@ -9,11 +9,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
-import com.printbusinesskmp.models.Client
+import com.printbusinesskmp.models.ClientCreateRequest
+import com.printbusinesskmp.models.ClientUpdateRequest
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.utils.ValidationUtils
 import kotlinx.coroutines.launch
-import kotlin.time.Clock
 
 @Composable
 fun ClientFormScreen(
@@ -58,24 +58,26 @@ fun ClientFormScreen(
         scope.launch {
             try {
                 isSaving = true
-                val client = Client(
-                    id = clientId ?: "",
-                    name = name,
-                    phone = phone.replace(" ", ""),
-                    email = email.ifBlank { null },
-                    totalOrders = 0,
-                    createdAt = Clock.System.now()
-                )
 
                 if (isEditMode) {
-                    ApiClient.updateClient(clientId, client)
+                    val request = ClientUpdateRequest(
+                        name = name,
+                        phone = phone.replace(" ", ""),
+                        email = email.ifBlank { null }
+                    )
+                    ApiClient.updateClient(clientId, request)
                 } else {
-                    ApiClient.createClient(client)
+                    val request = ClientCreateRequest(
+                        name = name,
+                        phone = phone.replace(" ", ""),
+                        email = email.ifBlank { null }
+                    )
+                    ApiClient.createClient(request)
                 }
 
                 onNavigate(Screen.Clients)
             } catch (e: Exception) {
-                errorMessage = e.toString()
+                errorMessage = "Failed to save client"
                 isSaving = false
             }
         }
