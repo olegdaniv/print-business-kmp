@@ -85,6 +85,13 @@ private fun Sidebar(
             isSelected = currentScreen is Screen.PricingCalculator,
             onClick = { onNavigate(Screen.PricingCalculator) }
         )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Language Switcher
+        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
+            LanguageSwitcher()
+        }
     }
 }
 

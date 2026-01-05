@@ -17,17 +17,16 @@ fun Route.configurePricingRoutes() {
             try {
                 val request = call.receive<PricingRequest>()
 
-                val pricingResponse = PricingCalculator.calculateFullPricing(
+                val breakdown = PricingCalculator.calculateCostBreakdown(
                     productType = request.productType,
                     quantity = request.quantity,
                     printArea = request.printArea,
                     laborMinutes = request.laborMinutes,
                     profitMarginPercent = request.profitMarginPercent,
-                    materialCosts = request.materialCosts,
                     laborRatePerHour = request.laborRatePerHour
                 )
 
-                call.respond(HttpStatusCode.OK, pricingResponse)
+                call.respond(HttpStatusCode.OK, breakdown)
             } catch (e: Exception) {
                 e.printStackTrace()
                 call.respond(

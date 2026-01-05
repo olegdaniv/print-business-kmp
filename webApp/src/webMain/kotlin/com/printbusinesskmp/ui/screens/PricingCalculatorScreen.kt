@@ -12,19 +12,20 @@ import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.*
 import com.printbusinesskmp.navigation.Screen
-import com.printbusinesskmp.utils.FormatUtils
+import com.printbusinesskmp.utils.PricingCalculator
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
+fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> Unit) {
     var productType by remember { mutableStateOf(ProductType.T_SHIRT) }
     var quantity by remember { mutableStateOf("1") }
     var printArea by remember { mutableStateOf(PrintArea.FRONT) }
     var laborMinutes by remember { mutableStateOf("30") }
+    var laborRate by remember { mutableStateOf("100") }
     var profitMargin by remember { mutableStateOf(50f) }
-    var pricingResponse by remember { mutableStateOf<PricingResponse?>(null) }
+    var costBreakdown by remember { mutableStateOf<CostBreakdown?>(null) }
     var isCalculating by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var productTypeExpanded by remember { mutableStateOf(false) }
@@ -35,8 +36,9 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
     fun calculatePricing() {
         val quantityInt = quantity.toIntOrNull() ?: return
         val laborMinutesInt = laborMinutes.toIntOrNull() ?: return
+        val laborRateDouble = laborRate.toDoubleOrNull() ?: return
 
-        if (quantityInt <= 0 || laborMinutesInt < 0) {
+        if (quantityInt <= 0 || laborMinutesInt < 0 || laborRateDouble <= 0) {
             errorMessage = "Please enter valid values"
             return
         }
@@ -51,10 +53,11 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
                     quantity = quantityInt,
                     printArea = printArea,
                     laborMinutes = laborMinutesInt,
-                    profitMarginPercent = profitMargin.toDouble()
+                    profitMarginPercent = profitMargin.toDouble(),
+                    laborRatePerHour = laborRateDouble
                 )
 
-                pricingResponse = ApiClient.calculatePricing(request)
+                costBreakdown = ApiClient.calculatePricing(request)
                 isCalculating = false
             } catch (e: Exception) {
                 errorMessage = "Failed to calculate pricing: ${e.message}"
@@ -64,10 +67,13 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
     }
 
     // Auto-calculate when inputs change
-    LaunchedEffect(productType, quantity, printArea, laborMinutes, profitMargin) {
+    LaunchedEffect(productType, quantity, printArea, laborMinutes, laborRate, profitMargin) {
         val quantityInt = quantity.toIntOrNull()
         val laborMinutesInt = laborMinutes.toIntOrNull()
-        if (quantityInt != null && quantityInt > 0 && laborMinutesInt != null && laborMinutesInt >= 0) {
+        val laborRateDouble = laborRate.toDoubleOrNull()
+        if (quantityInt != null && quantityInt > 0 &&
+            laborMinutesInt != null && laborMinutesInt >= 0 &&
+            laborRateDouble != null && laborRateDouble > 0) {
             calculatePricing()
         }
     }
@@ -125,7 +131,7 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = productTypeExpanded) },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .menuAnchor()
+                                .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                         )
                         ExposedDropdownMenu(
                             expanded = productTypeExpanded,
@@ -147,7 +153,7 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
                     OutlinedTextField(
                         value = quantity,
                         onValueChange = { quantity = it },
-                        label = { Text("Quantity") },
+                        label = { Text("Quantity (min: 1)") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -165,7 +171,7 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = printAreaExpanded) },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .menuAnchor()
+                                .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                         )
                         ExposedDropdownMenu(
                             expanded = printAreaExpanded,
@@ -192,7 +198,16 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
                         singleLine = true
                     )
 
-                    // Profit Margin Slider
+                    // Labor Rate Input
+                    OutlinedTextField(
+                        value = laborRate,
+                        onValueChange = { laborRate = it },
+                        label = { Text("Labor Rate (₴/hour)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    // Profit Margin Slider (0-100%, step 5%)
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
                             text = "Profit Margin: ${profitMargin.roundToInt()}%",
@@ -204,16 +219,17 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
                         Slider(
                             value = profitMargin,
                             onValueChange = { profitMargin = it },
-                            valueRange = 40f..65f,
-                            steps = 24,
+                            valueRange = 0f..100f,
+                            steps = 19, // Steps for every 5%: (100-0)/5 - 1 = 19
                             modifier = Modifier.fillMaxWidth()
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("40%", fontSize = 12.sp, color = Color(0xFF94A3B8))
-                            Text("65%", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                            Text("0%", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                            Text("50%", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                            Text("100%", fontSize = 12.sp, color = Color(0xFF94A3B8))
                         }
                     }
 
@@ -224,6 +240,15 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
                             fontSize = 14.sp,
                             modifier = Modifier.padding(top = 8.dp)
                         )
+                    }
+
+                    // Calculate Button
+                    Button(
+                        onClick = { calculatePricing() },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isCalculating
+                    ) {
+                        Text(if (isCalculating) "Calculating..." else "Calculate")
                     }
                 }
             }
@@ -257,23 +282,24 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
                         ) {
                             CircularProgressIndicator()
                         }
-                    } else if (pricingResponse != null) {
-                        val breakdown = pricingResponse!!.costBreakdown
+                    } else if (costBreakdown != null) {
+                        val breakdown = costBreakdown!!
 
-                        // Cost Summary
-                        CostRow("Materials Cost", breakdown.materialsCost)
-                        CostRow("Labor Cost", breakdown.laborCost)
-                        CostRow("Overhead Cost", breakdown.overheadCost)
+                        // Cost Summary (Red)
+                        CostRow("Materials Cost", breakdown.materialsCost, color = Color(0xFFDC2626))
+                        CostRow("Labor Cost", breakdown.laborCost, color = Color(0xFFDC2626))
+                        CostRow("Overhead Cost", breakdown.overheadCost, color = Color(0xFFDC2626))
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                        CostRow("Total Cost", breakdown.totalCost, bold = true)
+                        CostRow("Total Cost", breakdown.totalCost, bold = true, color = Color(0xFFDC2626))
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Pricing Summary
-                        CostRow("Selling Price (Before Tax)", breakdown.sellingPriceBeforeTax)
-                        CostRow("Tax (5%)", breakdown.simplifiedTax)
+                        // Pricing Summary (Blue)
+                        CostRow("Desired Profit Margin", "${breakdown.profitMarginPercent.roundToInt()}%", isText = true, color = Color(0xFF2563EB))
+                        CostRow("Selling Price (Before Tax)", breakdown.sellingPriceBeforeTax, color = Color(0xFF2563EB))
+                        CostRow("Simplified Tax (5%)", breakdown.simplifiedTax, color = Color(0xFF2563EB))
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -281,22 +307,23 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
                             "Final Selling Price",
                             breakdown.finalSellingPrice,
                             bold = true,
-                            color = Color(0xFF16A34A)
+                            color = Color(0xFF2563EB)
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Profit Summary
+                        // Profit Summary (Green)
                         CostRow(
-                            "Profit",
+                            "Actual Profit",
                             breakdown.actualProfit,
                             bold = true,
-                            color = Color(0xFF0EA5E9)
+                            color = Color(0xFF16A34A)
                         )
                         CostRow(
-                            "Profit Margin",
+                            "Profit Margin %",
                             "${(breakdown.desiredProfitMargin * 100).roundToInt()}%",
-                            isPercentage = true
+                            isText = true,
+                            color = Color(0xFF16A34A)
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -318,7 +345,7 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
                                     color = Color(0xFF64748B)
                                 )
                                 Text(
-                                    FormatUtils.formatCurrency(pricingResponse!!.perItemPrice),
+                                    PricingCalculator.formatCurrency(breakdown.finalSellingPrice / quantity.toIntOrNull()!!),
                                     fontSize = 24.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF1E293B)
@@ -327,7 +354,7 @@ fun PricingCalculatorScreen(onNavigate: (Screen) -> Unit) {
                         }
                     } else {
                         Text(
-                            "Enter product details to calculate pricing",
+                            "Enter product details and click Calculate",
                             fontSize = 14.sp,
                             color = Color(0xFF64748B),
                             modifier = Modifier.padding(top = 16.dp)
@@ -345,7 +372,7 @@ private fun CostRow(
     value: Double,
     bold: Boolean = false,
     color: Color = Color(0xFF1E293B),
-    isPercentage: Boolean = false
+    isText: Boolean = false
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -358,7 +385,7 @@ private fun CostRow(
             color = Color(0xFF64748B)
         )
         Text(
-            text = FormatUtils.formatCurrency(value),
+            text = PricingCalculator.formatCurrency(value),
             fontSize = if (bold) 16.sp else 14.sp,
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
             color = color
@@ -372,7 +399,7 @@ private fun CostRow(
     value: String,
     bold: Boolean = false,
     color: Color = Color(0xFF1E293B),
-    isPercentage: Boolean = false
+    isText: Boolean = false
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),

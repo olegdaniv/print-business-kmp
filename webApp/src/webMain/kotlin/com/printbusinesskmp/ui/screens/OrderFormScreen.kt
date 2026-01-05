@@ -18,6 +18,8 @@ import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.*
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.utils.FormatUtils
+import com.printbusinesskmp.localization.LocalizationState
+import com.printbusinesskmp.localization.Strings
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 
@@ -28,10 +30,16 @@ data class OrderItemForm(
     val size: String = "",
     val color: String = "",
     val printArea: PrintArea = PrintArea.FRONT,
+    val designUrl: String = "",
     val blankItemCost: Double = 0.0,
     val thermalPaperCost: Double = 0.0,
     val laborCost: Double = 0.0,
-    val sellingPrice: Double = 0.0
+    val sellingPrice: Double = 0.0,
+    val laborMinutes: Int = 15,
+    val laborRatePerHour: Double = 100.0,
+    val profitMarginPercent: Double = 50.0,
+    val calculatedBreakdown: CostBreakdown? = null,
+    val isCalculated: Boolean = false
 ) {
     val totalCost: Double get() = blankItemCost + thermalPaperCost + laborCost
     val profit: Double get() = sellingPrice - totalCost
@@ -40,6 +48,7 @@ data class OrderItemForm(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
+    val lang by LocalizationState.currentLanguage
     var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
     var selectedClientId by remember { mutableStateOf<String?>(null) }
     var orderItems by remember { mutableStateOf<List<OrderItemForm>>(emptyList()) }
@@ -56,7 +65,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                 clients = ApiClient.getClients()
                 isLoading = false
             } catch (e: Exception) {
-                errorMessage = "Failed to load clients: ${e.message}"
+                errorMessage = "${Strings.failedToLoadClients(lang)}: ${e.message}"
                 isLoading = false
             }
         }
@@ -65,12 +74,12 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
     fun handleSave() {
         val clientId = selectedClientId
         if (clientId == null) {
-            errorMessage = "Please select a client"
+            errorMessage = Strings.pleaseSelectClient(lang)
             return
         }
 
         if (orderItems.isEmpty()) {
-            errorMessage = "Please add at least one item"
+            errorMessage = Strings.pleaseAddAtLeastOneItem(lang)
             return
         }
 
@@ -107,7 +116,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                 ApiClient.createOrder(order)
                 onNavigate(Screen.Orders)
             } catch (e: Exception) {
-                errorMessage = "Failed to create order: ${e.message}"
+                errorMessage = "${Strings.failedToCreateOrder(lang)}: ${e.message}"
                 isSaving = false
             }
         }
@@ -121,14 +130,14 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "New Order",
+                text = Strings.newOrder(lang),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1E293B)
             )
 
             TextButton(onClick = { onNavigate(Screen.Orders) }) {
-                Text("← Cancel", color = Color(0xFF3B82F6))
+                Text("← ${Strings.cancel(lang)}", color = Color(0xFF3B82F6))
             }
         }
 
@@ -147,7 +156,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(
-                                text = "Client Selection",
+                                text = Strings.clientSelection(lang),
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF1E293B),
@@ -164,7 +173,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                     value = clients.find { it.id == selectedClientId }?.name ?: "",
                                     onValueChange = {},
                                     readOnly = true,
-                                    placeholder = { Text("Select a client") },
+                                    placeholder = { Text(Strings.selectClient(lang)) },
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                                     modifier = Modifier.fillMaxWidth().menuAnchor(
                                         type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
@@ -208,7 +217,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Order Items (${orderItems.size})",
+                                    text = "${Strings.orderItems(lang)} (${orderItems.size})",
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color(0xFF1E293B)
@@ -218,13 +227,13 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                     onClick = { showAddItemDialog = true },
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
                                 ) {
-                                    Text("+ Add Item", color = Color.White)
+                                    Text("+ ${Strings.addItem(lang)}", color = Color.White)
                                 }
                             }
 
                             if (orderItems.isEmpty()) {
                                 Text(
-                                    text = "No items added yet",
+                                    text = Strings.noItemsAdded(lang),
                                     fontSize = 14.sp,
                                     color = Color(0xFF64748B),
                                     modifier = Modifier.padding(vertical = 16.dp)
@@ -241,7 +250,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                                 horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
                                                 Text(
-                                                    text = item.productType.name.replace("_", " "),
+                                                    text = Strings.getProductTypeName(item.productType, lang),
                                                     fontSize = 16.sp,
                                                     fontWeight = FontWeight.SemiBold,
                                                     color = Color(0xFF1E293B)
@@ -252,12 +261,12 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                                         orderItems = orderItems.filterIndexed { i, _ -> i != index }
                                                     }
                                                 ) {
-                                                    Text("Remove", color = Color(0xFFEF4444))
+                                                    Text(Strings.remove(lang), color = Color(0xFFEF4444))
                                                 }
                                             }
 
                                             Text(
-                                                text = "Qty: ${item.quantity} | ${item.printArea.name}",
+                                                text = "${Strings.qty(lang)}: ${item.quantity} | ${Strings.getPrintAreaName(item.printArea, lang)}",
                                                 fontSize = 14.sp,
                                                 color = Color(0xFF64748B)
                                             )
@@ -280,18 +289,18 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                                 horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
                                                 Text(
-                                                    text = "Cost: ${FormatUtils.formatCurrency(item.totalCost)}",
+                                                    text = "${Strings.cost(lang)}: ${FormatUtils.formatCurrency(item.totalCost)}",
                                                     fontSize = 14.sp,
                                                     color = Color(0xFF64748B)
                                                 )
                                                 Text(
-                                                    text = "Price: ${FormatUtils.formatCurrency(item.sellingPrice)}",
+                                                    text = "${Strings.price(lang)}: ${FormatUtils.formatCurrency(item.sellingPrice)}",
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.Medium,
                                                     color = Color(0xFF1E293B)
                                                 )
                                                 Text(
-                                                    text = "Profit: ${FormatUtils.formatCurrency(item.profit)}",
+                                                    text = "${Strings.profit(lang)}: ${FormatUtils.formatCurrency(item.profit)}",
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.Medium,
                                                     color = if (item.profit >= 0) Color(0xFF16A34A) else Color(
@@ -311,7 +320,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
-                                            text = "Total Cost:",
+                                            text = "${Strings.totalCost(lang)}:",
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Medium,
                                             color = Color(0xFF64748B)
@@ -328,7 +337,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
-                                            text = "Total Price:",
+                                            text = "${Strings.totalPrice(lang)}:",
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Medium,
                                             color = Color(0xFF64748B)
@@ -345,7 +354,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
-                                            text = "Total Profit:",
+                                            text = "${Strings.totalProfit(lang)}:",
                                             fontSize = 18.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFF1E293B)
@@ -373,7 +382,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(
-                                text = "Notes (Optional)",
+                                text = "${Strings.notes(lang)} (${Strings.optional(lang)})",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF1E293B),
@@ -383,7 +392,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                             OutlinedTextField(
                                 value = notes,
                                 onValueChange = { notes = it },
-                                placeholder = { Text("Add any additional notes...") },
+                                placeholder = { Text(Strings.addNotes(lang)) },
                                 modifier = Modifier.fillMaxWidth().height(120.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedContainerColor = Color.White,
@@ -418,7 +427,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                 color = Color.White
                             )
                         } else {
-                            Text("Save Order", color = Color.White, fontSize = 16.sp)
+                            Text(Strings.saveOrder(lang), color = Color.White, fontSize = 16.sp)
                         }
                     }
                 }
@@ -442,20 +451,76 @@ private fun AddItemDialog(
     onDismiss: () -> Unit,
     onAdd: (OrderItemForm) -> Unit
 ) {
+    val lang by LocalizationState.currentLanguage
     var productType by remember { mutableStateOf(ProductType.T_SHIRT) }
     var quantity by remember { mutableStateOf("1") }
     var size by remember { mutableStateOf("") }
     var color by remember { mutableStateOf("") }
     var printArea by remember { mutableStateOf(PrintArea.FRONT) }
+    var designUrl by remember { mutableStateOf("") }
     var blankItemCost by remember { mutableStateOf("") }
     var thermalPaperCost by remember { mutableStateOf("") }
     var laborCost by remember { mutableStateOf("") }
     var sellingPrice by remember { mutableStateOf("") }
 
+    var laborMinutes by remember { mutableStateOf("15") }
+    var laborRatePerHour by remember { mutableStateOf("100") }
+    var profitMarginPercent by remember { mutableStateOf(50f) }
+
+    var isCalculating by remember { mutableStateOf(false) }
+    var calculatedBreakdown by remember { mutableStateOf<CostBreakdown?>(null) }
+    var calculationError by remember { mutableStateOf<String?>(null) }
+    var showSuccess by remember { mutableStateOf(false) }
+    var highlightFields by remember { mutableStateOf(false) }
+    var showBreakdown by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+
     val totalCost = (blankItemCost.toDoubleOrNull() ?: 0.0) +
             (thermalPaperCost.toDoubleOrNull() ?: 0.0) +
             (laborCost.toDoubleOrNull() ?: 0.0)
     val profit = (sellingPrice.toDoubleOrNull() ?: 0.0) - totalCost
+
+    fun calculatePricing() {
+        scope.launch {
+            try {
+                isCalculating = true
+                calculationError = null
+                showSuccess = false
+
+                val request = PricingRequest(
+                    productType = productType,
+                    quantity = quantity.toIntOrNull() ?: 1,
+                    printArea = printArea,
+                    laborMinutes = laborMinutes.toIntOrNull() ?: 15,
+                    profitMarginPercent = profitMarginPercent.toDouble(),
+                    laborRatePerHour = laborRatePerHour.toDoubleOrNull() ?: 100.0
+                )
+
+                val breakdown = ApiClient.calculatePricing(request)
+                calculatedBreakdown = breakdown
+
+                val qty = quantity.toIntOrNull() ?: 1
+                val thermalCost = if (printArea == PrintArea.BOTH) 10.0 else 5.0
+                blankItemCost = (((breakdown.materialsCost / qty - thermalCost) * 100).toInt() / 100.0).toString()
+                thermalPaperCost = ((thermalCost * 100).toInt() / 100.0).toString()
+                laborCost = ((breakdown.laborCost * 100).toInt() / 100.0).toString()
+                sellingPrice = ((breakdown.finalSellingPrice / qty * 100).toInt() / 100.0).toString()
+
+                showSuccess = true
+                showBreakdown = true
+                highlightFields = true
+
+                kotlinx.coroutines.delay(2000)
+                highlightFields = false
+
+                isCalculating = false
+            } catch (e: Exception) {
+                calculationError = "Calculation failed: ${e.message}"
+                isCalculating = false
+            }
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -575,8 +640,244 @@ private fun AddItemDialog(
                 }
 
                 item {
+                    OutlinedTextField(
+                        value = designUrl,
+                        onValueChange = { designUrl = it },
+                        label = { Text("Design URL (Optional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                item {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     Text(
-                        text = "Costs",
+                        text = "Pricing Calculator",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF3B82F6)
+                    )
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = laborMinutes,
+                            onValueChange = { if (it.all { c -> c.isDigit() }) laborMinutes = it },
+                            label = { Text("Labor Time (min)") },
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                        OutlinedTextField(
+                            value = laborRatePerHour,
+                            onValueChange = { laborRatePerHour = it },
+                            label = { Text("Rate (₴/hour)") },
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                        )
+                    }
+                }
+
+                item {
+                    Column {
+                        Text(
+                            text = "Profit Margin: ${profitMarginPercent.toInt()}%",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Slider(
+                            value = profitMarginPercent,
+                            onValueChange = { profitMarginPercent = it },
+                            valueRange = 0f..100f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                item {
+                    Button(
+                        onClick = { calculatePricing() },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isCalculating,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                    ) {
+                        if (isCalculating) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Calculating...", color = Color.White)
+                        } else {
+                            Text("Calculate Costs", color = Color.White)
+                        }
+                    }
+                }
+
+                if (showSuccess) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFDCFCE7))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("✓", fontSize = 20.sp, color = Color(0xFF16A34A))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Prices calculated successfully",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF16A34A),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (calculationError != null) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2))
+                        ) {
+                            Text(
+                                text = calculationError ?: "",
+                                fontSize = 14.sp,
+                                color = Color(0xFFEF4444),
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                    }
+                }
+
+                if (showBreakdown && calculatedBreakdown != null) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFDCFCE7))
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "Cost Breakdown",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                    TextButton(onClick = { showBreakdown = !showBreakdown }) {
+                                        Text(if (showBreakdown) "Hide" else "Show", color = Color(0xFF16A34A))
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                val breakdown = calculatedBreakdown!!
+                                val qty = quantity.toIntOrNull() ?: 1
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Total Materials:", fontSize = 14.sp, color = Color(0xFF16A34A))
+                                    Text(
+                                        FormatUtils.formatCurrency(breakdown.materialsCost),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Labor Cost:", fontSize = 14.sp, color = Color(0xFF16A34A))
+                                    Text(
+                                        FormatUtils.formatCurrency(breakdown.laborCost),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Total Cost per item:", fontSize = 14.sp, color = Color(0xFF16A34A))
+                                    Text(
+                                        FormatUtils.formatCurrency(breakdown.totalCost / qty),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                }
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Selling Price per item:", fontSize = 14.sp, color = Color(0xFF3B82F6))
+                                    Text(
+                                        FormatUtils.formatCurrency(breakdown.finalSellingPrice / qty),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF3B82F6)
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Tax (5%):", fontSize = 14.sp, color = Color(0xFF16A34A))
+                                    Text(
+                                        FormatUtils.formatCurrency(breakdown.simplifiedTax),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Profit per item:", fontSize = 14.sp, color = Color(0xFF16A34A))
+                                    Text(
+                                        FormatUtils.formatCurrency(breakdown.actualProfit / qty),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Profit Margin:", fontSize = 14.sp, color = Color(0xFF16A34A))
+                                    Text(
+                                        "${breakdown.profitMarginPercent.toInt()}%",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    Text(
+                        text = "Manual Cost Entry",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(top = 8.dp)
@@ -589,7 +890,11 @@ private fun AddItemDialog(
                         onValueChange = { blankItemCost = it },
                         label = { Text("Blank Item Cost") },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        colors = if (highlightFields) OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFBFDBFE),
+                            unfocusedContainerColor = Color(0xFFBFDBFE)
+                        ) else OutlinedTextFieldDefaults.colors()
                     )
                 }
 
@@ -599,7 +904,11 @@ private fun AddItemDialog(
                         onValueChange = { thermalPaperCost = it },
                         label = { Text("Thermal Paper Cost") },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        colors = if (highlightFields) OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFBFDBFE),
+                            unfocusedContainerColor = Color(0xFFBFDBFE)
+                        ) else OutlinedTextFieldDefaults.colors()
                     )
                 }
 
@@ -609,7 +918,11 @@ private fun AddItemDialog(
                         onValueChange = { laborCost = it },
                         label = { Text("Labor Cost") },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        colors = if (highlightFields) OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFBFDBFE),
+                            unfocusedContainerColor = Color(0xFFBFDBFE)
+                        ) else OutlinedTextFieldDefaults.colors()
                     )
                 }
 
@@ -619,7 +932,11 @@ private fun AddItemDialog(
                         onValueChange = { sellingPrice = it },
                         label = { Text("Selling Price") },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        colors = if (highlightFields) OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFBFDBFE),
+                            unfocusedContainerColor = Color(0xFFBFDBFE)
+                        ) else OutlinedTextFieldDefaults.colors()
                     )
                 }
 
@@ -663,10 +980,16 @@ private fun AddItemDialog(
                             size = size,
                             color = color,
                             printArea = printArea,
+                            designUrl = designUrl,
                             blankItemCost = blankItemCost.toDoubleOrNull() ?: 0.0,
                             thermalPaperCost = thermalPaperCost.toDoubleOrNull() ?: 0.0,
                             laborCost = laborCost.toDoubleOrNull() ?: 0.0,
-                            sellingPrice = sellingPrice.toDoubleOrNull() ?: 0.0
+                            sellingPrice = sellingPrice.toDoubleOrNull() ?: 0.0,
+                            laborMinutes = laborMinutes.toIntOrNull() ?: 15,
+                            laborRatePerHour = laborRatePerHour.toDoubleOrNull() ?: 100.0,
+                            profitMarginPercent = profitMarginPercent.toDouble(),
+                            calculatedBreakdown = calculatedBreakdown,
+                            isCalculated = calculatedBreakdown != null
                         )
                     )
                 }

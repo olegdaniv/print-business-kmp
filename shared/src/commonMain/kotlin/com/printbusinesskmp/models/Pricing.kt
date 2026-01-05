@@ -12,7 +12,8 @@ data class CostBreakdown(
     val sellingPriceBeforeTax: Double,   // totalCost / (1 - margin)
     val simplifiedTax: Double,           // 5% of selling price
     val finalSellingPrice: Double,       // sellingPrice + tax
-    val actualProfit: Double             // finalSellingPrice - totalCost - tax
+    val actualProfit: Double,            // finalSellingPrice - totalCost - tax
+    val profitMarginPercent: Double      // Desired profit margin as percentage
 )
 
 @Serializable
@@ -28,7 +29,7 @@ data class MaterialCosts(
 data class TaxInfo(
     val simplifiedTaxRate: Double = 0.05,      // 5% group 3
     val monthlyESV: Double = 1474.0,           // 2026 rate (update annually)
-    val monthlyLimit: Double = 1167000.0       // Group 3 limit
+    val monthlyIncomeLimit: Double = 1167000.0 // Group 3 limit
 )
 
 @Serializable
@@ -38,7 +39,6 @@ data class PricingRequest(
     val printArea: PrintArea,
     val laborMinutes: Int,
     val profitMarginPercent: Double,
-    val materialCosts: MaterialCosts = MaterialCosts(),
     val laborRatePerHour: Double = 100.0
 )
 

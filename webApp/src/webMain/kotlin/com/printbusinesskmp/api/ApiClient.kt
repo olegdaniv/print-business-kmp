@@ -84,7 +84,7 @@ object ApiClient {
     }
 
     // Pricing API functions
-    suspend fun calculatePricing(request: PricingRequest): PricingResponse {
+    suspend fun calculatePricing(request: PricingRequest): CostBreakdown {
         return client.post("$BASE_URL/api/pricing/calculate") {
             contentType(ContentType.Application.Json)
             setBody(request)
