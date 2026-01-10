@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">PrintBusiness</string>
+
+    <!-- Language Selection -->
+    <string name="language_ukrainian">Українська</string>
+    <string name="language_english">English</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">Панель</string>
+    <string name="nav_clients">Клієнти</string>
+    <string name="nav_orders">Замовлення</string>
+    <string name="nav_calculator">Калькулятор</string>
+
+    <!-- Common Actions -->
+    <string name="action_save">Зберегти</string>
+    <string name="action_cancel">Скасувати</string>
+    <string name="action_add">Додати</string>
+    <string name="action_remove">Видалити</string>
+    <string name="action_edit">Редагувати</string>
+    <string name="action_delete">Видалити</string>
+    <string name="action_search">Пошук</string>
+
+    <!-- Common Labels -->
+    <string name="label_loading">Завантаження...</string>
+    <string name="label_error">Помилка</string>
+    <string name="label_success">Успішно</string>
+    <string name="label_optional">Необов\'язково</string>
+
+    <!-- Order Form -->
+    <string name="order_new">Нове замовлення</string>
+    <string name="order_client_selection">Вибір клієнта</string>
+    <string name="order_select_client">Виберіть клієнта</string>
+    <string name="order_items">Товари замовлення</string>
+    <string name="order_add_item">Додати товар</string>
+    <string name="order_no_items">Товари ще не додані</string>
+    <string name="order_notes">Примітки</string>
+    <string name="order_notes_hint">Додайте будь-які примітки...</string>
+    <string name="order_save">Зберегти замовлення</string>
+
+    <!-- Order Item Dialog -->
+    <string name="item_add_title">Додати товар</string>
+    <string name="item_product_type">Тип товару</string>
+    <string name="item_quantity">Кількість</string>
+    <string name="item_size">Розмір</string>
+    <string name="item_color">Колір</string>
+    <string name="item_print_area">Область друку</string>
+    <string name="item_design_url">URL дизайну</string>
+
+    <!-- Pricing Calculator -->
+    <string name="pricing_calculator">Калькулятор цін</string>
+    <string name="pricing_labor_time">Час роботи (хв)</string>
+    <string name="pricing_labor_rate">Ставка (₴/год)</string>
+    <string name="pricing_profit_margin">Маржа прибутку</string>
+    <string name="pricing_calculate">Розрахувати вартість</string>
+    <string name="pricing_calculating">Розрахунок...</string>
+    <string name="pricing_success">Ціни успішно розраховані</string>
+    <string name="pricing_breakdown">Деталізація вартості</string>
+    <string name="pricing_materials">Матеріали:</string>
+    <string name="pricing_labor">Робота:</string>
+    <string name="pricing_cost_per_item">Вартість за одиницю:</string>
+    <string name="pricing_selling_price_per_item">Ціна за одиницю:</string>
+    <string name="pricing_tax">Податок (5%):</string>
+    <string name="pricing_profit_per_item">Прибуток за одиницю:</string>
+    <string name="pricing_manual_entry">Ручне введення вартості</string>
+    <string name="pricing_blank_cost">Вартість заготовки</string>
+    <string name="pricing_thermal_cost">Вартість термопаперу</string>
+    <string name="pricing_labor_cost">Вартість роботи</string>
+    <string name="pricing_selling_price">Ціна продажу</string>
+
+    <!-- Product Types -->
+    <string name="product_type_t_shirt">Футболка</string>
+    <string name="product_type_hoodie">Худі</string>
+    <string name="product_type_cap">Кепка</string>
+    <string name="product_type_bag">Сумка</string>
+    <string name="product_type_custom">Власний</string>
+
+    <!-- Print Areas -->
+    <string name="print_area_front">Передня</string>
+    <string name="print_area_back">Задня</string>
+    <string name="print_area_both">Обидві</string>
+    <string name="print_area_sleeve">Рукав</string>
+    <string name="print_area_custom">Власна</string>
+
+    <!-- Summary Labels -->
+    <string name="summary_qty">К-ть</string>
+    <string name="summary_cost">Вартість</string>
+    <string name="summary_price">Ціна</string>
+    <string name="summary_profit">Прибуток</string>
+    <string name="summary_total_cost">Загальна вартість</string>
+    <string name="summary_total_price">Загальна ціна</string>
+    <string name="summary_total_profit">Загальний прибуток</string>
+    <string name="summary_hide">Сховати</string>
+    <string name="summary_show">Показати</string>
+
+    <!-- Error Messages (Keys-First Architecture) -->
+    <string name="error_user_not_found">Користувача не знайдено</string>
+    <string name="error_client_load_failed">Не вдалося завантажити клієнтів</string>
+    <string name="error_order_create_failed">Не вдалося створити замовлення</string>
+    <string name="error_please_select_client">Будь ласка, виберіть клієнта</string>
+    <string name="error_please_add_item">Будь ласка, додайте хоча б один товар</string>
+    <string name="error_calculation_failed">Помилка розрахунку</string>
+    <string name="error_network">Помилка мережі</string>
+    <string name="error_unknown">Невідома помилка</string>
+    <string name="error_invalid_credentials">Невірні облікові дані</string>
+    <string name="error_unauthorized">Немає доступу</string>
+    <string name="error_forbidden">Заборонено</string>
+    <string name="error_not_found">Не знайдено</string>
+    <string name="error_server_error">Помилка сервера</string>
+</resources>

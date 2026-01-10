@@ -1,6 +1,7 @@
 package com.printbusinesskmp
 
 import com.printbusinesskmp.database.DatabaseFactory
+import com.printbusinesskmp.routes.authRoutes
 import com.printbusinesskmp.routes.configureClientRoutes
 import com.printbusinesskmp.routes.configureOrderRoutes
 import com.printbusinesskmp.routes.configurePricingRoutes
@@ -60,6 +61,7 @@ fun Application.module() {
             call.respondText("OK")
         }
 
+        authRoutes()
         configureClientRoutes()
         configureOrderRoutes()
         configurePricingRoutes()

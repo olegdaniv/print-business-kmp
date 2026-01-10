@@ -12,6 +12,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.navigation.Screen
+import com.printbusinesskmp.shared.resources.Res
+import com.printbusinesskmp.shared.resources.nav_calculator
+import com.printbusinesskmp.shared.resources.nav_clients
+import com.printbusinesskmp.shared.resources.nav_dashboard
+import com.printbusinesskmp.shared.resources.nav_orders
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun AppLayout(
@@ -63,35 +69,36 @@ private fun Sidebar(
 
         // Navigation items
         SidebarItem(
-            text = "Dashboard",
+            text =
+                stringResource(Res.string.nav_dashboard),
             isSelected = currentScreen is Screen.Dashboard,
             onClick = { onNavigate(Screen.Dashboard) }
         )
 
         SidebarItem(
-            text = "Clients",
+            text = stringResource(Res.string.nav_clients),
             isSelected = currentScreen is Screen.Clients || currentScreen is Screen.ClientDetail,
             onClick = { onNavigate(Screen.Clients) }
         )
 
         SidebarItem(
-            text = "Orders",
+            text = stringResource(Res.string.nav_orders),
             isSelected = currentScreen is Screen.Orders || currentScreen is Screen.OrderDetail || currentScreen is Screen.NewOrder,
             onClick = { onNavigate(Screen.Orders) }
         )
 
         SidebarItem(
-            text = "Pricing Calculator",
+            text = stringResource(Res.string.nav_calculator),
             isSelected = currentScreen is Screen.PricingCalculator,
             onClick = { onNavigate(Screen.PricingCalculator) }
         )
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Language Switcher
-        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-            LanguageSwitcher()
-        }
+        // Language switcher
+        LanguageSwitcher()
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 

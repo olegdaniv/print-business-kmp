@@ -15,7 +15,10 @@ import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.navigation.Screen
+import com.printbusinesskmp.shared.resources.Res
+import com.printbusinesskmp.shared.resources.nav_dashboard
 import com.printbusinesskmp.utils.FormatUtils
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun DashboardScreen(onNavigate: (Screen) -> Unit) {
@@ -43,7 +46,7 @@ fun DashboardScreen(onNavigate: (Screen) -> Unit) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
-            text = "Dashboard",
+            text = stringResource(Res.string.nav_dashboard),
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF1E293B),

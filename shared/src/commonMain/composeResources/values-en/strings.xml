@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">PrintBusiness</string>
+
+    <!-- Language Selection -->
+    <string name="language_ukrainian">Ukrainian</string>
+    <string name="language_english">English</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_clients">Clients</string>
+    <string name="nav_orders">Orders</string>
+    <string name="nav_calculator">Calculator</string>
+
+    <!-- Common Actions -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_add">Add</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_search">Search</string>
+
+    <!-- Common Labels -->
+    <string name="label_loading">Loading...</string>
+    <string name="label_error">Error</string>
+    <string name="label_success">Success</string>
+    <string name="label_optional">Optional</string>
+
+    <!-- Order Form -->
+    <string name="order_new">New Order</string>
+    <string name="order_client_selection">Client Selection</string>
+    <string name="order_select_client">Select a client</string>
+    <string name="order_items">Order Items</string>
+    <string name="order_add_item">Add Item</string>
+    <string name="order_no_items">No items added yet</string>
+    <string name="order_notes">Notes</string>
+    <string name="order_notes_hint">Add any additional notes...</string>
+    <string name="order_save">Save Order</string>
+
+    <!-- Order Item Dialog -->
+    <string name="item_add_title">Add Order Item</string>
+    <string name="item_product_type">Product Type</string>
+    <string name="item_quantity">Quantity</string>
+    <string name="item_size">Size</string>
+    <string name="item_color">Color</string>
+    <string name="item_print_area">Print Area</string>
+    <string name="item_design_url">Design URL</string>
+
+    <!-- Pricing Calculator -->
+    <string name="pricing_calculator">Pricing Calculator</string>
+    <string name="pricing_labor_time">Labor Time (min)</string>
+    <string name="pricing_labor_rate">Rate (₴/hour)</string>
+    <string name="pricing_profit_margin">Profit Margin</string>
+    <string name="pricing_calculate">Calculate Costs</string>
+    <string name="pricing_calculating">Calculating...</string>
+    <string name="pricing_success">Prices calculated successfully</string>
+    <string name="pricing_breakdown">Cost Breakdown</string>
+    <string name="pricing_materials">Total Materials:</string>
+    <string name="pricing_labor">Labor Cost:</string>
+    <string name="pricing_cost_per_item">Total Cost per item:</string>
+    <string name="pricing_selling_price_per_item">Selling Price per item:</string>
+    <string name="pricing_tax">Tax (5%):</string>
+    <string name="pricing_profit_per_item">Profit per item:</string>
+    <string name="pricing_manual_entry">Manual Cost Entry</string>
+    <string name="pricing_blank_cost">Blank Item Cost</string>
+    <string name="pricing_thermal_cost">Thermal Paper Cost</string>
+    <string name="pricing_labor_cost">Labor Cost</string>
+    <string name="pricing_selling_price">Selling Price</string>
+
+    <!-- Product Types -->
+    <string name="product_type_t_shirt">T-Shirt</string>
+    <string name="product_type_hoodie">Hoodie</string>
+    <string name="product_type_cap">Cap</string>
+    <string name="product_type_bag">Bag</string>
+    <string name="product_type_custom">Custom</string>
+
+    <!-- Print Areas -->
+    <string name="print_area_front">FRONT</string>
+    <string name="print_area_back">BACK</string>
+    <string name="print_area_both">BOTH</string>
+    <string name="print_area_sleeve">SLEEVE</string>
+    <string name="print_area_custom">CUSTOM</string>
+
+    <!-- Summary Labels -->
+    <string name="summary_qty">Qty</string>
+    <string name="summary_cost">Cost</string>
+    <string name="summary_price">Price</string>
+    <string name="summary_profit">Profit</string>
+    <string name="summary_total_cost">Total Cost</string>
+    <string name="summary_total_price">Total Price</string>
+    <string name="summary_total_profit">Total Profit</string>
+    <string name="summary_hide">Hide</string>
+    <string name="summary_show">Show</string>
+
+    <!-- Error Messages (Keys-First Architecture) -->
+    <string name="error_user_not_found">User not found</string>
+    <string name="error_client_load_failed">Failed to load clients</string>
+    <string name="error_order_create_failed">Failed to create order</string>
+    <string name="error_please_select_client">Please select a client</string>
+    <string name="error_please_add_item">Please add at least one item</string>
+    <string name="error_calculation_failed">Calculation failed</string>
+    <string name="error_network">Network error</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="error_invalid_credentials">Invalid credentials</string>
+    <string name="error_unauthorized">Unauthorized</string>
+    <string name="error_forbidden">Forbidden</string>
+    <string name="error_not_found">Not found</string>
+    <string name="error_server_error">Server error</string>
+</resources>

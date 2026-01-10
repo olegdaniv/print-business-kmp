@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,8 +16,11 @@ import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.navigation.Screen
+import com.printbusinesskmp.shared.resources.Res
+import com.printbusinesskmp.shared.resources.nav_dashboard
 import com.printbusinesskmp.utils.FormatUtils
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ClientsScreen(onNavigate: (Screen) -> Unit) {
@@ -57,7 +61,7 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Clients",
+                text = stringResource(Res.string.nav_dashboard),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1E293B)

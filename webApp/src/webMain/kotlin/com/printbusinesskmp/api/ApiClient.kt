@@ -16,7 +16,7 @@ private data class UpdateStatusRequest(val status: String)
 object ApiClient {
     private const val BASE_URL = "http://localhost:8080"
 
-    private val client = HttpClient {
+    internal val client = HttpClient {
         install(ContentNegotiation) {
             json(Json {
                 prettyPrint = true
