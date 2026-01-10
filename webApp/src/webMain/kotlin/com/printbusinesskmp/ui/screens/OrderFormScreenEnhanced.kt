@@ -3,10 +3,10 @@
 package com.printbusinesskmp.ui.screens
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,10 +18,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.printbusinesskmp.api.ApiClient
-import com.printbusinesskmp.models.*
-import com.printbusinesskmp.navigation.Screen
-import com.printbusinesskmp.shared.resources.*
+import com.printbusinesskmp.models.CostBreakdown
+import com.printbusinesskmp.models.OrderItem
+import com.printbusinesskmp.models.PrintArea
+import com.printbusinesskmp.models.ProductType
 import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.theme.AppColors.DarkGrayText
 import com.printbusinesskmp.theme.AppColors.DarkSlate
@@ -31,10 +31,6 @@ import com.printbusinesskmp.theme.AppColors.StatusBackground.Cancelled
 import com.printbusinesskmp.theme.AppColors.Success
 import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.FormatUtils
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.stringResource
-import kotlin.time.Clock
 
 // Enhanced OrderItemForm with timestamp
 data class OrderItemFormEnhanced(
@@ -163,7 +159,7 @@ fun QuickCalculateAllDialog(
                             text = "${profitMargin.toInt()}%",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AppColors.Success
+                            color = Success
                         )
                     }
                     Slider(

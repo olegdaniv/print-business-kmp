@@ -35,6 +35,20 @@
     </svg>
 </div>
 <div id="root"></div>
+<script>
+    // Override navigator.languages to support custom locale switching
+    var currentLanguagesImplementation = Object.getOwnPropertyDescriptor(Navigator.prototype, "languages");
+    var newLanguagesImplementation = Object.assign({}, currentLanguagesImplementation, {
+        get: function () {
+            if (window.__customLocale) {
+                return [window.__customLocale];
+            } else {
+                return currentLanguagesImplementation.get.apply(this);
+            }
+        }
+    });
+    Object.defineProperty(Navigator.prototype, "languages", newLanguagesImplementation)
+</script>
 <script type="application/javascript" src="webApp.js"></script>
 </body>
 </html>

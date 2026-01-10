@@ -2,9 +2,11 @@ package com.printbusinesskmp.localization
 
 import androidx.compose.runtime.*
 import kotlinx.browser.localStorage
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.js
 
+/**
+ * Manages application language state and persistence.
+ * Integrates with LocalAppLocale for proper resource loading.
+ */
 object LanguageManager {
     private const val LANGUAGE_KEY = "app_language"
 
@@ -22,18 +24,16 @@ object LanguageManager {
     private val _currentLanguage = mutableStateOf(getSavedLanguage())
     val currentLanguage: State<Language> = _currentLanguage
 
-    // Function to change language
+    /**
+     * Changes the application language.
+     * This will trigger recomposition and reload all string resources.
+     */
     fun setLanguage(language: Language) {
         _currentLanguage.value = language
         localStorage.setItem(LANGUAGE_KEY, language.code)
 
-        // Update the custom locale for Compose Multiplatform's stringResource()
-        updateBrowserLocale(language.code)
-    }
-
-    // Update browser's custom locale
-    @OptIn(ExperimentalWasmJsInterop::class)
-    private fun updateBrowserLocale(languageCode: String) {
-        js("window.__customLocale = [languageCode]")
+        // Update window.__customLocale which is read by navigator.languages override
+        // This is defined in index.html and intercepted by the LocalAppLocale system
+        com.printbusinesskmp.localization.setCustomLocale(language.code.replace('_', '-'))
     }
 }

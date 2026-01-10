@@ -41,11 +41,6 @@ fun LanguageSwitcher() {
                 color = White,
                 fontSize = 14.sp
             )
-            Text(
-                text = if (expanded) "▲" else "▼",
-                color = White,
-                fontSize = 12.sp
-            )
         }
 
         // Dropdown menu

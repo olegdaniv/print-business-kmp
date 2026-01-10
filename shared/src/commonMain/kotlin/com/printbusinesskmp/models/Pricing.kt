@@ -18,11 +18,11 @@ data class CostBreakdown(
 
 @Serializable
 data class MaterialCosts(
-    val thermalPaperPerSheet: Double = 5.0,    // UAH per A4 sheet
-    val blankTShirt: Double = 150.0,           // UAH
-    val blankHoodie: Double = 400.0,           // UAH
-    val blankCap: Double = 80.0,               // UAH
-    val blankBag: Double = 100.0               // UAH
+    val thermalPaperPerSheet: Double = 5.0,    // грн. per A4 sheet
+    val blankTShirt: Double = 150.0,           // грн.
+    val blankHoodie: Double = 400.0,           // грн.
+    val blankCap: Double = 80.0,               // грн.
+    val blankBag: Double = 100.0               // грн.
 )
 
 @Serializable

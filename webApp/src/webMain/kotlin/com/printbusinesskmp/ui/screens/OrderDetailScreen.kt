@@ -382,7 +382,7 @@ private fun StatusBadge(status: String) {
     val backgroundColor = when (status) {
         "NEW" -> StatusBackground.New
         "IN_PROGRESS" -> StatusBackground.InProgress
-        "READY" -> StatusBackground.Ready
+        "READY" -> Ready
         "COMPLETED" -> StatusBackground.Completed
         "CANCELLED" -> StatusBackground.Cancelled
         else -> VeryLightBluGray

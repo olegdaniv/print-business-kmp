@@ -169,7 +169,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                     text = "stringResource(Res.string.cancel)",
 
 //                    "← ${Strings.cancel()}",
-                    color = AppColors.PrimaryBlue
+                    color = PrimaryBlue
                 )
             }
         }
@@ -185,7 +185,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                     // Client Selection Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = AppColors.White)
+                        colors = CardDefaults.cardColors(containerColor = White)
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(
@@ -215,8 +215,8 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                         enabled = true,
                                     ),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = AppColors.White,
-                                        unfocusedContainerColor = AppColors.White
+                                        focusedContainerColor = White,
+                                        unfocusedContainerColor = White
                                     )
                                 )
 
@@ -243,7 +243,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                     // Order Items Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = AppColors.White)
+                        colors = CardDefaults.cardColors(containerColor = White)
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Row(
@@ -260,9 +260,9 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
 
                                 Button(
                                     onClick = { showAddItemDialog = true },
-                                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
+                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                                 ) {
-                                    Text("+ ${stringResource(Res.string.order_add_item)}", color = AppColors.White)
+                                    Text("+ ${stringResource(Res.string.order_add_item)}", color = White)
                                 }
                             }
 
@@ -277,7 +277,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                 orderItems.forEachIndexed { index, item ->
                                     Card(
                                         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                                        colors = CardDefaults.cardColors(containerColor = AppColors.CardItemBg)
+                                        colors = CardDefaults.cardColors(containerColor = CardItemBg)
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
                                             Row(
@@ -343,7 +343,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                                     text = "${stringResource(Res.string.summary_profit)}: ${FormatUtils.formatCurrency(item.profit)}",
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.Medium,
-                                                    color = if (item.profit >= 0) AppColors.Success else AppColors.Error
+                                                    color = if (item.profit >= 0) Success else AppColors.Error
                                                 )
                                             }
                                         }
@@ -401,7 +401,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                             text = FormatUtils.formatCurrency(orderItems.sumOf { it.profit }),
                                             fontSize = 18.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (orderItems.sumOf { it.profit } >= 0) AppColors.Success else AppColors.Error
+                                            color = if (orderItems.sumOf { it.profit } >= 0) Success else AppColors.Error
                                         )
                                     }
                                 }
@@ -414,7 +414,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                     // Notes Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = AppColors.White)
+                        colors = CardDefaults.cardColors(containerColor = White)
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(
@@ -433,8 +433,8 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                 },
                                 modifier = Modifier.fillMaxWidth().height(120.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = AppColors.White,
-                                    unfocusedContainerColor = AppColors.White
+                                    focusedContainerColor = White,
+                                    unfocusedContainerColor = White
                                 )
                             )
                         }
@@ -560,7 +560,7 @@ private fun AddItemDialog(
                 showBreakdown = true
                 highlightFields = true
 
-                kotlinx.coroutines.delay(3000)
+                delay(3000)
                 highlightFields = false
 
                 isCalculating = false
