@@ -108,4 +108,148 @@
     <string name="error_forbidden">Заборонено</string>
     <string name="error_not_found">Не знайдено</string>
     <string name="error_server_error">Помилка сервера</string>
+    <string name="error_load_data">Не вдалося завантажити дані</string>
+    <string name="error_save_client">Не вдалося зберегти клієнта</string>
+    <string name="error_delete_client">Не вдалося видалити клієнта</string>
+    <string name="error_load_orders">Не вдалося завантажити замовлення</string>
+    <string name="error_load_order">Не вдалося завантажити замовлення</string>
+    <string name="error_update_status">Не вдалося оновити статус</string>
+    <string name="error_calculate_pricing">Не вдалося розрахувати ціни</string>
+    <string name="error_please_enter_valid_values">Будь ласка, введіть коректні значення</string>
+
+    <!-- Validation Messages -->
+    <string name="validation_name_required">Ім\'я обов\'язкове</string>
+    <string name="validation_phone_required">Телефон обов\'язковий</string>
+    <string name="validation_phone_format">Невірний формат телефону. Використовуйте +380XXXXXXXXX</string>
+    <string name="validation_email_format">Невірний формат email</string>
+
+    <!-- Dashboard Screen -->
+    <string name="dashboard_total_clients">Всього клієнтів</string>
+    <string name="dashboard_total_orders">Всього замовлень</string>
+    <string name="dashboard_total_profit">Загальний прибуток</string>
+    <string name="dashboard_active_orders">Активні замовлення</string>
+    <string name="dashboard_recent_orders">Останні замовлення</string>
+    <string name="dashboard_unknown_client">Невідомий клієнт</string>
+
+    <!-- Clients Screen -->
+    <string name="clients_title">Клієнти</string>
+    <string name="clients_add_button">+ Додати клієнта</string>
+    <string name="clients_search_placeholder">Пошук клієнтів...</string>
+    <string name="clients_empty_indicator">-</string>
+
+    <!-- Client Form Screen -->
+    <string name="client_form_title_edit">Редагувати клієнта</string>
+    <string name="client_form_title_new">Новий клієнт</string>
+    <string name="client_form_label_name">Ім\'я *</string>
+    <string name="client_form_label_phone">Телефон *</string>
+    <string name="client_form_label_email">Email</string>
+    <string name="client_form_placeholder_name">Введіть ім\'я клієнта</string>
+    <string name="client_form_placeholder_phone">+380XXXXXXXXX</string>
+    <string name="client_form_placeholder_email">Введіть email адресу</string>
+
+    <!-- Table Headers -->
+    <string name="table_header_name">Ім\'я</string>
+    <string name="table_header_phone">Телефон</string>
+    <string name="table_header_email">Email</string>
+    <string name="table_header_total_orders">Всього замовлень</string>
+    <string name="table_header_actions">Дії</string>
+    <string name="table_header_order_id">ID замовлення</string>
+    <string name="table_header_client">Клієнт</string>
+    <string name="table_header_status">Статус</string>
+    <string name="table_header_items">Товари</string>
+    <string name="table_header_total_price">Загальна ціна</string>
+    <string name="table_header_profit">Прибуток</string>
+    <string name="table_header_date">Дата</string>
+
+    <!-- Action Buttons (Additional) -->
+    <string name="action_view">Переглянути</string>
+    <string name="action_add_client">Додати клієнта</string>
+
+    <!-- Confirmation Dialogs -->
+    <string name="confirm_delete_client_title">Видалити клієнта</string>
+    <string name="confirm_delete_client_message">Ви впевнені, що хочете видалити %1$s?</string>
+
+    <!-- Orders Screen -->
+    <string name="orders_title">Замовлення</string>
+    <string name="orders_new_button">+ Нове замовлення</string>
+    <string name="orders_unknown_client">Невідомо</string>
+
+    <!-- Order Detail Screen -->
+    <string name="order_detail_title">Деталі замовлення</string>
+    <string name="order_detail_back_button">← Назад до замовлень</string>
+    <string name="order_detail_section_information">Інформація про замовлення</string>
+    <string name="order_detail_section_update_status">Оновити статус</string>
+    <string name="order_detail_section_items">Товари замовлення (%1$d)</string>
+    <string name="order_detail_section_summary">Підсумок замовлення</string>
+    <string name="order_detail_label_order_id">ID замовлення</string>
+    <string name="order_detail_label_client">Клієнт</string>
+    <string name="order_detail_label_status">Статус</string>
+    <string name="order_detail_label_created">Створено</string>
+    <string name="order_detail_label_updated">Оновлено</string>
+    <string name="order_detail_label_completed">Завершено</string>
+    <string name="order_detail_label_notes">Примітки:</string>
+    <string name="order_detail_label_costs">Вартість</string>
+    <string name="order_detail_label_price">Ціна</string>
+    <string name="order_detail_label_profit">Прибуток</string>
+    <string name="order_detail_item_qty">К-ть: %1$d</string>
+    <string name="order_detail_item_print_area">Область друку: %1$s</string>
+    <string name="order_detail_cost_blank">Заготовка: %1$s</string>
+    <string name="order_detail_cost_paper">Папір: %1$s</string>
+    <string name="order_detail_cost_labor">Робота: %1$s</string>
+    <string name="order_detail_price_label">Ціна: %1$s</string>
+    <string name="order_detail_profit_label">Прибуток: %1$s</string>
+    <string name="order_detail_total_cost">Загальна вартість</string>
+    <string name="order_detail_total_price">Загальна ціна</string>
+    <string name="order_detail_total_profit">Загальний прибуток</string>
+
+    <!-- Order Form Screen (Additional) -->
+    <string name="order_form_item_dialog_title">Додати товар замовлення</string>
+    <string name="order_form_label_design_url_optional">URL дизайну (необов\'язково)</string>
+    <string name="order_form_section_pricing_calculator">Калькулятор цін</string>
+    <string name="order_form_label_labor_time_min">Час роботи (хв)</string>
+    <string name="order_form_label_rate_uah_hour">Ставка (₴/год)</string>
+    <string name="order_form_profit_margin_label">Маржа прибутку: %1$d%%</string>
+    <string name="order_form_button_add_item">Додати товар</string>
+    <string name="order_form_section_manual_entry">Ручне введення вартості</string>
+
+    <!-- Pricing Calculator Screen (Additional) -->
+    <string name="calculator_title">Калькулятор цін</string>
+    <string name="calculator_section_product_details">Деталі товару</string>
+    <string name="calculator_section_pricing_breakdown">Деталізація цін</string>
+    <string name="calculator_label_product_type">Тип товару</string>
+    <string name="calculator_label_quantity_min_1">Кількість (мін: 1)</string>
+    <string name="calculator_label_print_area">Область друку</string>
+    <string name="calculator_label_labor_time_minutes">Час роботи (хвилини)</string>
+    <string name="calculator_label_labor_rate_uah_hour">Ставка роботи (₴/год)</string>
+    <string name="calculator_profit_margin_percent">Маржа прибутку: %1$d%%</string>
+    <string name="calculator_slider_label_0">0%%</string>
+    <string name="calculator_slider_label_50">50%%</string>
+    <string name="calculator_slider_label_100">100%%</string>
+    <string name="calculator_button_calculate">Розрахувати</string>
+    <string name="calculator_cost_materials">Вартість матеріалів</string>
+    <string name="calculator_cost_labor">Вартість роботи</string>
+    <string name="calculator_cost_overhead">Накладні витрати</string>
+    <string name="calculator_cost_total">Загальна вартість</string>
+    <string name="calculator_desired_profit_margin">Бажана маржа прибутку</string>
+    <string name="calculator_selling_price_before_tax">Ціна продажу (до податку)</string>
+    <string name="calculator_simplified_tax">Спрощений податок (5%%)</string>
+    <string name="calculator_final_selling_price">Кінцева ціна продажу</string>
+    <string name="calculator_actual_profit">Фактичний прибуток</string>
+    <string name="calculator_profit_margin_percent_label">Маржа прибутку %%</string>
+    <string name="calculator_price_per_item">Ціна за одиницю</string>
+    <string name="calculator_instructions">Введіть деталі товару та натисніть Розрахувати</string>
+
+    <!-- Order Form Enhanced -->
+    <string name="order_form_enhanced_quick_calculate_title">⚡ Швидкий розрахунок для всіх товарів</string>
+    <string name="order_form_enhanced_quick_calculate_instructions">Застосувати ці стандартні значення до всіх товарів без цін:</string>
+    <string name="order_form_enhanced_default_labor_time">Стандартний час роботи (хвилини)</string>
+    <string name="order_form_enhanced_default_labor_rate">Стандартна ставка роботи (₴/год)</string>
+    <string name="order_form_enhanced_default_profit_margin">Стандартна маржа прибутку:</string>
+    <string name="order_form_enhanced_apply_button">Застосувати до всіх нерозрахованих товарів</string>
+    <string name="order_form_enhanced_success_checkmark">✓</string>
+    <string name="order_form_enhanced_info_icon">ℹ️</string>
+
+    <!-- Formatting & Display -->
+    <string name="format_currency_suffix"> грн.</string>
+    <string name="format_order_id_prefix">Замовлення №%1$s</string>
 </resources>

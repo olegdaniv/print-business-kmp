@@ -19,8 +19,11 @@ import com.printbusinesskmp.theme.AppColors.MediumLightGray
 import com.printbusinesskmp.theme.AppColors.Success
 import com.printbusinesskmp.theme.AppColors.VeryLightBluGray
 import com.printbusinesskmp.theme.AppColors.White
+import com.printbusinesskmp.shared.resources.*
 import com.printbusinesskmp.utils.PricingCalculator
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,12 +48,12 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
         val laborMinutesInt = laborMinutes.toIntOrNull() ?: return
         val laborRateDouble = laborRate.toDoubleOrNull() ?: return
 
-        if (quantityInt <= 0 || laborMinutesInt < 0 || laborRateDouble <= 0) {
-            errorMessage = "Please enter valid values"
-            return
-        }
-
         scope.launch {
+            if (quantityInt <= 0 || laborMinutesInt < 0 || laborRateDouble <= 0) {
+                errorMessage = getString(Res.string.error_please_enter_valid_values)
+                return@launch
+            }
+
             try {
                 isCalculating = true
                 errorMessage = null
@@ -67,7 +70,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                 costBreakdown = ApiClient.calculatePricing(request)
                 isCalculating = false
             } catch (e: Exception) {
-                errorMessage = "Failed to calculate pricing: ${e.message}"
+                errorMessage = "${getString(Res.string.error_calculate_pricing)}: ${e.message}"
                 isCalculating = false
             }
         }
@@ -93,7 +96,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
     ) {
         // Header
         Text(
-            text = "Pricing Calculator",
+            text = stringResource(Res.string.calculator_title),
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = DarkSlate,
@@ -119,7 +122,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "Product Details",
+                        text = stringResource(Res.string.calculator_section_product_details),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = DarkSlate,
@@ -135,7 +138,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                             value = productType.name.replace("_", " "),
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Product Type") },
+                            label = { Text(stringResource(Res.string.calculator_label_product_type)) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = productTypeExpanded) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -161,7 +164,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                     OutlinedTextField(
                         value = quantity,
                         onValueChange = { quantity = it },
-                        label = { Text("Quantity (min: 1)") },
+                        label = { Text(stringResource(Res.string.calculator_label_quantity_min_1)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -175,7 +178,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                             value = printArea.name,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Print Area") },
+                            label = { Text(stringResource(Res.string.calculator_label_print_area)) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = printAreaExpanded) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -201,7 +204,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                     OutlinedTextField(
                         value = laborMinutes,
                         onValueChange = { laborMinutes = it },
-                        label = { Text("Labor Time (minutes)") },
+                        label = { Text(stringResource(Res.string.calculator_label_labor_time_minutes)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -210,7 +213,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                     OutlinedTextField(
                         value = laborRate,
                         onValueChange = { laborRate = it },
-                        label = { Text("Labor Rate (₴/hour)") },
+                        label = { Text(stringResource(Res.string.calculator_label_labor_rate_uah_hour)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -218,7 +221,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                     // Profit Margin Slider (0-100%, step 5%)
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = "Profit Margin: ${profitMargin.roundToInt()}%",
+                            text = stringResource(Res.string.calculator_profit_margin_percent, profitMargin.roundToInt()),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             color = MediumGray,
@@ -235,9 +238,9 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("0%", fontSize = 12.sp, color = MediumLightGray)
-                            Text("50%", fontSize = 12.sp, color = MediumLightGray)
-                            Text("100%", fontSize = 12.sp, color = MediumLightGray)
+                            Text(stringResource(Res.string.calculator_slider_label_0), fontSize = 12.sp, color = MediumLightGray)
+                            Text(stringResource(Res.string.calculator_slider_label_50), fontSize = 12.sp, color = MediumLightGray)
+                            Text(stringResource(Res.string.calculator_slider_label_100), fontSize = 12.sp, color = MediumLightGray)
                         }
                     }
 
@@ -256,7 +259,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isCalculating
                     ) {
-                        Text(if (isCalculating) "Calculating..." else "Calculate")
+                        Text(if (isCalculating) stringResource(Res.string.pricing_calculating) else stringResource(Res.string.calculator_button_calculate))
                     }
                 }
             }
@@ -276,7 +279,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "Pricing Breakdown",
+                        text = stringResource(Res.string.calculator_section_pricing_breakdown),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = DarkSlate,

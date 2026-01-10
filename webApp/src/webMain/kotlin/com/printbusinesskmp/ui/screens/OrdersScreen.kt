@@ -25,8 +25,11 @@ import com.printbusinesskmp.theme.AppColors.PrimaryBlue
 import com.printbusinesskmp.theme.AppColors.StatusBackground
 import com.printbusinesskmp.theme.AppColors.Success
 import com.printbusinesskmp.theme.AppColors.White
+import com.printbusinesskmp.shared.resources.*
 import com.printbusinesskmp.utils.FormatUtils
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun OrdersScreen(onNavigate: (Screen) -> Unit) {
@@ -44,7 +47,7 @@ fun OrdersScreen(onNavigate: (Screen) -> Unit) {
                 clients = ApiClient.getClients()
                 isLoading = false
             } catch (e: Exception) {
-                errorMessage = "Failed to load orders: ${e.message}"
+                errorMessage = "${getString(Res.string.error_load_orders)}: ${e.message}"
                 isLoading = false
             }
         }
@@ -62,7 +65,7 @@ fun OrdersScreen(onNavigate: (Screen) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Orders",
+                text = stringResource(Res.string.orders_title),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = DarkSlate
@@ -72,7 +75,7 @@ fun OrdersScreen(onNavigate: (Screen) -> Unit) {
                 onClick = { onNavigate(Screen.NewOrder) },
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
             ) {
-                Text("+ New Order", color = White)
+                Text(stringResource(Res.string.orders_new_button), color = White)
             }
         }
 
@@ -98,14 +101,14 @@ fun OrdersScreen(onNavigate: (Screen) -> Unit) {
                             .background(CardItemBg)
                             .padding(16.dp)
                     ) {
-                        TableHeaderCell("Order ID", Modifier.weight(1f))
-                        TableHeaderCell("Client", Modifier.weight(1.5f))
-                        TableHeaderCell("Status", Modifier.weight(1f))
-                        TableHeaderCell("Items", Modifier.weight(0.8f))
-                        TableHeaderCell("Total Price", Modifier.weight(1f))
-                        TableHeaderCell("Profit", Modifier.weight(1f))
-                        TableHeaderCell("Date", Modifier.weight(1f))
-                        TableHeaderCell("Actions", Modifier.weight(1f))
+                        TableHeaderCell(stringResource(Res.string.table_header_order_id), Modifier.weight(1f))
+                        TableHeaderCell(stringResource(Res.string.table_header_client), Modifier.weight(1.5f))
+                        TableHeaderCell(stringResource(Res.string.table_header_status), Modifier.weight(1f))
+                        TableHeaderCell(stringResource(Res.string.table_header_items), Modifier.weight(0.8f))
+                        TableHeaderCell(stringResource(Res.string.table_header_total_price), Modifier.weight(1f))
+                        TableHeaderCell(stringResource(Res.string.table_header_profit), Modifier.weight(1f))
+                        TableHeaderCell(stringResource(Res.string.table_header_date), Modifier.weight(1f))
+                        TableHeaderCell(stringResource(Res.string.table_header_actions), Modifier.weight(1f))
                     }
 
                     HorizontalDivider()
@@ -160,7 +163,7 @@ private fun OrderRow(
         )
 
         Text(
-            text = client?.name ?: "Unknown",
+            text = client?.name ?: stringResource(Res.string.orders_unknown_client),
             fontSize = 14.sp,
             color = MediumGray,
             modifier = Modifier.weight(1.5f)
@@ -178,7 +181,7 @@ private fun OrderRow(
         )
 
         Text(
-            text = FormatUtils.formatCurrency(order.totalPrice),
+            text = FormatUtils.formatCurrency(order.totalPrice, stringResource(Res.string.format_currency_suffix)),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = DarkSlate,
@@ -186,7 +189,7 @@ private fun OrderRow(
         )
 
         Text(
-            text = FormatUtils.formatCurrency(order.totalProfit),
+            text = FormatUtils.formatCurrency(order.totalProfit, stringResource(Res.string.format_currency_suffix)),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = if (order.totalProfit >= 0) Success else AppColors.Error,
@@ -204,7 +207,7 @@ private fun OrderRow(
             onClick = onView,
             modifier = Modifier.weight(1f)
         ) {
-            Text("View", color = PrimaryBlue)
+            Text(stringResource(Res.string.action_view), color = PrimaryBlue)
         }
     }
 }

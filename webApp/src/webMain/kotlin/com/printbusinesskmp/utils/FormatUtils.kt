@@ -6,11 +6,17 @@ import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 
 object FormatUtils {
-    fun formatCurrency(amount: Double): String {
+    /**
+     * Formats currency with optional localized suffix.
+     * @param amount The amount to format
+     * @param currencySuffix Localized currency suffix (e.g., " грн." or " UAH"). Defaults to " UAH".
+     * @return Formatted currency string
+     */
+    fun formatCurrency(amount: Double, currencySuffix: String = " UAH"): String {
         val rounded = (amount * 100).toInt() / 100.0
         val intPart = rounded.toInt()
         val decimalPart = ((rounded - intPart) * 100).toInt()
-        return "$intPart.${decimalPart.toString().padStart(2, '0')} грн."
+        return "$intPart.${decimalPart.toString().padStart(2, '0')}$currencySuffix"
     }
 
     fun formatDate(instant: Instant): String {

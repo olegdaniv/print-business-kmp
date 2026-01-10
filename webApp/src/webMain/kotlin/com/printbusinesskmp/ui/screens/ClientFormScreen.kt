@@ -12,16 +12,30 @@ import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.ClientCreateRequest
 import com.printbusinesskmp.models.ClientUpdateRequest
 import com.printbusinesskmp.navigation.Screen
-import com.printbusinesskmp.shared.resources.Res
-import com.printbusinesskmp.shared.resources.action_edit
-import com.printbusinesskmp.shared.resources.error_client_load_failed
+import com.printbusinesskmp.shared.resources.*
 import com.printbusinesskmp.theme.AppColors.DarkSlate
 import com.printbusinesskmp.theme.AppColors.PrimaryBlue
 import com.printbusinesskmp.theme.AppColors.White
+import com.printbusinesskmp.utils.ValidationErrorKeys
 import com.printbusinesskmp.utils.ValidationUtils
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
+
+/**
+ * Maps validation error keys to string resources.
+ */
+@Composable
+private fun getValidationErrorString(errorKey: String): String {
+    return when (errorKey) {
+        ValidationErrorKeys.NAME_REQUIRED -> stringResource(Res.string.validation_name_required)
+        ValidationErrorKeys.PHONE_REQUIRED -> stringResource(Res.string.validation_phone_required)
+        ValidationErrorKeys.PHONE_FORMAT -> stringResource(Res.string.validation_phone_format)
+        ValidationErrorKeys.EMAIL_FORMAT -> stringResource(Res.string.validation_email_format)
+        else -> errorKey // Fallback to the key itself if not found
+    }
+}
 
 @Composable
 fun ClientFormScreen(
@@ -49,7 +63,7 @@ fun ClientFormScreen(
                     email = client.email ?: ""
                     isLoading = false
                 } catch (e: Exception) {
-                    errorMessage = getString(Res.string.error_client_load_failed) + " ${e.message}"
+                    errorMessage = getString(Res.string.error_client_load_failed) + ": ${e.message}"
                     isLoading = false
                 }
             }
@@ -84,8 +98,8 @@ fun ClientFormScreen(
                 }
 
                 onNavigate(Screen.Clients)
-            } catch (_: Exception) {
-                errorMessage = "Failed to save client"
+            } catch (e: Exception) {
+                errorMessage = getString(Res.string.error_save_client) + ": ${e.message}"
                 isSaving = false
             }
         }
@@ -94,7 +108,7 @@ fun ClientFormScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         // Header
         Text(
-            text = if (isEditMode) "Edit Client" else "New Client",
+            text = if (isEditMode) stringResource(Res.string.client_form_title_edit) else stringResource(Res.string.client_form_title_new),
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = DarkSlate,
@@ -124,7 +138,7 @@ fun ClientFormScreen(
                     // Name field
                     Column {
                         Text(
-                            text = "Name *",
+                            text = stringResource(Res.string.client_form_label_name),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             color = DarkSlate,
@@ -136,7 +150,7 @@ fun ClientFormScreen(
                                 name = it
                                 errors = errors - "name"
                             },
-                            placeholder = { Text("Enter client name") },
+                            placeholder = { Text(stringResource(Res.string.client_form_placeholder_name)) },
                             modifier = Modifier.fillMaxWidth(),
                             isError = errors.containsKey("name"),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -144,9 +158,9 @@ fun ClientFormScreen(
                                 unfocusedContainerColor = White
                             )
                         )
-                        errors["name"]?.let {
+                        errors["name"]?.let { errorKey ->
                             Text(
-                                text = it,
+                                text = getValidationErrorString(errorKey),
                                 color = Color.Red,
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(top = 4.dp)
@@ -157,7 +171,7 @@ fun ClientFormScreen(
                     // Phone field
                     Column {
                         Text(
-                            text = "Phone *",
+                            text = stringResource(Res.string.client_form_label_phone),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             color = DarkSlate,
@@ -169,7 +183,7 @@ fun ClientFormScreen(
                                 phone = it
                                 errors = errors - "phone"
                             },
-                            placeholder = { Text("+380XXXXXXXXX") },
+                            placeholder = { Text(stringResource(Res.string.client_form_placeholder_phone)) },
                             modifier = Modifier.fillMaxWidth(),
                             isError = errors.containsKey("phone"),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -177,9 +191,9 @@ fun ClientFormScreen(
                                 unfocusedContainerColor = White
                             )
                         )
-                        errors["phone"]?.let {
+                        errors["phone"]?.let { errorKey ->
                             Text(
-                                text = it,
+                                text = getValidationErrorString(errorKey),
                                 color = Color.Red,
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(top = 4.dp)
@@ -190,7 +204,7 @@ fun ClientFormScreen(
                     // Email field
                     Column {
                         Text(
-                            text = "Email",
+                            text = stringResource(Res.string.client_form_label_email),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             color = DarkSlate,
@@ -202,7 +216,7 @@ fun ClientFormScreen(
                                 email = it
                                 errors = errors - "email"
                             },
-                            placeholder = { Text("Enter email address") },
+                            placeholder = { Text(stringResource(Res.string.client_form_placeholder_email)) },
                             modifier = Modifier.fillMaxWidth(),
                             isError = errors.containsKey("email"),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -210,9 +224,9 @@ fun ClientFormScreen(
                                 unfocusedContainerColor = White
                             )
                         )
-                        errors["email"]?.let {
+                        errors["email"]?.let { errorKey ->
                             Text(
-                                text = it,
+                                text = getValidationErrorString(errorKey),
                                 color = Color.Red,
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(top = 4.dp)
@@ -229,7 +243,7 @@ fun ClientFormScreen(
                             onClick = { onNavigate(Screen.Clients) },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Cancel")
+                            Text(stringResource(Res.string.action_cancel))
                         }
 
                         Button(
@@ -244,7 +258,7 @@ fun ClientFormScreen(
                                     color = White
                                 )
                             } else {
-                                Text("Save", color = White)
+                                Text(stringResource(Res.string.action_save), color = White)
                             }
                         }
                     }

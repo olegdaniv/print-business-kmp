@@ -16,8 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.navigation.Screen
-import com.printbusinesskmp.shared.resources.Res
-import com.printbusinesskmp.shared.resources.nav_dashboard
+import com.printbusinesskmp.shared.resources.*
 import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.theme.AppColors.CardItemBg
 import com.printbusinesskmp.theme.AppColors.DarkGrayText
@@ -27,6 +26,7 @@ import com.printbusinesskmp.theme.AppColors.PrimaryBlue
 import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.FormatUtils
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -50,7 +50,7 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
                 clients = ApiClient.getClients()
                 isLoading = false
             } catch (e: Exception) {
-                errorMessage = "Failed to load clients: ${e.message}"
+                errorMessage = getString(Res.string.error_client_load_failed) + ": ${e.message}"
                 isLoading = false
             }
         }
@@ -68,7 +68,7 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(Res.string.nav_dashboard),
+                text = stringResource(Res.string.nav_clients),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = DarkSlate
@@ -78,7 +78,7 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
                 onClick = { onNavigate(Screen.ClientDetail(null)) },
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
             ) {
-                Text("+ Add Client", color = White)
+                Text(stringResource(Res.string.clients_add_button), color = White)
             }
         }
 
@@ -86,7 +86,7 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            placeholder = { Text("Search clients...") },
+            placeholder = { Text(stringResource(Res.string.clients_search_placeholder)) },
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = White,
@@ -116,11 +116,11 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
                             .background(CardItemBg)
                             .padding(16.dp)
                     ) {
-                        TableHeaderCell("Name", Modifier.weight(2f))
-                        TableHeaderCell("Phone", Modifier.weight(1.5f))
-                        TableHeaderCell("Email", Modifier.weight(2f))
-                        TableHeaderCell("Total Orders", Modifier.weight(1f))
-                        TableHeaderCell("Actions", Modifier.weight(1f))
+                        TableHeaderCell(stringResource(Res.string.table_header_name), Modifier.weight(2f))
+                        TableHeaderCell(stringResource(Res.string.table_header_phone), Modifier.weight(1.5f))
+                        TableHeaderCell(stringResource(Res.string.table_header_email), Modifier.weight(2f))
+                        TableHeaderCell(stringResource(Res.string.table_header_total_orders), Modifier.weight(1f))
+                        TableHeaderCell(stringResource(Res.string.table_header_actions), Modifier.weight(1f))
                     }
 
                     HorizontalDivider()
@@ -137,7 +137,7 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
                                             ApiClient.deleteClient(client.id)
                                             loadClients()
                                         } catch (e: Exception) {
-                                            errorMessage = "Failed to delete client: ${e.message}"
+                                            errorMessage = getString(Res.string.error_delete_client) + ": ${e.message}"
                                         }
                                     }
                                 }
@@ -191,7 +191,7 @@ private fun ClientRow(
         )
 
         Text(
-            text = client.email ?: "-",
+            text = client.email ?: stringResource(Res.string.clients_empty_indicator),
             fontSize = 14.sp,
             color = MediumGray,
             modifier = Modifier.weight(2f)
@@ -209,11 +209,11 @@ private fun ClientRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             TextButton(onClick = onEdit) {
-                Text("Edit", color = PrimaryBlue)
+                Text(stringResource(Res.string.action_edit), color = PrimaryBlue)
             }
 
             TextButton(onClick = { showDeleteDialog = true }) {
-                Text("Delete", color = AppColors.Error)
+                Text(stringResource(Res.string.action_delete), color = AppColors.Error)
             }
         }
     }
@@ -221,8 +221,8 @@ private fun ClientRow(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Client") },
-            text = { Text("Are you sure you want to delete ${client.name}?") },
+            title = { Text(stringResource(Res.string.confirm_delete_client_title)) },
+            text = { Text(stringResource(Res.string.confirm_delete_client_message, client.name)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -230,12 +230,12 @@ private fun ClientRow(
                         showDeleteDialog = false
                     }
                 ) {
-                    Text("Delete", color = AppColors.Error)
+                    Text(stringResource(Res.string.action_delete), color = AppColors.Error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(Res.string.action_cancel))
                 }
             }
         )

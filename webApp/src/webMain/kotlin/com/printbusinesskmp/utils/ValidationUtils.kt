@@ -1,5 +1,16 @@
 package com.printbusinesskmp.utils
 
+/**
+ * Validation error keys that map to string resources.
+ * These keys should be resolved to localized strings in Composable functions.
+ */
+object ValidationErrorKeys {
+    const val NAME_REQUIRED = "validation_name_required"
+    const val PHONE_REQUIRED = "validation_phone_required"
+    const val PHONE_FORMAT = "validation_phone_format"
+    const val EMAIL_FORMAT = "validation_email_format"
+}
+
 object ValidationUtils {
     fun isValidEmail(email: String): Boolean {
         if (email.isEmpty()) return true // Email is optional
@@ -18,21 +29,27 @@ object ValidationUtils {
         return value.isNotBlank()
     }
 
+    /**
+     * Validates client form fields and returns a map of field names to error keys.
+     * Error keys should be resolved to localized strings using stringResource in Composables.
+     *
+     * @return Map of field names to error resource keys (e.g., "name" to "validation_name_required")
+     */
     fun validateClientForm(name: String, phone: String, email: String): Map<String, String> {
         val errors = mutableMapOf<String, String>()
 
         if (!isRequired(name)) {
-            errors["name"] = "Name is required"
+            errors["name"] = ValidationErrorKeys.NAME_REQUIRED
         }
 
         if (!isRequired(phone)) {
-            errors["phone"] = "Phone is required"
+            errors["phone"] = ValidationErrorKeys.PHONE_REQUIRED
         } else if (!isValidPhone(phone)) {
-            errors["phone"] = "Invalid phone format. Use +380XXXXXXXXX"
+            errors["phone"] = ValidationErrorKeys.PHONE_FORMAT
         }
 
         if (email.isNotEmpty() && !isValidEmail(email)) {
-            errors["email"] = "Invalid email format"
+            errors["email"] = ValidationErrorKeys.EMAIL_FORMAT
         }
 
         return errors

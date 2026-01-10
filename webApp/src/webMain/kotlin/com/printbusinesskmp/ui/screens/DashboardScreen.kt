@@ -16,6 +16,15 @@ import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.shared.resources.Res
+import com.printbusinesskmp.shared.resources.dashboard_active_orders
+import com.printbusinesskmp.shared.resources.dashboard_recent_orders
+import com.printbusinesskmp.shared.resources.dashboard_total_clients
+import com.printbusinesskmp.shared.resources.dashboard_total_orders
+import com.printbusinesskmp.shared.resources.dashboard_total_profit
+import com.printbusinesskmp.shared.resources.dashboard_unknown_client
+import com.printbusinesskmp.shared.resources.error_load_data
+import com.printbusinesskmp.shared.resources.format_currency_suffix
+import com.printbusinesskmp.shared.resources.format_order_id_prefix
 import com.printbusinesskmp.shared.resources.nav_dashboard
 import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.theme.AppColors.DarkGrayText
@@ -30,6 +39,7 @@ import com.printbusinesskmp.theme.AppColors.StatusText
 import com.printbusinesskmp.theme.AppColors.VeryLightBluGray
 import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.FormatUtils
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -51,7 +61,7 @@ fun DashboardScreen(onNavigate: (Screen) -> Unit) {
         } catch (e: Exception) {
             println("DashboardScreen: Error - ${e.message}")
             e.printStackTrace()
-            errorMessage = "Failed to load data: ${e.message}"
+            errorMessage = "${getString(Res.string.error_load_data)}: ${e.message}"
             isLoading = false
         }
     }
@@ -80,25 +90,25 @@ fun DashboardScreen(onNavigate: (Screen) -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 StatCard(
-                    title = "Total Clients",
+                    title = stringResource(Res.string.dashboard_total_clients),
                     value = clients.size.toString(),
                     modifier = Modifier.weight(1f)
                 )
 
                 StatCard(
-                    title = "Total Orders",
+                    title = stringResource(Res.string.dashboard_total_orders),
                     value = orders.size.toString(),
                     modifier = Modifier.weight(1f)
                 )
 
                 StatCard(
-                    title = "Total Profit",
-                    value = FormatUtils.formatCurrency(orders.sumOf { it.totalProfit }),
+                    title = stringResource(Res.string.dashboard_total_profit),
+                    value = FormatUtils.formatCurrency(orders.sumOf { it.totalProfit }, stringResource(Res.string.format_currency_suffix)),
                     modifier = Modifier.weight(1f)
                 )
 
                 StatCard(
-                    title = "Active Orders",
+                    title = stringResource(Res.string.dashboard_active_orders),
                     value = orders.count { it.status.name != "COMPLETED" && it.status.name != "CANCELLED" }.toString(),
                     modifier = Modifier.weight(1f)
                 )
@@ -108,7 +118,7 @@ fun DashboardScreen(onNavigate: (Screen) -> Unit) {
 
             // Recent Orders
             Text(
-                text = "Recent Orders",
+                text = stringResource(Res.string.dashboard_recent_orders),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = DarkSlate,
@@ -177,13 +187,13 @@ private fun RecentOrderItem(order: Order, clients: List<Client>) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Order #${order.id.take(8)}",
+                text = stringResource(Res.string.format_order_id_prefix, order.id.take(8)),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = DarkSlate
             )
             Text(
-                text = client?.name ?: "Unknown Client",
+                text = client?.name ?: stringResource(Res.string.dashboard_unknown_client),
                 fontSize = 14.sp,
                 color = MediumGray,
                 modifier = Modifier.padding(top = 4.dp)
@@ -193,7 +203,7 @@ private fun RecentOrderItem(order: Order, clients: List<Client>) {
         Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
             StatusBadge(status = order.status.name)
             Text(
-                text = FormatUtils.formatCurrency(order.totalPrice),
+                text = FormatUtils.formatCurrency(order.totalPrice, stringResource(Res.string.format_currency_suffix)),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = DarkSlate,

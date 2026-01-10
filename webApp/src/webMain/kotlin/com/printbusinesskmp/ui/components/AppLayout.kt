@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.shared.resources.Res
+import com.printbusinesskmp.shared.resources.app_name
 import com.printbusinesskmp.shared.resources.nav_calculator
 import com.printbusinesskmp.shared.resources.nav_clients
 import com.printbusinesskmp.shared.resources.nav_dashboard
@@ -64,7 +65,7 @@ private fun Sidebar(
     ) {
         // Logo/Title
         Text(
-            text = "Print Business",
+            text = stringResource(Res.string.app_name),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = White,

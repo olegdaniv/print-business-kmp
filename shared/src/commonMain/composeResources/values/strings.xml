@@ -108,4 +108,148 @@
     <string name="error_forbidden">Forbidden</string>
     <string name="error_not_found">Not found</string>
     <string name="error_server_error">Server error</string>
+    <string name="error_load_data">Failed to load data</string>
+    <string name="error_save_client">Failed to save client</string>
+    <string name="error_delete_client">Failed to delete client</string>
+    <string name="error_load_orders">Failed to load orders</string>
+    <string name="error_load_order">Failed to load order</string>
+    <string name="error_update_status">Failed to update status</string>
+    <string name="error_calculate_pricing">Failed to calculate pricing</string>
+    <string name="error_please_enter_valid_values">Please enter valid values</string>
+
+    <!-- Validation Messages -->
+    <string name="validation_name_required">Name is required</string>
+    <string name="validation_phone_required">Phone is required</string>
+    <string name="validation_phone_format">Invalid phone format. Use +380XXXXXXXXX</string>
+    <string name="validation_email_format">Invalid email format</string>
+
+    <!-- Dashboard Screen -->
+    <string name="dashboard_total_clients">Total Clients</string>
+    <string name="dashboard_total_orders">Total Orders</string>
+    <string name="dashboard_total_profit">Total Profit</string>
+    <string name="dashboard_active_orders">Active Orders</string>
+    <string name="dashboard_recent_orders">Recent Orders</string>
+    <string name="dashboard_unknown_client">Unknown Client</string>
+
+    <!-- Clients Screen -->
+    <string name="clients_title">Clients</string>
+    <string name="clients_add_button">+ Add Client</string>
+    <string name="clients_search_placeholder">Search clients...</string>
+    <string name="clients_empty_indicator">-</string>
+
+    <!-- Client Form Screen -->
+    <string name="client_form_title_edit">Edit Client</string>
+    <string name="client_form_title_new">New Client</string>
+    <string name="client_form_label_name">Name *</string>
+    <string name="client_form_label_phone">Phone *</string>
+    <string name="client_form_label_email">Email</string>
+    <string name="client_form_placeholder_name">Enter client name</string>
+    <string name="client_form_placeholder_phone">+380XXXXXXXXX</string>
+    <string name="client_form_placeholder_email">Enter email address</string>
+
+    <!-- Table Headers -->
+    <string name="table_header_name">Name</string>
+    <string name="table_header_phone">Phone</string>
+    <string name="table_header_email">Email</string>
+    <string name="table_header_total_orders">Total Orders</string>
+    <string name="table_header_actions">Actions</string>
+    <string name="table_header_order_id">Order ID</string>
+    <string name="table_header_client">Client</string>
+    <string name="table_header_status">Status</string>
+    <string name="table_header_items">Items</string>
+    <string name="table_header_total_price">Total Price</string>
+    <string name="table_header_profit">Profit</string>
+    <string name="table_header_date">Date</string>
+
+    <!-- Action Buttons (Additional) -->
+    <string name="action_view">View</string>
+    <string name="action_add_client">Add Client</string>
+
+    <!-- Confirmation Dialogs -->
+    <string name="confirm_delete_client_title">Delete Client</string>
+    <string name="confirm_delete_client_message">Are you sure you want to delete %1$s?</string>
+
+    <!-- Orders Screen -->
+    <string name="orders_title">Orders</string>
+    <string name="orders_new_button">+ New Order</string>
+    <string name="orders_unknown_client">Unknown</string>
+
+    <!-- Order Detail Screen -->
+    <string name="order_detail_title">Order Details</string>
+    <string name="order_detail_back_button">← Back to Orders</string>
+    <string name="order_detail_section_information">Order Information</string>
+    <string name="order_detail_section_update_status">Update Status</string>
+    <string name="order_detail_section_items">Order Items (%1$d)</string>
+    <string name="order_detail_section_summary">Order Summary</string>
+    <string name="order_detail_label_order_id">Order ID</string>
+    <string name="order_detail_label_client">Client</string>
+    <string name="order_detail_label_status">Status</string>
+    <string name="order_detail_label_created">Created</string>
+    <string name="order_detail_label_updated">Updated</string>
+    <string name="order_detail_label_completed">Completed</string>
+    <string name="order_detail_label_notes">Notes:</string>
+    <string name="order_detail_label_costs">Costs</string>
+    <string name="order_detail_label_price">Price</string>
+    <string name="order_detail_label_profit">Profit</string>
+    <string name="order_detail_item_qty">Qty: %1$d</string>
+    <string name="order_detail_item_print_area">Print Area: %1$s</string>
+    <string name="order_detail_cost_blank">Blank: %1$s</string>
+    <string name="order_detail_cost_paper">Paper: %1$s</string>
+    <string name="order_detail_cost_labor">Labor: %1$s</string>
+    <string name="order_detail_price_label">Price: %1$s</string>
+    <string name="order_detail_profit_label">Profit: %1$s</string>
+    <string name="order_detail_total_cost">Total Cost</string>
+    <string name="order_detail_total_price">Total Price</string>
+    <string name="order_detail_total_profit">Total Profit</string>
+
+    <!-- Order Form Screen (Additional) -->
+    <string name="order_form_item_dialog_title">Add Order Item</string>
+    <string name="order_form_label_design_url_optional">Design URL (Optional)</string>
+    <string name="order_form_section_pricing_calculator">Pricing Calculator</string>
+    <string name="order_form_label_labor_time_min">Labor Time (min)</string>
+    <string name="order_form_label_rate_uah_hour">Rate (₴/hour)</string>
+    <string name="order_form_profit_margin_label">Profit Margin: %1$d%%</string>
+    <string name="order_form_button_add_item">Add Item</string>
+    <string name="order_form_section_manual_entry">Manual Cost Entry</string>
+
+    <!-- Pricing Calculator Screen (Additional) -->
+    <string name="calculator_title">Pricing Calculator</string>
+    <string name="calculator_section_product_details">Product Details</string>
+    <string name="calculator_section_pricing_breakdown">Pricing Breakdown</string>
+    <string name="calculator_label_product_type">Product Type</string>
+    <string name="calculator_label_quantity_min_1">Quantity (min: 1)</string>
+    <string name="calculator_label_print_area">Print Area</string>
+    <string name="calculator_label_labor_time_minutes">Labor Time (minutes)</string>
+    <string name="calculator_label_labor_rate_uah_hour">Labor Rate (₴/hour)</string>
+    <string name="calculator_profit_margin_percent">Profit Margin: %1$d%%</string>
+    <string name="calculator_slider_label_0">0%%</string>
+    <string name="calculator_slider_label_50">50%%</string>
+    <string name="calculator_slider_label_100">100%%</string>
+    <string name="calculator_button_calculate">Calculate</string>
+    <string name="calculator_cost_materials">Materials Cost</string>
+    <string name="calculator_cost_labor">Labor Cost</string>
+    <string name="calculator_cost_overhead">Overhead Cost</string>
+    <string name="calculator_cost_total">Total Cost</string>
+    <string name="calculator_desired_profit_margin">Desired Profit Margin</string>
+    <string name="calculator_selling_price_before_tax">Selling Price (Before Tax)</string>
+    <string name="calculator_simplified_tax">Simplified Tax (5%%)</string>
+    <string name="calculator_final_selling_price">Final Selling Price</string>
+    <string name="calculator_actual_profit">Actual Profit</string>
+    <string name="calculator_profit_margin_percent_label">Profit Margin %%</string>
+    <string name="calculator_price_per_item">Price per Item</string>
+    <string name="calculator_instructions">Enter product details and click Calculate</string>
+
+    <!-- Order Form Enhanced -->
+    <string name="order_form_enhanced_quick_calculate_title">⚡ Quick Calculate All Items</string>
+    <string name="order_form_enhanced_quick_calculate_instructions">Apply these default values to all items without prices:</string>
+    <string name="order_form_enhanced_default_labor_time">Default Labor Time (minutes)</string>
+    <string name="order_form_enhanced_default_labor_rate">Default Labor Rate (₴/hour)</string>
+    <string name="order_form_enhanced_default_profit_margin">Default Profit Margin:</string>
+    <string name="order_form_enhanced_apply_button">Apply to All Uncalculated Items</string>
+    <string name="order_form_enhanced_success_checkmark">✓</string>
+    <string name="order_form_enhanced_info_icon">ℹ️</string>
+
+    <!-- Formatting & Display -->
+    <string name="format_currency_suffix"> UAH</string>
+    <string name="format_order_id_prefix">Order #%1$s</string>
 </resources>
