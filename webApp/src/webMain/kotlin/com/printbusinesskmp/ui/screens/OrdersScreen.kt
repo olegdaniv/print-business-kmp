@@ -16,6 +16,15 @@ import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.navigation.Screen
+import com.printbusinesskmp.theme.AppColors
+import com.printbusinesskmp.theme.AppColors.CardItemBg
+import com.printbusinesskmp.theme.AppColors.DarkGrayText
+import com.printbusinesskmp.theme.AppColors.DarkSlate
+import com.printbusinesskmp.theme.AppColors.MediumGray
+import com.printbusinesskmp.theme.AppColors.PrimaryBlue
+import com.printbusinesskmp.theme.AppColors.StatusBackground
+import com.printbusinesskmp.theme.AppColors.Success
+import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.FormatUtils
 import kotlinx.coroutines.launch
 
@@ -56,14 +65,14 @@ fun OrdersScreen(onNavigate: (Screen) -> Unit) {
                 text = "Orders",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1E293B)
+                color = DarkSlate
             )
 
             Button(
                 onClick = { onNavigate(Screen.NewOrder) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
             ) {
-                Text("+ New Order", color = Color.White)
+                Text("+ New Order", color = White)
             }
         }
 
@@ -79,14 +88,14 @@ fun OrdersScreen(onNavigate: (Screen) -> Unit) {
             // Table
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = White)
             ) {
                 Column {
                     // Table Header
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFFF8FAFC))
+                            .background(CardItemBg)
                             .padding(16.dp)
                     ) {
                         TableHeaderCell("Order ID", Modifier.weight(1f))
@@ -124,7 +133,7 @@ private fun TableHeaderCell(text: String, modifier: Modifier = Modifier) {
         text = text,
         fontSize = 14.sp,
         fontWeight = FontWeight.SemiBold,
-        color = Color(0xFF475569),
+        color = DarkGrayText,
         modifier = modifier
     )
 }
@@ -146,14 +155,14 @@ private fun OrderRow(
         Text(
             text = "#${order.id.take(8)}",
             fontSize = 14.sp,
-            color = Color(0xFF1E293B),
+            color = DarkSlate,
             modifier = Modifier.weight(1f)
         )
 
         Text(
             text = client?.name ?: "Unknown",
             fontSize = 14.sp,
-            color = Color(0xFF64748B),
+            color = MediumGray,
             modifier = Modifier.weight(1.5f)
         )
 
@@ -164,7 +173,7 @@ private fun OrderRow(
         Text(
             text = order.items.size.toString(),
             fontSize = 14.sp,
-            color = Color(0xFF1E293B),
+            color = DarkSlate,
             modifier = Modifier.weight(0.8f)
         )
 
@@ -172,7 +181,7 @@ private fun OrderRow(
             text = FormatUtils.formatCurrency(order.totalPrice),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFF1E293B),
+            color = DarkSlate,
             modifier = Modifier.weight(1f)
         )
 
@@ -180,14 +189,14 @@ private fun OrderRow(
             text = FormatUtils.formatCurrency(order.totalProfit),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = if (order.totalProfit >= 0) Color(0xFF16A34A) else Color(0xFFEF4444),
+            color = if (order.totalProfit >= 0) Success else AppColors.Error,
             modifier = Modifier.weight(1f)
         )
 
         Text(
             text = FormatUtils.formatDate(order.createdAt),
             fontSize = 14.sp,
-            color = Color(0xFF64748B),
+            color = MediumGray,
             modifier = Modifier.weight(1f)
         )
 
@@ -195,7 +204,7 @@ private fun OrderRow(
             onClick = onView,
             modifier = Modifier.weight(1f)
         ) {
-            Text("View", color = Color(0xFF3B82F6))
+            Text("View", color = PrimaryBlue)
         }
     }
 }
@@ -203,11 +212,11 @@ private fun OrderRow(
 @Composable
 private fun StatusBadge(status: String) {
     val backgroundColor = when (status) {
-        "NEW" -> Color(0xFFDCFCE7)
-        "IN_PROGRESS" -> Color(0xFFDEEDFF)
-        "READY" -> Color(0xFFFEF3C7)
-        "COMPLETED" -> Color(0xFFD1FAE5)
-        "CANCELLED" -> Color(0xFFFEE2E2)
+        "NEW" -> StatusBackground.New
+        "IN_PROGRESS" -> StatusBackground.InProgress
+        "READY" -> StatusBackground.Ready
+        "COMPLETED" -> StatusBackground.Completed
+        "CANCELLED" -> StatusBackground.Cancelled
         else -> Color(0xFFF1F5F9)
     }
 
@@ -217,7 +226,7 @@ private fun StatusBadge(status: String) {
         "READY" -> Color(0xFF854D0E)
         "COMPLETED" -> Color(0xFF065F46)
         "CANCELLED" -> Color(0xFF991B1B)
-        else -> Color(0xFF475569)
+        else -> DarkGrayText
     }
 
     Box(

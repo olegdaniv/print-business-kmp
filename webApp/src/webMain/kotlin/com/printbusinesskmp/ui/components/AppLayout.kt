@@ -17,6 +17,12 @@ import com.printbusinesskmp.shared.resources.nav_calculator
 import com.printbusinesskmp.shared.resources.nav_clients
 import com.printbusinesskmp.shared.resources.nav_dashboard
 import com.printbusinesskmp.shared.resources.nav_orders
+import com.printbusinesskmp.theme.AppColors.DarkSlate
+import com.printbusinesskmp.theme.AppColors.LightGray
+import com.printbusinesskmp.theme.AppColors.LightGrayText
+import com.printbusinesskmp.theme.AppColors.PrimaryBlue
+import com.printbusinesskmp.theme.AppColors.Transparent
+import com.printbusinesskmp.theme.AppColors.White
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -36,7 +42,7 @@ fun AppLayout(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF5F5F5))
+                .background(LightGray)
                 .padding(24.dp)
         ) {
             content()
@@ -53,7 +59,7 @@ private fun Sidebar(
         modifier = Modifier
             .width(250.dp)
             .fillMaxHeight()
-            .background(Color(0xFF1E293B))
+            .background(DarkSlate)
             .padding(vertical = 24.dp)
     ) {
         // Logo/Title
@@ -61,7 +67,7 @@ private fun Sidebar(
             text = "Print Business",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = White,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
         )
 
@@ -108,8 +114,8 @@ private fun SidebarItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val backgroundColor = if (isSelected) Color(0xFF3B82F6) else Color.Transparent
-    val textColor = if (isSelected) Color.White else Color(0xFFCBD5E1)
+    val backgroundColor = if (isSelected) PrimaryBlue else Transparent
+    val textColor = if (isSelected) White else LightGrayText
 
     Box(
         modifier = Modifier

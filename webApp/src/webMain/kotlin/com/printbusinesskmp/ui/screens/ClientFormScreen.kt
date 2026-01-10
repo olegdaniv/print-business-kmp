@@ -15,6 +15,9 @@ import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.shared.resources.Res
 import com.printbusinesskmp.shared.resources.action_edit
 import com.printbusinesskmp.shared.resources.error_client_load_failed
+import com.printbusinesskmp.theme.AppColors.DarkSlate
+import com.printbusinesskmp.theme.AppColors.PrimaryBlue
+import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.ValidationUtils
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
@@ -94,7 +97,7 @@ fun ClientFormScreen(
             text = if (isEditMode) "Edit Client" else "New Client",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF1E293B),
+            color = DarkSlate,
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
@@ -103,7 +106,7 @@ fun ClientFormScreen(
         } else {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = White)
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -124,7 +127,7 @@ fun ClientFormScreen(
                             text = "Name *",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color(0xFF1E293B),
+                            color = DarkSlate,
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
                         OutlinedTextField(
@@ -137,8 +140,8 @@ fun ClientFormScreen(
                             modifier = Modifier.fillMaxWidth(),
                             isError = errors.containsKey("name"),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White
+                                focusedContainerColor = White,
+                                unfocusedContainerColor = White
                             )
                         )
                         errors["name"]?.let {
@@ -157,7 +160,7 @@ fun ClientFormScreen(
                             text = "Phone *",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color(0xFF1E293B),
+                            color = DarkSlate,
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
                         OutlinedTextField(
@@ -170,8 +173,8 @@ fun ClientFormScreen(
                             modifier = Modifier.fillMaxWidth(),
                             isError = errors.containsKey("phone"),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White
+                                focusedContainerColor = White,
+                                unfocusedContainerColor = White
                             )
                         )
                         errors["phone"]?.let {
@@ -190,7 +193,7 @@ fun ClientFormScreen(
                             text = "Email",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color(0xFF1E293B),
+                            color = DarkSlate,
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
                         OutlinedTextField(
@@ -203,8 +206,8 @@ fun ClientFormScreen(
                             modifier = Modifier.fillMaxWidth(),
                             isError = errors.containsKey("email"),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White
+                                focusedContainerColor = White,
+                                unfocusedContainerColor = White
                             )
                         )
                         errors["email"]?.let {
@@ -233,15 +236,15 @@ fun ClientFormScreen(
                             onClick = { handleSave() },
                             modifier = Modifier.weight(1f),
                             enabled = !isSaving,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                         ) {
                             if (isSaving) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
-                                    color = Color.White
+                                    color = White
                                 )
                             } else {
-                                Text("Save", color = Color.White)
+                                Text("Save", color = White)
                             }
                         }
                     }

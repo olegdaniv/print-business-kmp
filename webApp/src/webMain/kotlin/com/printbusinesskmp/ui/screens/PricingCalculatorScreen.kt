@@ -12,6 +12,13 @@ import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.*
 import com.printbusinesskmp.navigation.Screen
+import com.printbusinesskmp.theme.AppColors.DarkSlate
+import com.printbusinesskmp.theme.AppColors.Info
+import com.printbusinesskmp.theme.AppColors.MediumGray
+import com.printbusinesskmp.theme.AppColors.MediumLightGray
+import com.printbusinesskmp.theme.AppColors.Success
+import com.printbusinesskmp.theme.AppColors.VeryLightBluGray
+import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.PricingCalculator
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -73,7 +80,8 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
         val laborRateDouble = laborRate.toDoubleOrNull()
         if (quantityInt != null && quantityInt > 0 &&
             laborMinutesInt != null && laborMinutesInt >= 0 &&
-            laborRateDouble != null && laborRateDouble > 0) {
+            laborRateDouble != null && laborRateDouble > 0
+        ) {
             calculatePricing()
         }
     }
@@ -88,7 +96,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
             text = "Pricing Calculator",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF1E293B),
+            color = DarkSlate,
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
@@ -101,7 +109,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(
@@ -114,7 +122,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                         text = "Product Details",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1E293B),
+                        color = DarkSlate,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
@@ -213,7 +221,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                             text = "Profit Margin: ${profitMargin.roundToInt()}%",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color(0xFF64748B),
+                            color = MediumGray,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                         Slider(
@@ -227,9 +235,9 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("0%", fontSize = 12.sp, color = Color(0xFF94A3B8))
-                            Text("50%", fontSize = 12.sp, color = Color(0xFF94A3B8))
-                            Text("100%", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                            Text("0%", fontSize = 12.sp, color = MediumLightGray)
+                            Text("50%", fontSize = 12.sp, color = MediumLightGray)
+                            Text("100%", fontSize = 12.sp, color = MediumLightGray)
                         }
                     }
 
@@ -258,7 +266,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(
@@ -271,7 +279,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                         text = "Pricing Breakdown",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1E293B),
+                        color = DarkSlate,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
@@ -294,12 +302,21 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
 
                         CostRow("Total Cost", breakdown.totalCost, bold = true, color = Color(0xFFDC2626))
 
-                        Spacer(modifier = Modifier.height(16.dp))
+//                        Spacer(modifier = Modifier.height(16.dp))
 
                         // Pricing Summary (Blue)
-                        CostRow("Desired Profit Margin", "${breakdown.profitMarginPercent.roundToInt()}%", isText = true, color = Color(0xFF2563EB))
-                        CostRow("Selling Price (Before Tax)", breakdown.sellingPriceBeforeTax, color = Color(0xFF2563EB))
-                        CostRow("Simplified Tax (5%)", breakdown.simplifiedTax, color = Color(0xFF2563EB))
+                        CostRow(
+                            "Desired Profit Margin",
+                            "${breakdown.profitMarginPercent.roundToInt()}%",
+                            isText = true,
+                            color = Info
+                        )
+                        CostRow(
+                            "Selling Price (Before Tax)",
+                            breakdown.sellingPriceBeforeTax,
+                            color = Info
+                        )
+                        CostRow("Simplified Tax (5%)", breakdown.simplifiedTax, color = Info)
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -307,31 +324,27 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                             "Final Selling Price",
                             breakdown.finalSellingPrice,
                             bold = true,
-                            color = Color(0xFF2563EB)
+                            color = Info
                         )
-
-                        Spacer(modifier = Modifier.height(16.dp))
 
                         // Profit Summary (Green)
                         CostRow(
                             "Actual Profit",
                             breakdown.actualProfit,
                             bold = true,
-                            color = Color(0xFF16A34A)
+                            color = Success
                         )
                         CostRow(
                             "Profit Margin %",
                             "${(breakdown.desiredProfitMargin * 100).roundToInt()}%",
                             isText = true,
-                            color = Color(0xFF16A34A)
+                            color = Success
                         )
-
-                        Spacer(modifier = Modifier.height(16.dp))
 
                         // Per Item Price
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFF1F5F9)
+                                containerColor = VeryLightBluGray
                             ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -342,13 +355,13 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                                 Text(
                                     "Price per Item",
                                     fontSize = 14.sp,
-                                    color = Color(0xFF64748B)
+                                    color = MediumGray
                                 )
                                 Text(
                                     PricingCalculator.formatCurrency(breakdown.finalSellingPrice / quantity.toIntOrNull()!!),
                                     fontSize = 24.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1E293B)
+                                    color = DarkSlate
                                 )
                             }
                         }
@@ -356,7 +369,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                         Text(
                             "Enter product details and click Calculate",
                             fontSize = 14.sp,
-                            color = Color(0xFF64748B),
+                            color = MediumGray,
                             modifier = Modifier.padding(top = 16.dp)
                         )
                     }
@@ -371,7 +384,7 @@ private fun CostRow(
     label: String,
     value: Double,
     bold: Boolean = false,
-    color: Color = Color(0xFF1E293B),
+    color: Color = DarkSlate,
     isText: Boolean = false
 ) {
     Row(
@@ -382,7 +395,7 @@ private fun CostRow(
             text = label,
             fontSize = if (bold) 16.sp else 14.sp,
             fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal,
-            color = Color(0xFF64748B)
+            color = MediumGray
         )
         Text(
             text = PricingCalculator.formatCurrency(value),
@@ -398,7 +411,7 @@ private fun CostRow(
     label: String,
     value: String,
     bold: Boolean = false,
-    color: Color = Color(0xFF1E293B),
+    color: Color = DarkSlate,
     isText: Boolean = false
 ) {
     Row(
@@ -409,7 +422,7 @@ private fun CostRow(
             text = label,
             fontSize = if (bold) 16.sp else 14.sp,
             fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal,
-            color = Color(0xFF64748B)
+            color = MediumGray
         )
         Text(
             text = value,

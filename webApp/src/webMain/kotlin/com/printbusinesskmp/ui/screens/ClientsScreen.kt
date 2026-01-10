@@ -18,6 +18,13 @@ import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.shared.resources.Res
 import com.printbusinesskmp.shared.resources.nav_dashboard
+import com.printbusinesskmp.theme.AppColors
+import com.printbusinesskmp.theme.AppColors.CardItemBg
+import com.printbusinesskmp.theme.AppColors.DarkGrayText
+import com.printbusinesskmp.theme.AppColors.DarkSlate
+import com.printbusinesskmp.theme.AppColors.MediumGray
+import com.printbusinesskmp.theme.AppColors.PrimaryBlue
+import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.FormatUtils
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -64,14 +71,14 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
                 text = stringResource(Res.string.nav_dashboard),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1E293B)
+                color = DarkSlate
             )
 
             Button(
                 onClick = { onNavigate(Screen.ClientDetail(null)) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
             ) {
-                Text("+ Add Client", color = Color.White)
+                Text("+ Add Client", color = White)
             }
         }
 
@@ -82,8 +89,8 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
             placeholder = { Text("Search clients...") },
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White
+                focusedContainerColor = White,
+                unfocusedContainerColor = White
             )
         )
 
@@ -99,14 +106,14 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
             // Table
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = White)
             ) {
                 Column {
                     // Table Header
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFFF8FAFC))
+                            .background(CardItemBg)
                             .padding(16.dp)
                     ) {
                         TableHeaderCell("Name", Modifier.weight(2f))
@@ -150,7 +157,7 @@ private fun TableHeaderCell(text: String, modifier: Modifier = Modifier) {
         text = text,
         fontSize = 14.sp,
         fontWeight = FontWeight.SemiBold,
-        color = Color(0xFF475569),
+        color = DarkGrayText,
         modifier = modifier
     )
 }
@@ -172,28 +179,28 @@ private fun ClientRow(
         Text(
             text = client.name,
             fontSize = 14.sp,
-            color = Color(0xFF1E293B),
+            color = DarkSlate,
             modifier = Modifier.weight(2f)
         )
 
         Text(
             text = FormatUtils.formatPhone(client.phone),
             fontSize = 14.sp,
-            color = Color(0xFF64748B),
+            color = MediumGray,
             modifier = Modifier.weight(1.5f)
         )
 
         Text(
             text = client.email ?: "-",
             fontSize = 14.sp,
-            color = Color(0xFF64748B),
+            color = MediumGray,
             modifier = Modifier.weight(2f)
         )
 
         Text(
             text = client.totalOrders.toString(),
             fontSize = 14.sp,
-            color = Color(0xFF1E293B),
+            color = DarkSlate,
             modifier = Modifier.weight(1f)
         )
 
@@ -202,11 +209,11 @@ private fun ClientRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             TextButton(onClick = onEdit) {
-                Text("Edit", color = Color(0xFF3B82F6))
+                Text("Edit", color = PrimaryBlue)
             }
 
             TextButton(onClick = { showDeleteDialog = true }) {
-                Text("Delete", color = Color(0xFFEF4444))
+                Text("Delete", color = AppColors.Error)
             }
         }
     }
@@ -223,7 +230,7 @@ private fun ClientRow(
                         showDeleteDialog = false
                     }
                 ) {
-                    Text("Delete", color = Color(0xFFEF4444))
+                    Text("Delete", color = AppColors.Error)
                 }
             },
             dismissButton = {

@@ -16,6 +16,18 @@ import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.models.OrderStatus
 import com.printbusinesskmp.navigation.Screen
+import com.printbusinesskmp.theme.AppColors
+import com.printbusinesskmp.theme.AppColors.CardItemBg
+import com.printbusinesskmp.theme.AppColors.DarkGrayText
+import com.printbusinesskmp.theme.AppColors.DarkSlate
+import com.printbusinesskmp.theme.AppColors.MediumGray
+import com.printbusinesskmp.theme.AppColors.PrimaryBlue
+import com.printbusinesskmp.theme.AppColors.StatusBackground
+import com.printbusinesskmp.theme.AppColors.StatusBackground.Ready
+import com.printbusinesskmp.theme.AppColors.StatusText
+import com.printbusinesskmp.theme.AppColors.Success
+import com.printbusinesskmp.theme.AppColors.VeryLightBluGray
+import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.FormatUtils
 import kotlinx.coroutines.launch
 
@@ -61,11 +73,11 @@ fun OrderDetailScreen(
                 text = "Order Details",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1E293B)
+                color = DarkSlate
             )
 
             TextButton(onClick = { onNavigate(Screen.Orders) }) {
-                Text("← Back to Orders", color = Color(0xFF3B82F6))
+                Text("← Back to Orders", color = PrimaryBlue)
             }
         }
 
@@ -89,14 +101,14 @@ fun OrderDetailScreen(
                     // Order Info Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                        colors = CardDefaults.cardColors(containerColor = White)
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(
                                 text = "Order Information",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF1E293B),
+                                color = DarkSlate,
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
 
@@ -118,12 +130,12 @@ fun OrderDetailScreen(
                                     text = "Notes:",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF64748B)
+                                    color = MediumGray
                                 )
                                 Text(
                                     text = currentOrder.notes ?: "",
                                     fontSize = 14.sp,
-                                    color = Color(0xFF1E293B),
+                                    color = DarkSlate,
                                     modifier = Modifier.padding(top = 4.dp)
                                 )
                             }
@@ -138,7 +150,7 @@ fun OrderDetailScreen(
                                     text = "Update Status",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF64748B),
+                                    color = MediumGray,
                                     modifier = Modifier.padding(bottom = 8.dp)
                                 )
 
@@ -158,14 +170,14 @@ fun OrderDetailScreen(
                                                 }
                                             },
                                             colors = ButtonDefaults.buttonColors(
-                                                containerColor = if (status == currentOrder.status) Color(0xFF3B82F6) else Color(
+                                                containerColor = if (status == currentOrder.status) PrimaryBlue else Color(
                                                     0xFFE2E8F0
                                                 )
                                             )
                                         ) {
                                             Text(
                                                 text = status.name.replace("_", " "),
-                                                color = if (status == currentOrder.status) Color.White else Color(
+                                                color = if (status == currentOrder.status) White else Color(
                                                     0xFF64748B
                                                 ),
                                                 fontSize = 12.sp
@@ -182,21 +194,21 @@ fun OrderDetailScreen(
                     // Order Items Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                        colors = CardDefaults.cardColors(containerColor = White)
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(
                                 text = "Order Items (${currentOrder.items.size})",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF1E293B),
+                                color = DarkSlate,
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
 
                             currentOrder.items.forEach { item ->
                                 Card(
                                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))
+                                    colors = CardDefaults.cardColors(containerColor = CardItemBg)
                                 ) {
                                     Column(modifier = Modifier.padding(16.dp)) {
                                         Row(
@@ -207,12 +219,12 @@ fun OrderDetailScreen(
                                                 text = item.productType.name.replace("_", " "),
                                                 fontSize = 16.sp,
                                                 fontWeight = FontWeight.SemiBold,
-                                                color = Color(0xFF1E293B)
+                                                color = DarkSlate
                                             )
                                             Text(
                                                 text = "Qty: ${item.quantity}",
                                                 fontSize = 14.sp,
-                                                color = Color(0xFF64748B)
+                                                color = MediumGray
                                             )
                                         }
 
@@ -222,14 +234,14 @@ fun OrderDetailScreen(
                                             Text(
                                                 text = listOfNotNull(item.size, item.color).joinToString(", "),
                                                 fontSize = 14.sp,
-                                                color = Color(0xFF64748B)
+                                                color = MediumGray
                                             )
                                         }
 
                                         Text(
                                             text = "Print Area: ${item.printArea.name}",
                                             fontSize = 14.sp,
-                                            color = Color(0xFF64748B)
+                                            color = MediumGray
                                         )
 
                                         Spacer(modifier = Modifier.height(8.dp))
@@ -242,22 +254,22 @@ fun OrderDetailScreen(
                                                 Text(
                                                     text = "Costs",
                                                     fontSize = 12.sp,
-                                                    color = Color(0xFF64748B)
+                                                    color = MediumGray
                                                 )
                                                 Text(
                                                     text = "Blank: ${FormatUtils.formatCurrency(item.blankItemCost)}",
                                                     fontSize = 12.sp,
-                                                    color = Color(0xFF1E293B)
+                                                    color = DarkSlate
                                                 )
                                                 Text(
                                                     text = "Paper: ${FormatUtils.formatCurrency(item.thermalPaperCost)}",
                                                     fontSize = 12.sp,
-                                                    color = Color(0xFF1E293B)
+                                                    color = DarkSlate
                                                 )
                                                 Text(
                                                     text = "Labor: ${FormatUtils.formatCurrency(item.laborCost)}",
                                                     fontSize = 12.sp,
-                                                    color = Color(0xFF1E293B)
+                                                    color = DarkSlate
                                                 )
                                             }
 
@@ -266,13 +278,13 @@ fun OrderDetailScreen(
                                                     text = "Price: ${FormatUtils.formatCurrency(item.sellingPrice)}",
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.SemiBold,
-                                                    color = Color(0xFF1E293B)
+                                                    color = DarkSlate
                                                 )
                                                 Text(
                                                     text = "Profit: ${FormatUtils.formatCurrency(item.profit)}",
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.SemiBold,
-                                                    color = if (item.profit >= 0) Color(0xFF16A34A) else Color(
+                                                    color = if (item.profit >= 0) Success else Color(
                                                         0xFFEF4444
                                                     )
                                                 )
@@ -289,14 +301,14 @@ fun OrderDetailScreen(
                     // Order Summary Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                        colors = CardDefaults.cardColors(containerColor = White)
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(
                                 text = "Order Summary",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF1E293B),
+                                color = DarkSlate,
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
 
@@ -326,13 +338,13 @@ private fun InfoRow(label: String, value: String) {
             text = "$label:",
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFF64748B),
+            color = MediumGray,
             modifier = Modifier.width(120.dp)
         )
         Text(
             text = value,
             fontSize = 14.sp,
-            color = Color(0xFF1E293B)
+            color = DarkSlate
         )
     }
 }
@@ -352,13 +364,13 @@ private fun SummaryRow(
             text = label,
             fontSize = if (isProfit) 18.sp else 14.sp,
             fontWeight = if (isProfit) FontWeight.Bold else FontWeight.Medium,
-            color = Color(0xFF1E293B)
+            color = DarkSlate
         )
         Text(
             text = value,
             fontSize = if (isProfit) 18.sp else 14.sp,
             fontWeight = if (isProfit) FontWeight.Bold else FontWeight.Medium,
-            color = if (isProfit && profitValue >= 0) Color(0xFF16A34A) else if (isProfit) Color(0xFFEF4444) else Color(
+            color = if (isProfit && profitValue >= 0) Success else if (isProfit) AppColors.Error else Color(
                 0xFF1E293B
             )
         )
@@ -368,21 +380,21 @@ private fun SummaryRow(
 @Composable
 private fun StatusBadge(status: String) {
     val backgroundColor = when (status) {
-        "NEW" -> Color(0xFFDCFCE7)
-        "IN_PROGRESS" -> Color(0xFFDEEDFF)
-        "READY" -> Color(0xFFFEF3C7)
-        "COMPLETED" -> Color(0xFFD1FAE5)
-        "CANCELLED" -> Color(0xFFFEE2E2)
-        else -> Color(0xFFF1F5F9)
+        "NEW" -> StatusBackground.New
+        "IN_PROGRESS" -> StatusBackground.InProgress
+        "READY" -> StatusBackground.Ready
+        "COMPLETED" -> StatusBackground.Completed
+        "CANCELLED" -> StatusBackground.Cancelled
+        else -> VeryLightBluGray
     }
 
     val textColor = when (status) {
-        "NEW" -> Color(0xFF166534)
-        "IN_PROGRESS" -> Color(0xFF1E40AF)
-        "READY" -> Color(0xFF854D0E)
-        "COMPLETED" -> Color(0xFF065F46)
-        "CANCELLED" -> Color(0xFF991B1B)
-        else -> Color(0xFF475569)
+        "NEW" -> StatusText.New
+        "IN_PROGRESS" -> StatusText.InProgress
+        "READY" -> StatusText.Ready
+        "COMPLETED" -> StatusText.Completed
+        "CANCELLED" -> StatusText.Cancelled
+        else -> DarkGrayText
     }
 
     Box(

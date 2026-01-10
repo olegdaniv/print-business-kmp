@@ -17,6 +17,18 @@ import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.shared.resources.Res
 import com.printbusinesskmp.shared.resources.nav_dashboard
+import com.printbusinesskmp.theme.AppColors
+import com.printbusinesskmp.theme.AppColors.DarkGrayText
+import com.printbusinesskmp.theme.AppColors.DarkSlate
+import com.printbusinesskmp.theme.AppColors.MediumGray
+import com.printbusinesskmp.theme.AppColors.StatusBackground.Cancelled
+import com.printbusinesskmp.theme.AppColors.StatusBackground.Completed
+import com.printbusinesskmp.theme.AppColors.StatusBackground.InProgress
+import com.printbusinesskmp.theme.AppColors.StatusBackground.New
+import com.printbusinesskmp.theme.AppColors.StatusBackground.Ready
+import com.printbusinesskmp.theme.AppColors.StatusText
+import com.printbusinesskmp.theme.AppColors.VeryLightBluGray
+import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.FormatUtils
 import org.jetbrains.compose.resources.stringResource
 
@@ -49,7 +61,7 @@ fun DashboardScreen(onNavigate: (Screen) -> Unit) {
             text = stringResource(Res.string.nav_dashboard),
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF1E293B),
+            color = DarkSlate,
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
@@ -99,13 +111,13 @@ fun DashboardScreen(onNavigate: (Screen) -> Unit) {
                 text = "Recent Orders",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1E293B),
+                color = DarkSlate,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = White)
             ) {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth()
@@ -130,7 +142,7 @@ private fun StatCard(
 ) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = White)
     ) {
         Column(
             modifier = Modifier
@@ -140,14 +152,14 @@ private fun StatCard(
             Text(
                 text = title,
                 fontSize = 14.sp,
-                color = Color(0xFF64748B),
+                color = MediumGray,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             Text(
                 text = value,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1E293B)
+                color = DarkSlate
             )
         }
     }
@@ -168,12 +180,12 @@ private fun RecentOrderItem(order: Order, clients: List<Client>) {
                 text = "Order #${order.id.take(8)}",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1E293B)
+                color = DarkSlate
             )
             Text(
                 text = client?.name ?: "Unknown Client",
                 fontSize = 14.sp,
-                color = Color(0xFF64748B),
+                color = MediumGray,
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
@@ -184,7 +196,7 @@ private fun RecentOrderItem(order: Order, clients: List<Client>) {
                 text = FormatUtils.formatCurrency(order.totalPrice),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1E293B),
+                color = DarkSlate,
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
@@ -194,21 +206,21 @@ private fun RecentOrderItem(order: Order, clients: List<Client>) {
 @Composable
 private fun StatusBadge(status: String) {
     val backgroundColor = when (status) {
-        "NEW" -> Color(0xFFDCFCE7)
-        "IN_PROGRESS" -> Color(0xFFDEEDFF)
-        "READY" -> Color(0xFFFEF3C7)
-        "COMPLETED" -> Color(0xFFD1FAE5)
-        "CANCELLED" -> Color(0xFFFEE2E2)
-        else -> Color(0xFFF1F5F9)
+        "NEW" -> New
+        "IN_PROGRESS" -> InProgress
+        "READY" -> Ready
+        "COMPLETED" -> Completed
+        "CANCELLED" -> Cancelled
+        else -> VeryLightBluGray
     }
 
     val textColor = when (status) {
-        "NEW" -> Color(0xFF166534)
-        "IN_PROGRESS" -> Color(0xFF1E40AF)
-        "READY" -> Color(0xFF854D0E)
-        "COMPLETED" -> Color(0xFF065F46)
-        "CANCELLED" -> Color(0xFF991B1B)
-        else -> Color(0xFF475569)
+        "NEW" -> StatusText.New
+        "IN_PROGRESS" -> StatusText.InProgress
+        "READY" -> StatusText.Ready
+        "COMPLETED" -> StatusText.Completed
+        "CANCELLED" -> StatusText.Cancelled
+        else -> DarkGrayText
     }
 
     Box(

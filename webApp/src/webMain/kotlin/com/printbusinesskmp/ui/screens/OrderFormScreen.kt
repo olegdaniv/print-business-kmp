@@ -36,6 +36,11 @@ import com.printbusinesskmp.shared.resources.summary_total_cost
 import com.printbusinesskmp.shared.resources.summary_total_price
 import com.printbusinesskmp.shared.resources.summary_total_profit
 import com.printbusinesskmp.theme.AppColors
+import com.printbusinesskmp.theme.AppColors.CardItemBg
+import com.printbusinesskmp.theme.AppColors.PrimaryBlue
+import com.printbusinesskmp.theme.AppColors.StatusBackground.Cancelled
+import com.printbusinesskmp.theme.AppColors.Success
+import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.FormatUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -452,16 +457,16 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                         onClick = { handleSave() },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         enabled = !isSaving,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                     ) {
                         if (isSaving) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
-                                color = Color.White
+                                color = White
                             )
                         } else {
                             Text(
-                                text = stringResource(Res.string.order_save), color = Color.White, fontSize = 16.sp
+                                text = stringResource(Res.string.order_save), color = White, fontSize = 16.sp
                             )
                         }
                     }
@@ -698,7 +703,7 @@ private fun AddItemDialog(
                         text = "Pricing Calculator",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF3B82F6)
+                        color = PrimaryBlue
                     )
                 }
 
@@ -746,17 +751,17 @@ private fun AddItemDialog(
                         onClick = { calculatePricing() },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isCalculating,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                     ) {
                         if (isCalculating) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
-                                color = Color.White
+                                color = White
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Calculating...", color = Color.White)
+                            Text("Calculating...", color = White)
                         } else {
-                            Text("Calculate Costs", color = Color.White)
+                            Text("Calculate Costs", color = White)
                         }
                     }
                 }
@@ -765,18 +770,18 @@ private fun AddItemDialog(
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFDCFCE7))
+                            colors = CardDefaults.cardColors(containerColor = AppColors.StatusBackground.New)
                         ) {
                             Row(
                                 modifier = Modifier.padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("✓", fontSize = 20.sp, color = Color(0xFF16A34A))
+                                Text("✓", fontSize = 20.sp, color = Success)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     "Prices calculated successfully",
                                     fontSize = 14.sp,
-                                    color = Color(0xFF16A34A),
+                                    color = Success,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
@@ -788,12 +793,12 @@ private fun AddItemDialog(
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2))
+                            colors = CardDefaults.cardColors(containerColor = Cancelled)
                         ) {
                             Text(
                                 text = calculationError ?: "",
                                 fontSize = 14.sp,
-                                color = Color(0xFFEF4444),
+                                color = AppColors.Error,
                                 modifier = Modifier.padding(12.dp)
                             )
                         }
@@ -804,7 +809,7 @@ private fun AddItemDialog(
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFDCFCE7))
+                            colors = CardDefaults.cardColors(containerColor = AppColors.StatusBackground.New)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(
@@ -816,10 +821,10 @@ private fun AddItemDialog(
                                         "Cost Breakdown",
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF16A34A)
+                                        color = Success
                                     )
                                     TextButton(onClick = { showBreakdown = !showBreakdown }) {
-                                        Text(if (showBreakdown) "Hide" else "Show", color = Color(0xFF16A34A))
+                                        Text(if (showBreakdown) "Hide" else "Show", color = Success)
                                     }
                                 }
 
@@ -832,36 +837,36 @@ private fun AddItemDialog(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Total Materials:", fontSize = 14.sp, color = Color(0xFF16A34A))
+                                    Text("Total Materials:", fontSize = 14.sp, color = Success)
                                     Text(
                                         FormatUtils.formatCurrency(breakdown.materialsCost),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = Color(0xFF16A34A)
+                                        color = Success
                                     )
                                 }
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Labor Cost:", fontSize = 14.sp, color = Color(0xFF16A34A))
+                                    Text("Labor Cost:", fontSize = 14.sp, color = Success)
                                     Text(
                                         FormatUtils.formatCurrency(breakdown.laborCost),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = Color(0xFF16A34A)
+                                        color = Success
                                     )
                                 }
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Total Cost per item:", fontSize = 14.sp, color = Color(0xFF16A34A))
+                                    Text("Total Cost per item:", fontSize = 14.sp, color = Success)
                                     Text(
                                         FormatUtils.formatCurrency(breakdown.totalCost / qty),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = Color(0xFF16A34A)
+                                        color = Success
                                     )
                                 }
                                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
@@ -869,48 +874,48 @@ private fun AddItemDialog(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Selling Price per item:", fontSize = 14.sp, color = Color(0xFF3B82F6))
+                                    Text("Selling Price per item:", fontSize = 14.sp, color = PrimaryBlue)
                                     Text(
                                         FormatUtils.formatCurrency(breakdown.finalSellingPrice / qty),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF3B82F6)
+                                        color = PrimaryBlue
                                     )
                                 }
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Tax (5%):", fontSize = 14.sp, color = Color(0xFF16A34A))
+                                    Text("Tax (5%):", fontSize = 14.sp, color = Success)
                                     Text(
                                         FormatUtils.formatCurrency(breakdown.simplifiedTax),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = Color(0xFF16A34A)
+                                        color = Success
                                     )
                                 }
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Profit per item:", fontSize = 14.sp, color = Color(0xFF16A34A))
+                                    Text("Profit per item:", fontSize = 14.sp, color = Success)
                                     Text(
                                         FormatUtils.formatCurrency(breakdown.actualProfit / qty),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF16A34A)
+                                        color = Success
                                     )
                                 }
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Profit Margin:", fontSize = 14.sp, color = Color(0xFF16A34A))
+                                    Text("Profit Margin:", fontSize = 14.sp, color = Success)
                                     Text(
                                         "${breakdown.profitMarginPercent.toInt()}%",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF16A34A)
+                                        color = Success
                                     )
                                 }
                             }
@@ -988,7 +993,7 @@ private fun AddItemDialog(
                     // Calculated Values
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))
+                        colors = CardDefaults.cardColors(containerColor = CardItemBg)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Row(
@@ -1006,7 +1011,7 @@ private fun AddItemDialog(
                                 Text(
                                     FormatUtils.formatCurrency(profit),
                                     fontWeight = FontWeight.Medium,
-                                    color = if (profit >= 0) Color(0xFF16A34A) else Color(0xFFEF4444)
+                                    color = if (profit >= 0) Success else AppColors.Error
                                 )
                             }
                         }

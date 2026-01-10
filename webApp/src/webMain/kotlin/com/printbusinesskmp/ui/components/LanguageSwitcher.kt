@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.localization.Language
 import com.printbusinesskmp.localization.LanguageManager
+import com.printbusinesskmp.theme.AppColors.Slate
+import com.printbusinesskmp.theme.AppColors.White
 
 @Composable
 fun LanguageSwitcher() {
@@ -28,7 +30,7 @@ fun LanguageSwitcher() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(40.dp)
-                .background(Color(0xFF334155), shape = MaterialTheme.shapes.small)
+                .background(Slate, shape = MaterialTheme.shapes.small)
                 .clickable { expanded = !expanded }
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -36,12 +38,12 @@ fun LanguageSwitcher() {
         ) {
             Text(
                 text = currentLanguage.displayName,
-                color = Color.White,
+                color = White,
                 fontSize = 14.sp
             )
             Text(
                 text = if (expanded) "▲" else "▼",
-                color = Color.White,
+                color = White,
                 fontSize = 12.sp
             )
         }
