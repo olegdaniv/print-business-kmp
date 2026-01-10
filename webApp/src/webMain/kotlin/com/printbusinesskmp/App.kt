@@ -10,7 +10,7 @@ import com.printbusinesskmp.ui.components.NavigationContent
 @Composable
 fun App() {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Dashboard) }
-    val currentLanguage = LanguageManager.currentLanguage
+    val currentLanguage = LanguageManager.currentLanguage.value
 
     MaterialTheme {
         // key() forces complete recomposition when language changes
