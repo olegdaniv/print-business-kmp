@@ -18,6 +18,10 @@ object OrderItemsTable : Table("order_items") {
     val sellingPrice = double("selling_price")
     val profit = double("profit")
     val notes = text("notes").nullable()
+    val laborTimeUsed = integer("labor_time_used").nullable()
+    val laborRateUsed = double("labor_rate_used").nullable()
+    val profitMarginUsed = double("profit_margin_used").nullable()
+    val calculatedAt = long("calculated_at").nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

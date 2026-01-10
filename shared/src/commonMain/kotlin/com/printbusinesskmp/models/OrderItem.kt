@@ -17,7 +17,11 @@ data class OrderItem(
     val totalCost: Double,
     val sellingPrice: Double,
     val profit: Double,
-    val notes: String? = null
+    val notes: String? = null,
+    val laborTimeUsed: Int? = null,
+    val laborRateUsed: Double? = null,
+    val profitMarginUsed: Double? = null,
+    val calculatedAt: Long? = null
 ) {
     companion object {
         fun create(
@@ -32,7 +36,11 @@ data class OrderItem(
             thermalPaperCost: Double,
             laborCost: Double,
             sellingPrice: Double,
-            notes: String? = null
+            notes: String? = null,
+            laborTimeUsed: Int? = null,
+            laborRateUsed: Double? = null,
+            profitMarginUsed: Double? = null,
+            calculatedAt: Long? = null
         ): OrderItem {
             val totalCost = blankItemCost + thermalPaperCost + laborCost
             val profit = sellingPrice - totalCost
@@ -51,7 +59,11 @@ data class OrderItem(
                 totalCost = totalCost,
                 sellingPrice = sellingPrice,
                 profit = profit,
-                notes = notes
+                notes = notes,
+                laborTimeUsed = laborTimeUsed,
+                laborRateUsed = laborRateUsed,
+                profitMarginUsed = profitMarginUsed,
+                calculatedAt = calculatedAt
             )
         }
     }

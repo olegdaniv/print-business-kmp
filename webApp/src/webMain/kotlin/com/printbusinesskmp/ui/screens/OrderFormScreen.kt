@@ -35,7 +35,9 @@ import com.printbusinesskmp.shared.resources.summary_qty
 import com.printbusinesskmp.shared.resources.summary_total_cost
 import com.printbusinesskmp.shared.resources.summary_total_price
 import com.printbusinesskmp.shared.resources.summary_total_profit
+import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.utils.FormatUtils
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
@@ -56,10 +58,28 @@ data class OrderItemForm(
     val laborRatePerHour: Double = 100.0,
     val profitMarginPercent: Double = 50.0,
     val calculatedBreakdown: CostBreakdown? = null,
-    val isCalculated: Boolean = false
+    val isCalculated: Boolean = false,
+    val calculatedAt: Long? = null
 ) {
     val totalCost: Double get() = blankItemCost + thermalPaperCost + laborCost
     val profit: Double get() = sellingPrice - totalCost
+
+    fun toOrderItem(): OrderItem = OrderItem.create(
+        id = "",
+        productType = productType,
+        quantity = quantity,
+        size = size.ifBlank { null },
+        color = color.ifBlank { null },
+        printArea = printArea,
+        blankItemCost = blankItemCost,
+        thermalPaperCost = thermalPaperCost,
+        laborCost = laborCost,
+        sellingPrice = sellingPrice,
+        laborTimeUsed = if (isCalculated) laborMinutes else null,
+        laborRateUsed = if (isCalculated) laborRatePerHour else null,
+        profitMarginUsed = if (isCalculated) profitMarginPercent else null,
+        calculatedAt = calculatedAt
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,20 +124,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                 isSaving = true
                 val now = Clock.System.now()
 
-                val items = orderItems.map { item ->
-                    OrderItem.create(
-                        id = "",
-                        productType = item.productType,
-                        quantity = item.quantity,
-                        size = item.size.ifBlank { null },
-                        color = item.color.ifBlank { null },
-                        printArea = item.printArea,
-                        blankItemCost = item.blankItemCost,
-                        thermalPaperCost = item.thermalPaperCost,
-                        laborCost = item.laborCost,
-                        sellingPrice = item.sellingPrice
-                    )
-                }
+                val items = orderItems.map { item -> item.toOrderItem() }
 
                 val order = Order.create(
                     id = "",
@@ -149,15 +156,15 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                 text = stringResource(Res.string.nav_orders),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1E293B)
+                color = AppColors.DarkSlate
             )
 
             TextButton(onClick = { onNavigate(Screen.Orders) }) {
                 Text(
                     text = "stringResource(Res.string.cancel)",
 
-//                    "← ${Strings.cancel()}", 
-                    color = Color(0xFF3B82F6)
+//                    "← ${Strings.cancel()}",
+                    color = AppColors.PrimaryBlue
                 )
             }
         }
@@ -173,14 +180,14 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                     // Client Selection Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                        colors = CardDefaults.cardColors(containerColor = AppColors.White)
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(
                                 text = "stringResource(Res.string.clientSelection)",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF1E293B),
+                                color = AppColors.DarkSlate,
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
 
@@ -203,8 +210,8 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                         enabled = true,
                                     ),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = Color.White,
-                                        unfocusedContainerColor = Color.White
+                                        focusedContainerColor = AppColors.White,
+                                        unfocusedContainerColor = AppColors.White
                                     )
                                 )
 
@@ -231,7 +238,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                     // Order Items Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                        colors = CardDefaults.cardColors(containerColor = AppColors.White)
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Row(
@@ -243,14 +250,14 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                     text = "${stringResource(Res.string.order_items)} (${orderItems.size})",
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF1E293B)
+                                    color = AppColors.DarkSlate
                                 )
 
                                 Button(
                                     onClick = { showAddItemDialog = true },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
                                 ) {
-                                    Text("+ ${stringResource(Res.string.order_add_item)}", color = Color.White)
+                                    Text("+ ${stringResource(Res.string.order_add_item)}", color = AppColors.White)
                                 }
                             }
 
@@ -258,14 +265,14 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                 Text(
                                     text = stringResource(Res.string.order_no_items),
                                     fontSize = 14.sp,
-                                    color = Color(0xFF64748B),
+                                    color = AppColors.MediumGray,
                                     modifier = Modifier.padding(vertical = 16.dp)
                                 )
                             } else {
                                 orderItems.forEachIndexed { index, item ->
                                     Card(
                                         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))
+                                        colors = CardDefaults.cardColors(containerColor = AppColors.CardItemBg)
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
                                             Row(
@@ -276,7 +283,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                                     text = item.productType.toString(),
                                                     fontSize = 16.sp,
                                                     fontWeight = FontWeight.SemiBold,
-                                                    color = Color(0xFF1E293B)
+                                                    color = AppColors.DarkSlate
                                                 )
 
                                                 TextButton(
@@ -286,7 +293,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                                 ) {
                                                     Text(
                                                         text = stringResource(Res.string.action_remove),
-                                                        color = Color(0xFFEF4444)
+                                                        color = AppColors.Error
                                                     )
                                                 }
                                             }
@@ -296,7 +303,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                                     item.printArea
                                                 }",
                                                 fontSize = 14.sp,
-                                                color = Color(0xFF64748B)
+                                                color = AppColors.MediumGray
                                             )
 
                                             if (item.size.isNotBlank() || item.color.isNotBlank()) {
@@ -306,7 +313,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                                         item.color.takeIf { it.isNotBlank() }
                                                     ).joinToString(", "),
                                                     fontSize = 14.sp,
-                                                    color = Color(0xFF64748B)
+                                                    color = AppColors.MediumGray
                                                 )
                                             }
 
@@ -319,21 +326,19 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                                 Text(
                                                     text = "${stringResource(Res.string.summary_cost)}: ${FormatUtils.formatCurrency(item.totalCost)}",
                                                     fontSize = 14.sp,
-                                                    color = Color(0xFF64748B)
+                                                    color = AppColors.MediumGray
                                                 )
                                                 Text(
                                                     text = "${stringResource(Res.string.summary_price)}: ${FormatUtils.formatCurrency(item.sellingPrice)}",
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.Medium,
-                                                    color = Color(0xFF1E293B)
+                                                    color = AppColors.DarkSlate
                                                 )
                                                 Text(
                                                     text = "${stringResource(Res.string.summary_profit)}: ${FormatUtils.formatCurrency(item.profit)}",
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.Medium,
-                                                    color = if (item.profit >= 0) Color(0xFF16A34A) else Color(
-                                                        0xFFEF4444
-                                                    )
+                                                    color = if (item.profit >= 0) AppColors.Success else AppColors.Error
                                                 )
                                             }
                                         }
@@ -351,13 +356,13 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                             text = stringResource(Res.string.summary_total_cost) + ":",
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Medium,
-                                            color = Color(0xFF64748B)
+                                            color = AppColors.MediumGray
                                         )
                                         Text(
                                             text = FormatUtils.formatCurrency(orderItems.sumOf { it.totalCost }),
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Medium,
-                                            color = Color(0xFF1E293B)
+                                            color = AppColors.DarkSlate
                                         )
                                     }
                                     Row(
@@ -368,13 +373,13 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                             text = stringResource(Res.string.summary_total_price) + ":",
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Medium,
-                                            color = Color(0xFF64748B)
+                                            color = AppColors.MediumGray
                                         )
                                         Text(
                                             text = FormatUtils.formatCurrency(orderItems.sumOf { it.sellingPrice }),
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Medium,
-                                            color = Color(0xFF1E293B)
+                                            color = AppColors.DarkSlate
                                         )
                                     }
                                     Row(
@@ -385,15 +390,13 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                             text = stringResource(Res.string.summary_total_profit) + ":",
                                             fontSize = 18.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF1E293B)
+                                            color = AppColors.DarkSlate
                                         )
                                         Text(
                                             text = FormatUtils.formatCurrency(orderItems.sumOf { it.profit }),
                                             fontSize = 18.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (orderItems.sumOf { it.profit } >= 0) Color(0xFF16A34A) else Color(
-                                                0xFFEF4444
-                                            )
+                                            color = if (orderItems.sumOf { it.profit } >= 0) AppColors.Success else AppColors.Error
                                         )
                                     }
                                 }
@@ -406,14 +409,14 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                     // Notes Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                        colors = CardDefaults.cardColors(containerColor = AppColors.White)
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(
                                 text = "${stringResource(Res.string.order_notes)} (${stringResource(Res.string.label_optional)})",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF1E293B),
+                                color = AppColors.DarkSlate,
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
 
@@ -425,8 +428,8 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                 },
                                 modifier = Modifier.fillMaxWidth().height(120.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White
+                                    focusedContainerColor = AppColors.White,
+                                    unfocusedContainerColor = AppColors.White
                                 )
                             )
                         }
@@ -504,8 +507,17 @@ private fun AddItemDialog(
     var showSuccess by remember { mutableStateOf(false) }
     var highlightFields by remember { mutableStateOf(false) }
     var showBreakdown by remember { mutableStateOf(false) }
+    var calculatedTimestamp by remember { mutableStateOf<Long?>(null) }
 
     val scope = rememberCoroutineScope()
+
+    // Auto-dismiss error after 5 seconds
+    LaunchedEffect(calculationError) {
+        if (calculationError != null) {
+            delay(5000)
+            calculationError = null
+        }
+    }
 
     val totalCost = (blankItemCost.toDoubleOrNull() ?: 0.0) +
             (thermalPaperCost.toDoubleOrNull() ?: 0.0) +
@@ -530,6 +542,7 @@ private fun AddItemDialog(
 
                 val breakdown = ApiClient.calculatePricing(request)
                 calculatedBreakdown = breakdown
+                calculatedTimestamp = Clock.System.now().toEpochMilliseconds()
 
                 val qty = quantity.toIntOrNull() ?: 1
                 val thermalCost = if (printArea == PrintArea.BOTH) 10.0 else 5.0
@@ -542,7 +555,7 @@ private fun AddItemDialog(
                 showBreakdown = true
                 highlightFields = true
 
-                kotlinx.coroutines.delay(2000)
+                kotlinx.coroutines.delay(3000)
                 highlightFields = false
 
                 isCalculating = false
@@ -1020,7 +1033,8 @@ private fun AddItemDialog(
                             laborRatePerHour = laborRatePerHour.toDoubleOrNull() ?: 100.0,
                             profitMarginPercent = profitMarginPercent.toDouble(),
                             calculatedBreakdown = calculatedBreakdown,
-                            isCalculated = calculatedBreakdown != null
+                            isCalculated = calculatedBreakdown != null,
+                            calculatedAt = calculatedTimestamp
                         )
                     )
                 }

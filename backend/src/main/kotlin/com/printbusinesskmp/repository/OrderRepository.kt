@@ -64,6 +64,10 @@ class OrderRepository {
                 it[sellingPrice] = item.sellingPrice
                 it[profit] = item.profit
                 it[notes] = item.notes
+                it[laborTimeUsed] = item.laborTimeUsed
+                it[laborRateUsed] = item.laborRateUsed
+                it[profitMarginUsed] = item.profitMarginUsed
+                it[calculatedAt] = item.calculatedAt
             }
         }
 
@@ -108,6 +112,10 @@ class OrderRepository {
                 it[sellingPrice] = item.sellingPrice
                 it[profit] = item.profit
                 it[notes] = item.notes
+                it[laborTimeUsed] = item.laborTimeUsed
+                it[laborRateUsed] = item.laborRateUsed
+                it[profitMarginUsed] = item.profitMarginUsed
+                it[calculatedAt] = item.calculatedAt
             }
         }
 
@@ -177,6 +185,10 @@ class OrderRepository {
             totalCost = row[OrderItemsTable.totalCost],
             sellingPrice = row[OrderItemsTable.sellingPrice],
             profit = row[OrderItemsTable.profit],
-            notes = row[OrderItemsTable.notes]
+            notes = row[OrderItemsTable.notes],
+            laborTimeUsed = row[OrderItemsTable.laborTimeUsed],
+            laborRateUsed = row[OrderItemsTable.laborRateUsed],
+            profitMarginUsed = row[OrderItemsTable.profitMarginUsed],
+            calculatedAt = row[OrderItemsTable.calculatedAt]
         )
 }

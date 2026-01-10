@@ -12,8 +12,13 @@ import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.ClientCreateRequest
 import com.printbusinesskmp.models.ClientUpdateRequest
 import com.printbusinesskmp.navigation.Screen
+import com.printbusinesskmp.shared.resources.Res
+import com.printbusinesskmp.shared.resources.action_edit
+import com.printbusinesskmp.shared.resources.error_client_load_failed
 import com.printbusinesskmp.utils.ValidationUtils
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ClientFormScreen(
@@ -41,7 +46,7 @@ fun ClientFormScreen(
                     email = client.email ?: ""
                     isLoading = false
                 } catch (e: Exception) {
-                    errorMessage = "Failed to load client: ${e.message}"
+                    errorMessage = getString(Res.string.error_client_load_failed) + " ${e.message}"
                     isLoading = false
                 }
             }
@@ -76,7 +81,7 @@ fun ClientFormScreen(
                 }
 
                 onNavigate(Screen.Clients)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 errorMessage = "Failed to save client"
                 isSaving = false
             }
