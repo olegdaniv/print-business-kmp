@@ -98,4 +98,31 @@ object ApiClient {
     suspend fun getTaxInfo(): TaxInfo {
         return client.get("$BASE_URL/api/pricing/tax-info").body()
     }
+
+    // Invoice API functions
+    suspend fun generateInvoice(orderId: String): Invoice {
+        return client.post("$BASE_URL/api/invoices/generate/$orderId") {
+            contentType(ContentType.Application.Json)
+        }.body()
+    }
+
+    suspend fun getInvoice(id: String): Invoice {
+        return client.get("$BASE_URL/api/invoices/$id").body()
+    }
+
+    suspend fun getInvoicesByOrderId(orderId: String): List<Invoice> {
+        return client.get("$BASE_URL/api/invoices/order/$orderId").body()
+    }
+
+    suspend fun getAllInvoices(): List<Invoice> {
+        return client.get("$BASE_URL/api/invoices").body()
+    }
+
+    fun getInvoiceDownloadUrl(id: String): String {
+        return "$BASE_URL/api/invoices/download/$id"
+    }
+
+    suspend fun deleteInvoice(id: String) {
+        client.delete("$BASE_URL/api/invoices/$id")
+    }
 }

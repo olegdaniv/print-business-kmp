@@ -95,6 +95,12 @@ private fun Sidebar(
         )
 
         SidebarItem(
+            text = "Рахунки",
+            isSelected = currentScreen is Screen.Invoices,
+            onClick = { onNavigate(Screen.Invoices) }
+        )
+
+        SidebarItem(
             text = stringResource(Res.string.nav_calculator),
             isSelected = currentScreen is Screen.PricingCalculator,
             onClick = { onNavigate(Screen.PricingCalculator) }

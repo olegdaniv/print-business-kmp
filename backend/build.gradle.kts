@@ -36,6 +36,9 @@ dependencies {
     implementation(libs.exposed.javaTime)
     implementation(libs.h2)
 
+    // PDF Generation
+    implementation("com.itextpdf:itext7-core:7.2.5")
+
     // Logging
     implementation(libs.logback)
 

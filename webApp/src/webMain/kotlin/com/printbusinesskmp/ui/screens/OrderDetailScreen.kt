@@ -324,6 +324,116 @@ fun OrderDetailScreen(
                         }
                     }
                 }
+
+                item {
+                    // Invoice Generation Card
+                    var isGeneratingInvoice by remember { mutableStateOf(false) }
+                    var invoiceGenerationError by remember { mutableStateOf<String?>(null) }
+                    var showSuccessDialog by remember { mutableStateOf(false) }
+                    var generatedInvoiceId by remember { mutableStateOf<String?>(null) }
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = White)
+                    ) {
+                        Column(modifier = Modifier.padding(24.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Рахунок (Акт наданих послуг)",
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = DarkSlate
+                                    )
+                                    if (currentOrder.invoiceGenerated) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "✓ Рахунок вже згенеровано",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Success
+                                        )
+                                    }
+                                }
+
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                isGeneratingInvoice = true
+                                                invoiceGenerationError = null
+                                                val invoice = ApiClient.generateInvoice(orderId)
+                                                generatedInvoiceId = invoice.id
+                                                showSuccessDialog = true
+                                                loadOrder() // Reload to update invoiceGenerated flag
+                                                isGeneratingInvoice = false
+                                            } catch (e: Exception) {
+                                                invoiceGenerationError = "Помилка генерації рахунку: ${e.message}"
+                                                isGeneratingInvoice = false
+                                            }
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Success),
+                                    enabled = !isGeneratingInvoice
+                                ) {
+                                    if (isGeneratingInvoice) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(20.dp),
+                                            color = White,
+                                            strokeWidth = 2.dp
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                    }
+                                    Text(
+                                        text = if (currentOrder.invoiceGenerated) "Згенерувати ще раз" else "Згенерувати рахунок",
+                                        color = White
+                                    )
+                                }
+                            }
+
+                            if (invoiceGenerationError != null) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = invoiceGenerationError ?: "",
+                                    color = Color.Red,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                    }
+
+                    // Success dialog
+                    if (showSuccessDialog && generatedInvoiceId != null) {
+                        AlertDialog(
+                            onDismissRequest = { showSuccessDialog = false },
+                            title = { Text("Рахунок успішно згенеровано") },
+                            text = {
+                                Text("Рахунок успішно створено. Ви можете завантажити PDF файл зараз або пізніше на сторінці 'Рахунки'.")
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        val downloadUrl = ApiClient.getInvoiceDownloadUrl(generatedInvoiceId!!)
+                                        kotlinx.browser.window.open(downloadUrl, "_blank")
+                                        showSuccessDialog = false
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                                ) {
+                                    Text("Завантажити PDF", color = White)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showSuccessDialog = false }) {
+                                    Text("Закрити")
+                                }
+                            }
+                        )
+                    }
+                }
             }
         }
     }

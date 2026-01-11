@@ -22,6 +22,7 @@ fun NavigationContent(
             onNavigate = onNavigate
         )
         is Screen.NewOrder -> OrderFormScreen(onNavigate)
+        is Screen.Invoices -> InvoiceScreen(onNavigate)
         is Screen.PricingCalculator -> PricingCalculatorScreen(onNavigate)
     }
 }

@@ -1,6 +1,8 @@
 package com.printbusinesskmp.database
 
 import com.printbusinesskmp.database.tables.ClientsTable
+import com.printbusinesskmp.database.tables.InvoiceItemsTable
+import com.printbusinesskmp.database.tables.InvoicesTable
 import com.printbusinesskmp.database.tables.OrderItemsTable
 import com.printbusinesskmp.database.tables.OrdersTable
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +24,8 @@ object DatabaseFactory {
             SchemaUtils.create(ClientsTable)
             SchemaUtils.create(OrdersTable)
             SchemaUtils.create(OrderItemsTable)
+            SchemaUtils.create(InvoicesTable)
+            SchemaUtils.create(InvoiceItemsTable)
         }
     }
 

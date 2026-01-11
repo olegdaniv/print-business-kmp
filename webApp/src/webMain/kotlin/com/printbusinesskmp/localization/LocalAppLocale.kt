@@ -11,9 +11,6 @@ import kotlinx.browser.window
 object LocalAppLocale {
     private val LocalAppLocale = staticCompositionLocalOf { Locale.current }
 
-    val current: String
-        @Composable get() = LocalAppLocale.current.toString()
-
     @Composable
     infix fun provides(value: String?): ProvidedValue<*> {
         // Set the custom locale on the window object
@@ -29,7 +26,6 @@ object LocalAppLocale {
 object Locale {
     val current: String
         get() {
-            val languages = window.navigator.languages
             return if (getLanguagesLength() > 0) {
                 getFirstLanguage()
             } else {
