@@ -18,16 +18,27 @@ import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.*
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.shared.resources.Res
+import com.printbusinesskmp.shared.resources.action_cancel
 import com.printbusinesskmp.shared.resources.action_remove
+import com.printbusinesskmp.shared.resources.item_add_title
 import com.printbusinesskmp.shared.resources.label_optional
 import com.printbusinesskmp.shared.resources.nav_orders
 import com.printbusinesskmp.shared.resources.order_add_item
+import com.printbusinesskmp.shared.resources.order_detail_label_client
+import com.printbusinesskmp.shared.resources.order_detail_label_profit
+import com.printbusinesskmp.shared.resources.order_detail_total_cost
+import com.printbusinesskmp.shared.resources.order_form_button_add_item
+import com.printbusinesskmp.shared.resources.order_form_profit_margin_label
 import com.printbusinesskmp.shared.resources.order_items
 import com.printbusinesskmp.shared.resources.order_no_items
 import com.printbusinesskmp.shared.resources.order_notes
 import com.printbusinesskmp.shared.resources.order_save
 import com.printbusinesskmp.shared.resources.order_select_client
-import com.printbusinesskmp.shared.resources.product_type_bag
+import com.printbusinesskmp.shared.resources.pricing_blank_cost
+import com.printbusinesskmp.shared.resources.pricing_labor_cost
+import com.printbusinesskmp.shared.resources.pricing_manual_entry
+import com.printbusinesskmp.shared.resources.pricing_selling_price
+import com.printbusinesskmp.shared.resources.pricing_thermal_cost
 import com.printbusinesskmp.shared.resources.summary_cost
 import com.printbusinesskmp.shared.resources.summary_price
 import com.printbusinesskmp.shared.resources.summary_profit
@@ -166,9 +177,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
 
             TextButton(onClick = { onNavigate(Screen.Orders) }) {
                 Text(
-                    text = "stringResource(Res.string.cancel)",
-
-//                    "← ${Strings.cancel()}",
+                    text = stringResource(Res.string.action_cancel),
                     color = PrimaryBlue
                 )
             }
@@ -189,7 +198,7 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(
-                                text = "stringResource(Res.string.clientSelection)",
+                                text = stringResource(Res.string.order_detail_label_client),
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = AppColors.DarkSlate,
@@ -209,7 +218,11 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                     placeholder = {
                                         Text(stringResource(Res.string.order_select_client))
                                     },
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                    trailingIcon = {
+                                        ExposedDropdownMenuDefaults.TrailingIcon(
+                                            expanded = expanded
+                                        )
+                                    },
                                     modifier = Modifier.fillMaxWidth().menuAnchor(
                                         type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
                                         enabled = true,
@@ -262,7 +275,10 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                     onClick = { showAddItemDialog = true },
                                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                                 ) {
-                                    Text("+ ${stringResource(Res.string.order_add_item)}", color = White)
+                                    Text(
+                                        "+ ${stringResource(Res.string.order_add_item)}",
+                                        color = White
+                                    )
                                 }
                             }
 
@@ -293,7 +309,8 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
 
                                                 TextButton(
                                                     onClick = {
-                                                        orderItems = orderItems.filterIndexed { i, _ -> i != index }
+                                                        orderItems =
+                                                            orderItems.filterIndexed { i, _ -> i != index }
                                                     }
                                                 ) {
                                                     Text(
@@ -329,18 +346,30 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                                                 horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
                                                 Text(
-                                                    text = "${stringResource(Res.string.summary_cost)}: ${FormatUtils.formatCurrency(item.totalCost)}",
+                                                    text = "${stringResource(Res.string.summary_cost)}: ${
+                                                        FormatUtils.formatCurrency(
+                                                            item.totalCost
+                                                        )
+                                                    }",
                                                     fontSize = 14.sp,
                                                     color = AppColors.MediumGray
                                                 )
                                                 Text(
-                                                    text = "${stringResource(Res.string.summary_price)}: ${FormatUtils.formatCurrency(item.sellingPrice)}",
+                                                    text = "${stringResource(Res.string.summary_price)}: ${
+                                                        FormatUtils.formatCurrency(
+                                                            item.sellingPrice
+                                                        )
+                                                    }",
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.Medium,
                                                     color = AppColors.DarkSlate
                                                 )
                                                 Text(
-                                                    text = "${stringResource(Res.string.summary_profit)}: ${FormatUtils.formatCurrency(item.profit)}",
+                                                    text = "${stringResource(Res.string.summary_profit)}: ${
+                                                        FormatUtils.formatCurrency(
+                                                            item.profit
+                                                        )
+                                                    }",
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.Medium,
                                                     color = if (item.profit >= 0) Success else AppColors.Error
@@ -418,7 +447,11 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(
-                                text = "${stringResource(Res.string.order_notes)} (${stringResource(Res.string.label_optional)})",
+                                text = "${stringResource(Res.string.order_notes)} (${
+                                    stringResource(
+                                        Res.string.label_optional
+                                    )
+                                })",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = AppColors.DarkSlate,
@@ -466,7 +499,9 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                             )
                         } else {
                             Text(
-                                text = stringResource(Res.string.order_save), color = White, fontSize = 16.sp
+                                text = stringResource(Res.string.order_save),
+                                color = White,
+                                fontSize = 16.sp
                             )
                         }
                     }
@@ -551,10 +586,12 @@ private fun AddItemDialog(
 
                 val qty = quantity.toIntOrNull() ?: 1
                 val thermalCost = if (printArea == PrintArea.BOTH) 10.0 else 5.0
-                blankItemCost = (((breakdown.materialsCost / qty - thermalCost) * 100).toInt() / 100.0).toString()
+                blankItemCost =
+                    (((breakdown.materialsCost / qty - thermalCost) * 100).toInt() / 100.0).toString()
                 thermalPaperCost = ((thermalCost * 100).toInt() / 100.0).toString()
                 laborCost = ((breakdown.laborCost * 100).toInt() / 100.0).toString()
-                sellingPrice = ((breakdown.finalSellingPrice / qty * 100).toInt() / 100.0).toString()
+                sellingPrice =
+                    ((breakdown.finalSellingPrice / qty * 100).toInt() / 100.0).toString()
 
                 showSuccess = true
                 showBreakdown = true
@@ -573,7 +610,7 @@ private fun AddItemDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Order Item") },
+        title = { Text(stringResource(Res.string.item_add_title)) },
         text = {
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
@@ -598,7 +635,10 @@ private fun AddItemDialog(
                             readOnly = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                             modifier = Modifier.fillMaxWidth()
-                                .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
+                                .menuAnchor(
+                                    type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                    enabled = true
+                                ),
                         )
                         ExposedDropdownMenu(
                             expanded = expanded,
@@ -722,7 +762,7 @@ private fun AddItemDialog(
                         OutlinedTextField(
                             value = laborRatePerHour,
                             onValueChange = { laborRatePerHour = it },
-                            label = { Text("Rate (₴/hour)") },
+                            label = { Text("Rate (грн./hour)") },
                             modifier = Modifier.weight(1f),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                         )
@@ -874,7 +914,11 @@ private fun AddItemDialog(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Selling Price per item:", fontSize = 14.sp, color = PrimaryBlue)
+                                    Text(
+                                        "Selling Price per item:",
+                                        fontSize = 14.sp,
+                                        color = PrimaryBlue
+                                    )
                                     Text(
                                         FormatUtils.formatCurrency(breakdown.finalSellingPrice / qty),
                                         fontSize = 14.sp,
@@ -926,7 +970,7 @@ private fun AddItemDialog(
                 item {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     Text(
-                        text = "Manual Cost Entry",
+                        text = stringResource(Res.string.pricing_manual_entry),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(top = 8.dp)
@@ -937,7 +981,7 @@ private fun AddItemDialog(
                     OutlinedTextField(
                         value = blankItemCost,
                         onValueChange = { blankItemCost = it },
-                        label = { Text("Blank Item Cost") },
+                        label = { Text(stringResource(Res.string.pricing_blank_cost)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         colors = if (highlightFields) OutlinedTextFieldDefaults.colors(
@@ -951,7 +995,7 @@ private fun AddItemDialog(
                     OutlinedTextField(
                         value = thermalPaperCost,
                         onValueChange = { thermalPaperCost = it },
-                        label = { Text("Thermal Paper Cost") },
+                        label = { Text(stringResource(Res.string.pricing_thermal_cost)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         colors = if (highlightFields) OutlinedTextFieldDefaults.colors(
@@ -965,7 +1009,7 @@ private fun AddItemDialog(
                     OutlinedTextField(
                         value = laborCost,
                         onValueChange = { laborCost = it },
-                        label = { Text("Labor Cost") },
+                        label = { Text(stringResource(Res.string.pricing_labor_cost)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         colors = if (highlightFields) OutlinedTextFieldDefaults.colors(
@@ -979,7 +1023,7 @@ private fun AddItemDialog(
                     OutlinedTextField(
                         value = sellingPrice,
                         onValueChange = { sellingPrice = it },
-                        label = { Text("Selling Price") },
+                        label = { Text(stringResource(Res.string.pricing_selling_price)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         colors = if (highlightFields) OutlinedTextFieldDefaults.colors(
@@ -1000,14 +1044,25 @@ private fun AddItemDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Total Cost:", fontSize = 14.sp)
-                                Text(FormatUtils.formatCurrency(totalCost), fontWeight = FontWeight.Medium)
+                                Text(
+                                    stringResource(Res.string.order_detail_total_cost),
+                                    fontSize = 14.sp
+                                )
+
+
+                                Text(
+                                    FormatUtils.formatCurrency(totalCost),
+                                    fontWeight = FontWeight.Medium
+                                )
                             }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Profit:", fontSize = 14.sp)
+                                Text(
+                                    stringResource(Res.string.order_detail_label_profit),
+                                    fontSize = 14.sp
+                                )
                                 Text(
                                     FormatUtils.formatCurrency(profit),
                                     fontWeight = FontWeight.Medium,
@@ -1044,12 +1099,12 @@ private fun AddItemDialog(
                     )
                 }
             ) {
-                Text("Add Item")
+                Text(stringResource(Res.string.order_form_button_add_item))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(Res.string.action_cancel))
             }
         }
     )

@@ -120,7 +120,7 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
                         TableHeaderCell(stringResource(Res.string.table_header_phone), Modifier.weight(1.5f))
                         TableHeaderCell(stringResource(Res.string.table_header_email), Modifier.weight(2f))
                         TableHeaderCell(stringResource(Res.string.table_header_total_orders), Modifier.weight(1f))
-                        TableHeaderCell(stringResource(Res.string.table_header_actions), Modifier.weight(1f))
+                        TableHeaderCell(stringResource(Res.string.table_header_actions), Modifier.weight(2f))
                     }
 
                     HorizontalDivider()
@@ -205,8 +205,8 @@ private fun ClientRow(
         )
 
         Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.weight(2f),
+//            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             TextButton(onClick = onEdit) {
                 Text(stringResource(Res.string.action_edit), color = PrimaryBlue)

@@ -51,7 +51,7 @@
     <!-- Pricing Calculator -->
     <string name="pricing_calculator">Pricing Calculator</string>
     <string name="pricing_labor_time">Labor Time (min)</string>
-    <string name="pricing_labor_rate">Rate (₴/hour)</string>
+    <string name="pricing_labor_rate">Rate (uah/hour)</string>
     <string name="pricing_profit_margin">Profit Margin</string>
     <string name="pricing_calculate">Calculate Costs</string>
     <string name="pricing_calculating">Calculating...</string>
@@ -207,7 +207,7 @@
     <string name="order_form_label_design_url_optional">Design URL (Optional)</string>
     <string name="order_form_section_pricing_calculator">Pricing Calculator</string>
     <string name="order_form_label_labor_time_min">Labor Time (min)</string>
-    <string name="order_form_label_rate_uah_hour">Rate (₴/hour)</string>
+    <string name="order_form_label_rate_uah_hour">Rate (uah/hour)</string>
     <string name="order_form_profit_margin_label">Profit Margin: %1$d%%</string>
     <string name="order_form_button_add_item">Add Item</string>
     <string name="order_form_section_manual_entry">Manual Cost Entry</string>
@@ -220,7 +220,7 @@
     <string name="calculator_label_quantity_min_1">Quantity (min: 1)</string>
     <string name="calculator_label_print_area">Print Area</string>
     <string name="calculator_label_labor_time_minutes">Labor Time (minutes)</string>
-    <string name="calculator_label_labor_rate_uah_hour">Labor Rate (₴/hour)</string>
+    <string name="calculator_label_labor_rate_uah_hour">Labor Rate (uah/hour)</string>
     <string name="calculator_profit_margin_percent">Profit Margin: %1$d%%</string>
     <string name="calculator_slider_label_0">0%%</string>
     <string name="calculator_slider_label_50">50%%</string>
@@ -243,7 +243,7 @@
     <string name="order_form_enhanced_quick_calculate_title">⚡ Quick Calculate All Items</string>
     <string name="order_form_enhanced_quick_calculate_instructions">Apply these default values to all items without prices:</string>
     <string name="order_form_enhanced_default_labor_time">Default Labor Time (minutes)</string>
-    <string name="order_form_enhanced_default_labor_rate">Default Labor Rate (₴/hour)</string>
+    <string name="order_form_enhanced_default_labor_rate">Default Labor Rate (uah/hour)</string>
     <string name="order_form_enhanced_default_profit_margin">Default Profit Margin:</string>
     <string name="order_form_enhanced_apply_button">Apply to All Uncalculated Items</string>
     <string name="order_form_enhanced_success_checkmark">✓</string>

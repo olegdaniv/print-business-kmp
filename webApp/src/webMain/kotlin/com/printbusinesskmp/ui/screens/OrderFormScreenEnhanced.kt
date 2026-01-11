@@ -140,7 +140,7 @@ fun QuickCalculateAllDialog(
                 OutlinedTextField(
                     value = laborRate,
                     onValueChange = { laborRate = it },
-                    label = { Text("Default Labor Rate (₴/hour)") },
+                    label = { Text("Default Labor Rate (грн./hour)") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )

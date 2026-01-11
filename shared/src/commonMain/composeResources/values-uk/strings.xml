@@ -26,7 +26,7 @@
     <string name="label_loading">Завантаження...</string>
     <string name="label_error">Помилка</string>
     <string name="label_success">Успішно</string>
-    <string name="label_optional">Необов\'язково</string>
+    <string name="label_optional">Необов'язково</string>
 
     <!-- Order Form -->
     <string name="order_new">Нове замовлення</string>
@@ -51,7 +51,7 @@
     <!-- Pricing Calculator -->
     <string name="pricing_calculator">Калькулятор цін</string>
     <string name="pricing_labor_time">Час роботи (хв)</string>
-    <string name="pricing_labor_rate">Ставка (₴/год)</string>
+    <string name="pricing_labor_rate">Ставка (грн./год)</string>
     <string name="pricing_profit_margin">Маржа прибутку</string>
     <string name="pricing_calculate">Розрахувати вартість</string>
     <string name="pricing_calculating">Розрахунок...</string>
@@ -118,8 +118,8 @@
     <string name="error_please_enter_valid_values">Будь ласка, введіть коректні значення</string>
 
     <!-- Validation Messages -->
-    <string name="validation_name_required">Ім\'я обов\'язкове</string>
-    <string name="validation_phone_required">Телефон обов\'язковий</string>
+    <string name="validation_name_required">Ім'я обов'язкове</string>
+    <string name="validation_phone_required">Телефон обов'язковий</string>
     <string name="validation_phone_format">Невірний формат телефону. Використовуйте +380XXXXXXXXX</string>
     <string name="validation_email_format">Невірний формат email</string>
 
@@ -140,15 +140,15 @@
     <!-- Client Form Screen -->
     <string name="client_form_title_edit">Редагувати клієнта</string>
     <string name="client_form_title_new">Новий клієнт</string>
-    <string name="client_form_label_name">Ім\'я *</string>
+    <string name="client_form_label_name">Ім'я *</string>
     <string name="client_form_label_phone">Телефон *</string>
     <string name="client_form_label_email">Email</string>
-    <string name="client_form_placeholder_name">Введіть ім\'я клієнта</string>
+    <string name="client_form_placeholder_name">Введіть ім'я клієнта</string>
     <string name="client_form_placeholder_phone">+380XXXXXXXXX</string>
     <string name="client_form_placeholder_email">Введіть email адресу</string>
 
     <!-- Table Headers -->
-    <string name="table_header_name">Ім\'я</string>
+    <string name="table_header_name">Ім'я</string>
     <string name="table_header_phone">Телефон</string>
     <string name="table_header_email">Email</string>
     <string name="table_header_total_orders">Всього замовлень</string>
@@ -204,10 +204,10 @@
 
     <!-- Order Form Screen (Additional) -->
     <string name="order_form_item_dialog_title">Додати товар замовлення</string>
-    <string name="order_form_label_design_url_optional">URL дизайну (необов\'язково)</string>
+    <string name="order_form_label_design_url_optional">URL дизайну (необов'язково)</string>
     <string name="order_form_section_pricing_calculator">Калькулятор цін</string>
     <string name="order_form_label_labor_time_min">Час роботи (хв)</string>
-    <string name="order_form_label_rate_uah_hour">Ставка (₴/год)</string>
+    <string name="order_form_label_rate_uah_hour">Ставка (грн./год)</string>
     <string name="order_form_profit_margin_label">Маржа прибутку: %1$d%%</string>
     <string name="order_form_button_add_item">Додати товар</string>
     <string name="order_form_section_manual_entry">Ручне введення вартості</string>
@@ -220,7 +220,7 @@
     <string name="calculator_label_quantity_min_1">Кількість (мін: 1)</string>
     <string name="calculator_label_print_area">Область друку</string>
     <string name="calculator_label_labor_time_minutes">Час роботи (хвилини)</string>
-    <string name="calculator_label_labor_rate_uah_hour">Ставка роботи (₴/год)</string>
+    <string name="calculator_label_labor_rate_uah_hour">Ставка роботи (грн./год)</string>
     <string name="calculator_profit_margin_percent">Маржа прибутку: %1$d%%</string>
     <string name="calculator_slider_label_0">0%%</string>
     <string name="calculator_slider_label_50">50%%</string>
@@ -243,7 +243,7 @@
     <string name="order_form_enhanced_quick_calculate_title">⚡ Швидкий розрахунок для всіх товарів</string>
     <string name="order_form_enhanced_quick_calculate_instructions">Застосувати ці стандартні значення до всіх товарів без цін:</string>
     <string name="order_form_enhanced_default_labor_time">Стандартний час роботи (хвилини)</string>
-    <string name="order_form_enhanced_default_labor_rate">Стандартна ставка роботи (₴/год)</string>
+    <string name="order_form_enhanced_default_labor_rate">Стандартна ставка роботи (грн./год)</string>
     <string name="order_form_enhanced_default_profit_margin">Стандартна маржа прибутку:</string>
     <string name="order_form_enhanced_apply_button">Застосувати до всіх нерозрахованих товарів</string>
     <string name="order_form_enhanced_success_checkmark">✓</string>
