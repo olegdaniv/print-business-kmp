@@ -8,7 +8,7 @@ data class Invoice(
     val id: String,
     val number: Int,
     val date: Instant,
-    val orderId: String,
+    val orderId: String? = null,
     val client: InvoiceClient,
     val items: List<InvoiceItem>,
     val totalAmount: Double,
@@ -28,7 +28,7 @@ data class InvoiceClient(
 @Serializable
 data class InvoiceItem(
     val number: Int,
-    val description: String,  // e.g., "Термодрук на футболці (чорна, розмір L, друк на грудях)"
+    val description: String,
     val quantity: Int,
     val unit: String = "шт.",
     val pricePerUnit: Double,

@@ -20,6 +20,7 @@ import com.printbusinesskmp.theme.AppColors.Success
 import com.printbusinesskmp.theme.AppColors.VeryLightBluGray
 import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.shared.resources.*
+import com.printbusinesskmp.theme.AppColors.ErrorDark
 import com.printbusinesskmp.utils.PricingCalculator
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
@@ -221,7 +222,10 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                     // Profit Margin Slider (0-100%, step 5%)
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = stringResource(Res.string.calculator_profit_margin_percent, profitMargin.roundToInt()),
+                            text = stringResource(
+                                Res.string.calculator_profit_margin_percent,
+                                profitMargin.roundToInt()
+                            ),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             color = MediumGray,
@@ -238,9 +242,21 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(stringResource(Res.string.calculator_slider_label_0), fontSize = 12.sp, color = MediumLightGray)
-                            Text(stringResource(Res.string.calculator_slider_label_50), fontSize = 12.sp, color = MediumLightGray)
-                            Text(stringResource(Res.string.calculator_slider_label_100), fontSize = 12.sp, color = MediumLightGray)
+                            Text(
+                                stringResource(Res.string.calculator_slider_label_0),
+                                fontSize = 12.sp,
+                                color = MediumLightGray
+                            )
+                            Text(
+                                stringResource(Res.string.calculator_slider_label_50),
+                                fontSize = 12.sp,
+                                color = MediumLightGray
+                            )
+                            Text(
+                                stringResource(Res.string.calculator_slider_label_100),
+                                fontSize = 12.sp,
+                                color = MediumLightGray
+                            )
                         }
                     }
 
@@ -259,7 +275,11 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isCalculating
                     ) {
-                        Text(if (isCalculating) stringResource(Res.string.pricing_calculating) else stringResource(Res.string.calculator_button_calculate))
+                        Text(
+                            if (isCalculating) stringResource(Res.string.pricing_calculating) else stringResource(
+                                Res.string.calculator_button_calculate
+                            )
+                        )
                     }
                 }
             }
@@ -297,34 +317,49 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                         val breakdown = costBreakdown!!
 
                         // Cost Summary (Red)
-                        CostRow("Materials Cost", breakdown.materialsCost, color = Color(0xFFDC2626))
-                        CostRow("Labor Cost", breakdown.laborCost, color = Color(0xFFDC2626))
-                        CostRow("Overhead Cost", breakdown.overheadCost, color = Color(0xFFDC2626))
+                        CostRow(
+                            label = stringResource(Res.string.calculator_cost_materials),
+                            value = breakdown.materialsCost,
+                            color = ErrorDark
+                        )
+                        CostRow(
+                            label = stringResource(Res.string.calculator_cost_labor),
+                            value = breakdown.laborCost,
+                            color = ErrorDark
+                        )
+                        CostRow("Overhead Cost", breakdown.overheadCost, color = ErrorDark)
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                        CostRow("Total Cost", breakdown.totalCost, bold = true, color = Color(0xFFDC2626))
-
-//                        Spacer(modifier = Modifier.height(16.dp))
+                        CostRow(
+                            label = stringResource(Res.string.calculator_cost_total),
+                            value = breakdown.totalCost,
+                            bold = true,
+                            color = ErrorDark
+                        )
 
                         // Pricing Summary (Blue)
                         CostRow(
-                            "Desired Profit Margin",
-                            "${breakdown.profitMarginPercent.roundToInt()}%",
+                            label = stringResource(Res.string.calculator_desired_profit_margin),
+                            value = "${breakdown.profitMarginPercent.roundToInt()}%",
                             isText = true,
                             color = Info
                         )
                         CostRow(
-                            "Selling Price (Before Tax)",
-                            breakdown.sellingPriceBeforeTax,
+                            label = stringResource(Res.string.calculator_selling_price_before_tax),
+                            value = breakdown.sellingPriceBeforeTax,
                             color = Info
                         )
-                        CostRow("Simplified Tax (5%)", breakdown.simplifiedTax, color = Info)
+                        CostRow(
+                            label = stringResource(Res.string.calculator_simplified_tax),
+                            value = breakdown.simplifiedTax,
+                            color = Info
+                        )
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                         CostRow(
-                            "Final Selling Price",
+                            label = stringResource(Res.string.calculator_final_selling_price),
                             breakdown.finalSellingPrice,
                             bold = true,
                             color = Info
@@ -332,13 +367,13 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
 
                         // Profit Summary (Green)
                         CostRow(
-                            "Actual Profit",
+                            label = stringResource(Res.string.calculator_actual_profit),
                             breakdown.actualProfit,
                             bold = true,
                             color = Success
                         )
                         CostRow(
-                            "Profit Margin %",
+                            label = stringResource(Res.string.calculator_profit_margin_percent_label),
                             "${(breakdown.desiredProfitMargin * 100).roundToInt()}%",
                             isText = true,
                             color = Success
@@ -356,7 +391,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    "Price per Item",
+                                    text = stringResource(Res.string.calculator_price_per_item),
                                     fontSize = 14.sp,
                                     color = MediumGray
                                 )
@@ -370,7 +405,7 @@ fun PricingCalculatorScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -
                         }
                     } else {
                         Text(
-                            "Enter product details and click Calculate",
+                            text = stringResource(Res.string.calculator_instructions),
                             fontSize = 14.sp,
                             color = MediumGray,
                             modifier = Modifier.padding(top = 16.dp)

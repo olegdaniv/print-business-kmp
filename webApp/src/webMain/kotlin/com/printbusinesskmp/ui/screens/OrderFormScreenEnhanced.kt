@@ -22,6 +22,23 @@ import com.printbusinesskmp.models.CostBreakdown
 import com.printbusinesskmp.models.OrderItem
 import com.printbusinesskmp.models.PrintArea
 import com.printbusinesskmp.models.ProductType
+import com.printbusinesskmp.shared.resources.Res
+import com.printbusinesskmp.shared.resources.action_cancel
+import com.printbusinesskmp.shared.resources.order_form_enhanced_apply_button
+import com.printbusinesskmp.shared.resources.order_form_enhanced_default_labor_rate
+import com.printbusinesskmp.shared.resources.order_form_enhanced_default_labor_time
+import com.printbusinesskmp.shared.resources.order_form_enhanced_default_profit_margin
+import com.printbusinesskmp.shared.resources.order_form_enhanced_quick_calculate_instructions
+import com.printbusinesskmp.shared.resources.order_form_enhanced_quick_calculate_title
+import com.printbusinesskmp.shared.resources.pricing_breakdown
+import com.printbusinesskmp.shared.resources.pricing_cost_per_item
+import com.printbusinesskmp.shared.resources.pricing_labor
+import com.printbusinesskmp.shared.resources.pricing_labor_cost
+import com.printbusinesskmp.shared.resources.pricing_materials
+import com.printbusinesskmp.shared.resources.pricing_profit_margin
+import com.printbusinesskmp.shared.resources.pricing_profit_per_item
+import com.printbusinesskmp.shared.resources.pricing_selling_price_per_item
+import com.printbusinesskmp.shared.resources.pricing_tax
 import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.theme.AppColors.DarkGrayText
 import com.printbusinesskmp.theme.AppColors.DarkSlate
@@ -31,6 +48,7 @@ import com.printbusinesskmp.theme.AppColors.StatusBackground.Cancelled
 import com.printbusinesskmp.theme.AppColors.Success
 import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.FormatUtils
+import org.jetbrains.compose.resources.stringResource
 
 // Enhanced OrderItemForm with timestamp
 data class OrderItemFormEnhanced(
@@ -118,13 +136,15 @@ fun QuickCalculateAllDialog(
         onDismissRequest = onDismiss,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("⚡ Quick Calculate All Items")
+                Text(
+                    stringResource(Res.string.order_form_enhanced_quick_calculate_title)
+                )
             }
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
-                    "Apply these default values to all items without prices:",
+                    stringResource(Res.string.order_form_enhanced_quick_calculate_instructions),
                     fontSize = 14.sp,
                     color = MediumGray
                 )
@@ -132,7 +152,11 @@ fun QuickCalculateAllDialog(
                 OutlinedTextField(
                     value = laborMinutes,
                     onValueChange = { if (it.all { c -> c.isDigit() }) laborMinutes = it },
-                    label = { Text("Default Labor Time (minutes)") },
+                    label = {
+                        Text(
+                            stringResource(Res.string.order_form_enhanced_default_labor_time)
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
@@ -140,7 +164,11 @@ fun QuickCalculateAllDialog(
                 OutlinedTextField(
                     value = laborRate,
                     onValueChange = { laborRate = it },
-                    label = { Text("Default Labor Rate (грн./hour)") },
+                    label = {
+                        Text(
+                            stringResource(Res.string.order_form_enhanced_default_labor_rate),
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
@@ -151,7 +179,7 @@ fun QuickCalculateAllDialog(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Default Profit Margin:",
+                            text = stringResource(Res.string.order_form_enhanced_default_profit_margin),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -182,12 +210,14 @@ fun QuickCalculateAllDialog(
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
             ) {
-                Text("Apply to All Uncalculated Items", color = White)
+                Text(stringResource(Res.string.order_form_enhanced_apply_button), color = White)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(
+                    stringResource(Res.string.action_cancel)
+                )
             }
         }
     )
@@ -262,7 +292,7 @@ private fun AnimatedCostBreakdownCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                "Cost Breakdown",
+                stringResource(Res.string.pricing_breakdown),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1E40AF),
@@ -271,17 +301,17 @@ private fun AnimatedCostBreakdownCard(
 
             // Costs in RED
             BreakdownRow(
-                label = "Total Materials:",
+                label = stringResource(Res.string.pricing_materials),
                 value = FormatUtils.formatCurrency(breakdown.materialsCost),
                 valueColor = AppColors.Error
             )
             BreakdownRow(
-                label = "Labor Cost:",
+                label = stringResource(Res.string.pricing_labor),
                 value = FormatUtils.formatCurrency(breakdown.laborCost),
                 valueColor = AppColors.Error
             )
             BreakdownRow(
-                label = "Total Cost per item:",
+                label = stringResource(Res.string.pricing_cost_per_item),
                 value = FormatUtils.formatCurrency(breakdown.totalCost / quantity),
                 valueColor = AppColors.Error,
                 fontWeight = FontWeight.Bold
@@ -291,7 +321,7 @@ private fun AnimatedCostBreakdownCard(
 
             // Selling Price in BLUE
             BreakdownRow(
-                label = "Selling Price per item:",
+                label = stringResource(Res.string.pricing_selling_price_per_item),
                 value = FormatUtils.formatCurrency(breakdown.finalSellingPrice / quantity),
                 valueColor = PrimaryBlue,
                 fontWeight = FontWeight.Bold
@@ -299,18 +329,18 @@ private fun AnimatedCostBreakdownCard(
 
             // Tax and Profit in GREEN
             BreakdownRow(
-                label = "Tax (5%):",
+                label = stringResource(Res.string.pricing_tax),
                 value = FormatUtils.formatCurrency(breakdown.simplifiedTax),
                 valueColor = Success
             )
             BreakdownRow(
-                label = "Profit per item:",
+                label = stringResource(Res.string.pricing_profit_per_item),
                 value = FormatUtils.formatCurrency(breakdown.actualProfit / quantity),
                 valueColor = Success,
                 fontWeight = FontWeight.Bold
             )
             BreakdownRow(
-                label = "Profit Margin:",
+                label = stringResource(Res.string.pricing_profit_margin),
                 value = "${breakdown.profitMarginPercent.toInt()}%",
                 valueColor = Success,
                 fontWeight = FontWeight.Bold

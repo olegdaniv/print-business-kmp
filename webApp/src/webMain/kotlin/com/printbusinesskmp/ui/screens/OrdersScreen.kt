@@ -26,6 +26,8 @@ import com.printbusinesskmp.theme.AppColors.StatusBackground
 import com.printbusinesskmp.theme.AppColors.Success
 import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.shared.resources.*
+import com.printbusinesskmp.theme.AppColors.StatusText
+import com.printbusinesskmp.theme.AppColors.VeryLightBluGray
 import com.printbusinesskmp.utils.FormatUtils
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
@@ -101,14 +103,38 @@ fun OrdersScreen(onNavigate: (Screen) -> Unit) {
                             .background(CardItemBg)
                             .padding(16.dp)
                     ) {
-                        TableHeaderCell(stringResource(Res.string.table_header_order_id), Modifier.weight(1f))
-                        TableHeaderCell(stringResource(Res.string.table_header_client), Modifier.weight(1.5f))
-                        TableHeaderCell(stringResource(Res.string.table_header_status), Modifier.weight(1f))
-                        TableHeaderCell(stringResource(Res.string.table_header_items), Modifier.weight(0.8f))
-                        TableHeaderCell(stringResource(Res.string.table_header_total_price), Modifier.weight(1f))
-                        TableHeaderCell(stringResource(Res.string.table_header_profit), Modifier.weight(1f))
-                        TableHeaderCell(stringResource(Res.string.table_header_date), Modifier.weight(1f))
-                        TableHeaderCell(stringResource(Res.string.table_header_actions), Modifier.weight(1f))
+                        TableHeaderCell(
+                            stringResource(Res.string.table_header_order_id),
+                            Modifier.weight(1f)
+                        )
+                        TableHeaderCell(
+                            stringResource(Res.string.table_header_client),
+                            Modifier.weight(1.5f)
+                        )
+                        TableHeaderCell(
+                            stringResource(Res.string.table_header_status),
+                            Modifier.weight(1f)
+                        )
+                        TableHeaderCell(
+                            stringResource(Res.string.table_header_items),
+                            Modifier.weight(0.8f)
+                        )
+                        TableHeaderCell(
+                            stringResource(Res.string.table_header_total_price),
+                            Modifier.weight(1f)
+                        )
+                        TableHeaderCell(
+                            stringResource(Res.string.table_header_profit),
+                            Modifier.weight(1f)
+                        )
+                        TableHeaderCell(
+                            stringResource(Res.string.table_header_date),
+                            Modifier.weight(1f)
+                        )
+                        TableHeaderCell(
+                            stringResource(Res.string.table_header_actions),
+                            Modifier.weight(1f)
+                        )
                     }
 
                     HorizontalDivider()
@@ -181,7 +207,10 @@ private fun OrderRow(
         )
 
         Text(
-            text = FormatUtils.formatCurrency(order.totalPrice, stringResource(Res.string.format_currency_suffix)),
+            text = FormatUtils.formatCurrency(
+                order.totalPrice,
+                stringResource(Res.string.format_currency_suffix)
+            ),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = DarkSlate,
@@ -189,7 +218,10 @@ private fun OrderRow(
         )
 
         Text(
-            text = FormatUtils.formatCurrency(order.totalProfit, stringResource(Res.string.format_currency_suffix)),
+            text = FormatUtils.formatCurrency(
+                order.totalProfit,
+                stringResource(Res.string.format_currency_suffix)
+            ),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = if (order.totalProfit >= 0) Success else AppColors.Error,
@@ -220,15 +252,15 @@ private fun StatusBadge(status: String) {
         "READY" -> StatusBackground.Ready
         "COMPLETED" -> StatusBackground.Completed
         "CANCELLED" -> StatusBackground.Cancelled
-        else -> Color(0xFFF1F5F9)
+        else -> VeryLightBluGray
     }
 
     val textColor = when (status) {
-        "NEW" -> Color(0xFF166534)
-        "IN_PROGRESS" -> Color(0xFF1E40AF)
-        "READY" -> Color(0xFF854D0E)
-        "COMPLETED" -> Color(0xFF065F46)
-        "CANCELLED" -> Color(0xFF991B1B)
+        "NEW" -> StatusText.New
+        "IN_PROGRESS" -> StatusText.InProgress
+        "READY" -> StatusText.Ready
+        "COMPLETED" -> StatusText.Completed
+        "CANCELLED" -> StatusText.Cancelled
         else -> DarkGrayText
     }
 

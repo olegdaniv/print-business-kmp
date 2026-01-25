@@ -130,6 +130,7 @@ fun InvoiceScreen(onNavigate: (Screen) -> Unit) {
                                 onDelete = {
                                     scope.launch {
                                         try {
+                                            invoice.id
                                             ApiClient.deleteInvoice(invoice.id)
                                             loadData()
                                         } catch (e: Exception) {
@@ -261,9 +262,10 @@ private fun InvoiceRow(
 }
 
 private fun formatDate(instant: kotlin.time.Instant): String {
-    val kotlinxInstant = kotlinx.datetime.Instant.fromEpochMilliseconds(instant.toEpochMilliseconds())
-    val localDateTime = kotlinxInstant.toLocalDateTime(TimeZone.currentSystemDefault())
-    return "${localDateTime.dayOfMonth.toString().padStart(2, '0')}.${
-        localDateTime.monthNumber.toString().padStart(2, '0')
+    val instant =
+        kotlin.time.Instant.fromEpochMilliseconds(instant.toEpochMilliseconds())
+    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    return "${localDateTime.day.toString().padStart(2, '0')}.${
+        localDateTime.month.toString().padStart(2, '0')
     }.${localDateTime.year}"
 }

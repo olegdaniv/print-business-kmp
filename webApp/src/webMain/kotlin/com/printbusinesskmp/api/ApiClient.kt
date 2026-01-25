@@ -22,6 +22,7 @@ object ApiClient {
                 prettyPrint = true
                 isLenient = true
                 ignoreUnknownKeys = true
+                explicitNulls = false
             })
         }
     }

@@ -2,11 +2,42 @@
 
 package com.printbusinesskmp.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,12 +46,23 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
-import com.printbusinesskmp.models.*
+import com.printbusinesskmp.models.Client
+import com.printbusinesskmp.models.CostBreakdown
+import com.printbusinesskmp.models.Order
+import com.printbusinesskmp.models.OrderItem
+import com.printbusinesskmp.models.OrderStatus
+import com.printbusinesskmp.models.PricingRequest
+import com.printbusinesskmp.models.PrintArea
+import com.printbusinesskmp.models.ProductType
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.shared.resources.Res
 import com.printbusinesskmp.shared.resources.action_cancel
 import com.printbusinesskmp.shared.resources.action_remove
 import com.printbusinesskmp.shared.resources.item_add_title
+import com.printbusinesskmp.shared.resources.item_color
+import com.printbusinesskmp.shared.resources.item_print_area
+import com.printbusinesskmp.shared.resources.item_quantity
+import com.printbusinesskmp.shared.resources.item_size
 import com.printbusinesskmp.shared.resources.label_optional
 import com.printbusinesskmp.shared.resources.nav_orders
 import com.printbusinesskmp.shared.resources.order_add_item
@@ -28,6 +70,9 @@ import com.printbusinesskmp.shared.resources.order_detail_label_client
 import com.printbusinesskmp.shared.resources.order_detail_label_profit
 import com.printbusinesskmp.shared.resources.order_detail_total_cost
 import com.printbusinesskmp.shared.resources.order_form_button_add_item
+import com.printbusinesskmp.shared.resources.order_form_label_design_url_optional
+import com.printbusinesskmp.shared.resources.order_form_label_labor_time_min
+import com.printbusinesskmp.shared.resources.order_form_label_rate_uah_hour
 import com.printbusinesskmp.shared.resources.order_form_profit_margin_label
 import com.printbusinesskmp.shared.resources.order_items
 import com.printbusinesskmp.shared.resources.order_no_items
@@ -35,14 +80,27 @@ import com.printbusinesskmp.shared.resources.order_notes
 import com.printbusinesskmp.shared.resources.order_save
 import com.printbusinesskmp.shared.resources.order_select_client
 import com.printbusinesskmp.shared.resources.pricing_blank_cost
+import com.printbusinesskmp.shared.resources.pricing_breakdown
+import com.printbusinesskmp.shared.resources.pricing_calculate
+import com.printbusinesskmp.shared.resources.pricing_calculating
+import com.printbusinesskmp.shared.resources.pricing_calculator
+import com.printbusinesskmp.shared.resources.pricing_cost_per_item
 import com.printbusinesskmp.shared.resources.pricing_labor_cost
 import com.printbusinesskmp.shared.resources.pricing_manual_entry
+import com.printbusinesskmp.shared.resources.pricing_materials
+import com.printbusinesskmp.shared.resources.pricing_profit_margin
+import com.printbusinesskmp.shared.resources.pricing_profit_per_item
 import com.printbusinesskmp.shared.resources.pricing_selling_price
+import com.printbusinesskmp.shared.resources.pricing_selling_price_per_item
+import com.printbusinesskmp.shared.resources.pricing_success
+import com.printbusinesskmp.shared.resources.pricing_tax
 import com.printbusinesskmp.shared.resources.pricing_thermal_cost
 import com.printbusinesskmp.shared.resources.summary_cost
+import com.printbusinesskmp.shared.resources.summary_hide
 import com.printbusinesskmp.shared.resources.summary_price
 import com.printbusinesskmp.shared.resources.summary_profit
 import com.printbusinesskmp.shared.resources.summary_qty
+import com.printbusinesskmp.shared.resources.summary_show
 import com.printbusinesskmp.shared.resources.summary_total_cost
 import com.printbusinesskmp.shared.resources.summary_total_price
 import com.printbusinesskmp.shared.resources.summary_total_profit
@@ -662,7 +720,7 @@ private fun AddItemDialog(
                     OutlinedTextField(
                         value = quantity,
                         onValueChange = { if (it.all { c -> c.isDigit() }) quantity = it },
-                        label = { Text("Quantity") },
+                        label = { Text(stringResource(Res.string.item_quantity)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
@@ -676,13 +734,13 @@ private fun AddItemDialog(
                         OutlinedTextField(
                             value = size,
                             onValueChange = { size = it },
-                            label = { Text("Size") },
+                            label = { Text(stringResource(Res.string.item_size)) },
                             modifier = Modifier.weight(1f)
                         )
                         OutlinedTextField(
                             value = color,
                             onValueChange = { color = it },
-                            label = { Text("Color") },
+                            label = { Text(stringResource(Res.string.item_color)) },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -691,7 +749,7 @@ private fun AddItemDialog(
                 item {
                     // Print Area
                     Text(
-                        text = "Print Area",
+                        text = stringResource(Res.string.item_print_area),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(bottom = 4.dp)
@@ -732,7 +790,7 @@ private fun AddItemDialog(
                     OutlinedTextField(
                         value = designUrl,
                         onValueChange = { designUrl = it },
-                        label = { Text("Design URL (Optional)") },
+                        label = { Text(stringResource(Res.string.order_form_label_design_url_optional)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -740,7 +798,7 @@ private fun AddItemDialog(
                 item {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     Text(
-                        text = "Pricing Calculator",
+                        text = stringResource(Res.string.pricing_calculator),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = PrimaryBlue
@@ -755,14 +813,14 @@ private fun AddItemDialog(
                         OutlinedTextField(
                             value = laborMinutes,
                             onValueChange = { if (it.all { c -> c.isDigit() }) laborMinutes = it },
-                            label = { Text("Labor Time (min)") },
+                            label = { Text(stringResource(Res.string.order_form_label_labor_time_min)) },
                             modifier = Modifier.weight(1f),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
                         OutlinedTextField(
                             value = laborRatePerHour,
                             onValueChange = { laborRatePerHour = it },
-                            label = { Text("Rate (грн./hour)") },
+                            label = { Text(stringResource(Res.string.order_form_label_rate_uah_hour)) },
                             modifier = Modifier.weight(1f),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                         )
@@ -772,7 +830,10 @@ private fun AddItemDialog(
                 item {
                     Column {
                         Text(
-                            text = "Profit Margin: ${profitMarginPercent.toInt()}%",
+                            text = stringResource(
+                                Res.string.order_form_profit_margin_label,
+                                profitMarginPercent.toInt().toString()
+                            ),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.padding(bottom = 8.dp)
@@ -799,9 +860,9 @@ private fun AddItemDialog(
                                 color = White
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Calculating...", color = White)
+                            Text(stringResource(Res.string.pricing_calculating), color = White)
                         } else {
-                            Text("Calculate Costs", color = White)
+                            Text(stringResource(Res.string.pricing_calculate), color = White)
                         }
                     }
                 }
@@ -819,7 +880,7 @@ private fun AddItemDialog(
                                 Text("✓", fontSize = 20.sp, color = Success)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    "Prices calculated successfully",
+                                    stringResource(Res.string.pricing_success),
                                     fontSize = 14.sp,
                                     color = Success,
                                     fontWeight = FontWeight.Medium
@@ -858,13 +919,20 @@ private fun AddItemDialog(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        "Cost Breakdown",
+                                        stringResource(Res.string.pricing_breakdown),
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Success
                                     )
                                     TextButton(onClick = { showBreakdown = !showBreakdown }) {
-                                        Text(if (showBreakdown) "Hide" else "Show", color = Success)
+                                        Text(
+                                            text = if (showBreakdown) {
+                                                stringResource(Res.string.summary_hide)
+                                            } else stringResource(
+                                                Res.string.summary_show
+                                            ),
+                                            color = Success
+                                        )
                                     }
                                 }
 
@@ -877,7 +945,11 @@ private fun AddItemDialog(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Total Materials:", fontSize = 14.sp, color = Success)
+                                    Text(
+                                        stringResource(resource = Res.string.pricing_materials),
+                                        fontSize = 14.sp,
+                                        color = Success
+                                    )
                                     Text(
                                         FormatUtils.formatCurrency(breakdown.materialsCost),
                                         fontSize = 14.sp,
@@ -889,7 +961,12 @@ private fun AddItemDialog(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Labor Cost:", fontSize = 14.sp, color = Success)
+                                    Text(
+                                        text =
+                                            stringResource(Res.string.pricing_labor_cost),
+                                        fontSize = 14.sp,
+                                        color = Success
+                                    )
                                     Text(
                                         FormatUtils.formatCurrency(breakdown.laborCost),
                                         fontSize = 14.sp,
@@ -901,7 +978,11 @@ private fun AddItemDialog(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Total Cost per item:", fontSize = 14.sp, color = Success)
+                                    Text(
+                                        stringResource(Res.string.pricing_cost_per_item),
+                                        fontSize = 14.sp,
+                                        color = Success
+                                    )
                                     Text(
                                         FormatUtils.formatCurrency(breakdown.totalCost / qty),
                                         fontSize = 14.sp,
@@ -915,7 +996,7 @@ private fun AddItemDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        "Selling Price per item:",
+                                        text = stringResource(Res.string.pricing_selling_price_per_item),
                                         fontSize = 14.sp,
                                         color = PrimaryBlue
                                     )
@@ -930,7 +1011,11 @@ private fun AddItemDialog(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Tax (5%):", fontSize = 14.sp, color = Success)
+                                    Text(
+                                        text = stringResource(Res.string.pricing_tax),
+                                        fontSize = 14.sp,
+                                        color = Success
+                                    )
                                     Text(
                                         FormatUtils.formatCurrency(breakdown.simplifiedTax),
                                         fontSize = 14.sp,
@@ -942,7 +1027,10 @@ private fun AddItemDialog(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Profit per item:", fontSize = 14.sp, color = Success)
+                                    Text(
+                                        text = stringResource(Res.string.pricing_profit_per_item),
+                                        fontSize = 14.sp, color = Success
+                                    )
                                     Text(
                                         FormatUtils.formatCurrency(breakdown.actualProfit / qty),
                                         fontSize = 14.sp,
@@ -954,7 +1042,10 @@ private fun AddItemDialog(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Profit Margin:", fontSize = 14.sp, color = Success)
+                                    Text(
+                                        stringResource(Res.string.pricing_profit_margin),
+                                        fontSize = 14.sp, color = Success
+                                    )
                                     Text(
                                         "${breakdown.profitMarginPercent.toInt()}%",
                                         fontSize = 14.sp,

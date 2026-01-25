@@ -165,7 +165,8 @@ fun OrderDetailScreen(
                                                         ApiClient.updateOrderStatus(orderId, status)
                                                         loadOrder()
                                                     } catch (e: Exception) {
-                                                        errorMessage = "Failed to update status: ${e.message}"
+                                                        errorMessage =
+                                                            "Failed to update status: ${e.message}"
                                                     }
                                                 }
                                             },
@@ -232,7 +233,10 @@ fun OrderDetailScreen(
 
                                         if (item.size != null || item.color != null) {
                                             Text(
-                                                text = listOfNotNull(item.size, item.color).joinToString(", "),
+                                                text = listOfNotNull(
+                                                    item.size,
+                                                    item.color
+                                                ).joinToString(", "),
                                                 fontSize = 14.sp,
                                                 color = MediumGray
                                             )
@@ -281,7 +285,11 @@ fun OrderDetailScreen(
                                                     color = DarkSlate
                                                 )
                                                 Text(
-                                                    text = "Profit: ${FormatUtils.formatCurrency(item.profit)}",
+                                                    text = "Profit: ${
+                                                        FormatUtils.formatCurrency(
+                                                            item.profit
+                                                        )
+                                                    }",
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.SemiBold,
                                                     color = if (item.profit >= 0) Success else Color(
@@ -312,8 +320,14 @@ fun OrderDetailScreen(
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
 
-                            SummaryRow("Total Cost", FormatUtils.formatCurrency(currentOrder.totalCost))
-                            SummaryRow("Total Price", FormatUtils.formatCurrency(currentOrder.totalPrice))
+                            SummaryRow(
+                                "Total Cost",
+                                FormatUtils.formatCurrency(currentOrder.totalCost)
+                            )
+                            SummaryRow(
+                                "Total Price",
+                                FormatUtils.formatCurrency(currentOrder.totalPrice)
+                            )
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                             SummaryRow(
                                 "Total Profit",
@@ -372,7 +386,9 @@ fun OrderDetailScreen(
                                                 loadOrder() // Reload to update invoiceGenerated flag
                                                 isGeneratingInvoice = false
                                             } catch (e: Exception) {
-                                                invoiceGenerationError = "Помилка генерації рахунку: ${e.message}"
+                                                e.printStackTrace()
+                                                invoiceGenerationError =
+                                                    "Помилка генерації рахунку: ${e.message}"
                                                 isGeneratingInvoice = false
                                             }
                                         }
@@ -417,7 +433,8 @@ fun OrderDetailScreen(
                             confirmButton = {
                                 Button(
                                     onClick = {
-                                        val downloadUrl = ApiClient.getInvoiceDownloadUrl(generatedInvoiceId!!)
+                                        val downloadUrl =
+                                            ApiClient.getInvoiceDownloadUrl(generatedInvoiceId!!)
                                         kotlinx.browser.window.open(downloadUrl, "_blank")
                                         showSuccessDialog = false
                                     },

@@ -8,7 +8,7 @@ object InvoicesTable : Table("invoices") {
     val id = varchar("id", 36)
     val number = integer("number").autoIncrement()
     val date = timestamp("date")
-    val orderId = varchar("order_id", 36).references(OrdersTable.id)
+    val orderId = varchar("order_id", 36).references(OrdersTable.id).nullable()
     val clientName = varchar("client_name", 255)
     val clientPhone = varchar("client_phone", 50)
     val clientEmail = varchar("client_email", 255).nullable()
