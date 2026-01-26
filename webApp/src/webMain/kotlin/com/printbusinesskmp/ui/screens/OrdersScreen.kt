@@ -74,7 +74,7 @@ fun OrdersScreen(onNavigate: (Screen) -> Unit) {
             )
 
             Button(
-                onClick = { onNavigate(Screen.NewOrder) },
+                onClick = { onNavigate(Screen.OrderForm()) },
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
             ) {
                 Text(stringResource(Res.string.orders_new_button), color = White)

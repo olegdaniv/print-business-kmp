@@ -84,6 +84,17 @@ object ApiClient {
         }.body()
     }
 
+    suspend fun updateOrder(id: String, order: Order): Order {
+        return client.put("$BASE_URL/api/orders/$id") {
+            contentType(ContentType.Application.Json)
+            setBody(order)
+        }.body()
+    }
+
+    suspend fun deleteOrder(id: String) {
+        client.delete("$BASE_URL/api/orders/$id")
+    }
+
     // Pricing API functions
     suspend fun calculatePricing(request: PricingRequest): CostBreakdown {
         return client.post("$BASE_URL/api/pricing/calculate") {

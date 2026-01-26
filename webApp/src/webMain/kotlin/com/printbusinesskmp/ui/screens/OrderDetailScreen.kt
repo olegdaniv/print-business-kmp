@@ -76,8 +76,16 @@ fun OrderDetailScreen(
                 color = DarkSlate
             )
 
-            TextButton(onClick = { onNavigate(Screen.Orders) }) {
-                Text("← Back to Orders", color = PrimaryBlue)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { onNavigate(Screen.OrderForm(orderId)) },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                ) {
+                    Text("Edit Order", color = White)
+                }
+                TextButton(onClick = { onNavigate(Screen.Orders) }) {
+                    Text("← Back to Orders", color = PrimaryBlue)
+                }
             }
         }
 
@@ -446,6 +454,92 @@ fun OrderDetailScreen(
                             dismissButton = {
                                 TextButton(onClick = { showSuccessDialog = false }) {
                                     Text("Закрити")
+                                }
+                            }
+                        )
+                    }
+                }
+
+                item {
+                    // Delete Order Card
+                    var showDeleteDialog by remember { mutableStateOf(false) }
+                    var isDeleting by remember { mutableStateOf(false) }
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = White)
+                    ) {
+                        Column(modifier = Modifier.padding(24.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Danger Zone",
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = AppColors.Error
+                                    )
+                                    Text(
+                                        text = "Deleting an order cannot be undone",
+                                        fontSize = 14.sp,
+                                        color = MediumGray
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { showDeleteDialog = true },
+                                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Error),
+                                    enabled = !isDeleting
+                                ) {
+                                    if (isDeleting) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(20.dp),
+                                            color = White,
+                                            strokeWidth = 2.dp
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                    }
+                                    Text("Delete Order", color = White)
+                                }
+                            }
+                        }
+                    }
+
+                    if (showDeleteDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showDeleteDialog = false },
+                            title = { Text("Delete Order?") },
+                            text = {
+                                Text("Are you sure you want to delete this order? This action cannot be undone and will also delete all associated order items.")
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                isDeleting = true
+                                                ApiClient.deleteOrder(orderId)
+                                                showDeleteDialog = false
+                                                onNavigate(Screen.Orders)
+                                            } catch (e: Exception) {
+                                                errorMessage = "Failed to delete order: ${e.message}"
+                                                isDeleting = false
+                                                showDeleteDialog = false
+                                            }
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Error),
+                                    enabled = !isDeleting
+                                ) {
+                                    Text("Delete", color = White)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showDeleteDialog = false }) {
+                                    Text("Cancel")
                                 }
                             }
                         )

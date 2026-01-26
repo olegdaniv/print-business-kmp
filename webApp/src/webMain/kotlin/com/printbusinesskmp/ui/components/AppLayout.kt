@@ -90,7 +90,7 @@ private fun Sidebar(
 
         SidebarItem(
             text = stringResource(Res.string.nav_orders),
-            isSelected = currentScreen is Screen.Orders || currentScreen is Screen.OrderDetail || currentScreen is Screen.NewOrder,
+            isSelected = currentScreen is Screen.Orders || currentScreen is Screen.OrderDetail || currentScreen is Screen.OrderForm,
             onClick = { onNavigate(Screen.Orders) }
         )
 

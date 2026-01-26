@@ -158,11 +158,17 @@ data class OrderItemForm(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
+fun OrderFormScreen(
+    orderId: String? = null,
+    onNavigate: (Screen) -> Unit
+) {
+    val isEditMode = orderId != null
     var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
     var selectedClientId by remember { mutableStateOf<String?>(null) }
     var orderItems by remember { mutableStateOf<List<OrderItemForm>>(emptyList()) }
     var notes by remember { mutableStateOf("") }
+    var existingOrderStatus by remember { mutableStateOf(OrderStatus.NEW) }
+    var existingOrderCreatedAt by remember { mutableStateOf<kotlin.time.Instant?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -173,9 +179,39 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
         scope.launch {
             try {
                 clients = ApiClient.getClients()
+
+                // Load existing order if in edit mode
+                if (orderId != null) {
+                    val order = ApiClient.getOrder(orderId)
+                    selectedClientId = order.clientId
+                    notes = order.notes ?: ""
+                    existingOrderStatus = order.status
+                    existingOrderCreatedAt = order.createdAt
+                    orderItems = order.items.map { item ->
+                        OrderItemForm(
+                            id = item.id,
+                            productType = item.productType,
+                            quantity = item.quantity,
+                            size = item.size ?: "",
+                            color = item.color ?: "",
+                            printArea = item.printArea,
+                            designUrl = item.designUrl ?: "",
+                            blankItemCost = item.blankItemCost,
+                            thermalPaperCost = item.thermalPaperCost,
+                            laborCost = item.laborCost,
+                            sellingPrice = item.sellingPrice,
+                            laborMinutes = item.laborTimeUsed ?: 15,
+                            laborRatePerHour = item.laborRateUsed ?: 100.0,
+                            profitMarginPercent = item.profitMarginUsed ?: 50.0,
+                            isCalculated = item.laborTimeUsed != null,
+                            calculatedAt = item.calculatedAt
+                        )
+                    }
+                }
+
                 isLoading = false
             } catch (e: Exception) {
-//                errorMessage = "${Strings.failedToLoadClients()}: ${e.message}"
+                errorMessage = "Failed to load data: ${e.message}"
                 isLoading = false
             }
         }
@@ -184,12 +220,12 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
     fun handleSave() {
         val clientId = selectedClientId
         if (clientId == null) {
-//            errorMessage = Strings.pleaseSelectClient()
+            errorMessage = "Please select a client"
             return
         }
 
         if (orderItems.isEmpty()) {
-//            errorMessage = Strings.pleaseAddAtLeastOneItem()
+            errorMessage = "Please add at least one item"
             return
         }
 
@@ -201,19 +237,23 @@ fun OrderFormScreen(onNavigate: (Screen) -> Unit) {
                 val items = orderItems.map { item -> item.toOrderItem() }
 
                 val order = Order.create(
-                    id = "",
+                    id = orderId ?: "",
                     clientId = clientId,
                     items = items,
-                    status = OrderStatus.NEW,
-                    createdAt = now,
+                    status = if (isEditMode) existingOrderStatus else OrderStatus.NEW,
+                    createdAt = existingOrderCreatedAt ?: now,
                     updatedAt = now,
                     notes = notes.ifBlank { null }
                 )
 
-                ApiClient.createOrder(order)
+                if (orderId != null) {
+                    ApiClient.updateOrder(orderId, order)
+                } else {
+                    ApiClient.createOrder(order)
+                }
                 onNavigate(Screen.Orders)
             } catch (e: Exception) {
-//                errorMessage = "${Strings.failedToCreateOrder()}: ${e.message}"
+                errorMessage = "Failed to save order: ${e.message}"
                 isSaving = false
             }
         }
