@@ -33,7 +33,6 @@ import com.printbusinesskmp.shared.resources.order_form_enhanced_quick_calculate
 import com.printbusinesskmp.shared.resources.pricing_breakdown
 import com.printbusinesskmp.shared.resources.pricing_cost_per_item
 import com.printbusinesskmp.shared.resources.pricing_labor
-import com.printbusinesskmp.shared.resources.pricing_labor_cost
 import com.printbusinesskmp.shared.resources.pricing_materials
 import com.printbusinesskmp.shared.resources.pricing_profit_margin
 import com.printbusinesskmp.shared.resources.pricing_profit_per_item

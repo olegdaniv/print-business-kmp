@@ -5,22 +5,22 @@ import kotlin.time.Instant
 
 @Serializable
 data class Invoice(
-    val id: String,
-    val number: Int,
-    val date: Instant,
+    val id: String = "",
+    val number: Int = 0,
+    val date: Instant = Instant.fromEpochMilliseconds(0),
     val orderId: String? = null,
-    val client: InvoiceClient,
-    val items: List<InvoiceItem>,
-    val totalAmount: Double,
+    val client: InvoiceClient = InvoiceClient(),
+    val items: List<InvoiceItem> = emptyList(),
+    val totalAmount: Double = 0.0,
     val notes: String? = null,
-    val generatedAt: Instant,
+    val generatedAt: Instant = Instant.fromEpochMilliseconds(0),
     val filePath: String? = null
 )
 
 @Serializable
 data class InvoiceClient(
-    val name: String,
-    val phone: String,
+    val name: String = "",
+    val phone: String = "",
     val email: String? = null,
     val address: String? = null
 )
