@@ -34,7 +34,9 @@ dependencies {
     implementation(libs.exposed.dao)
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.javaTime)
-    implementation(libs.h2)
+    implementation(libs.h2)  // Keep for local development
+    implementation(libs.postgres)
+    implementation(libs.hikari)
 
     // PDF Generation
     implementation("com.itextpdf:itext7-core:7.2.5")
@@ -45,4 +47,10 @@ dependencies {
     // Testing
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
+}
+
+ktor {
+    fatJar {
+        archiveFileName.set("server-all.jar")
+    }
 }
