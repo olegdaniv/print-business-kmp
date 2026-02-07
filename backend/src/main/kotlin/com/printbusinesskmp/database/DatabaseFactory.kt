@@ -1,10 +1,13 @@
 package com.printbusinesskmp.database
 
+import com.printbusinesskmp.database.tables.BusinessProfilesTable
 import com.printbusinesskmp.database.tables.ClientsTable
-import com.printbusinesskmp.database.tables.InvoiceItemsTable
+import com.printbusinesskmp.database.tables.InvoiceLinesTable
 import com.printbusinesskmp.database.tables.InvoicesTable
 import com.printbusinesskmp.database.tables.OrderItemsTable
 import com.printbusinesskmp.database.tables.OrdersTable
+import com.printbusinesskmp.database.tables.OutsourceJobsTable
+import com.printbusinesskmp.database.tables.PartnersTable
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.Dispatchers
@@ -17,10 +20,8 @@ object DatabaseFactory {
 
     fun init() {
         val database = if (isDockerEnvironment()) {
-            // PostgreSQL configuration for Docker/Production
             Database.connect(createHikariDataSource())
         } else {
-            // H2 in-memory database for local development
             Database.connect(
                 url = "jdbc:h2:mem:printbusiness;DB_CLOSE_DELAY=-1",
                 driver = "org.h2.Driver",
@@ -30,14 +31,17 @@ object DatabaseFactory {
         }
 
         transaction(database) {
-            SchemaUtils.create(ClientsTable)
-            SchemaUtils.create(OrdersTable)
-            SchemaUtils.create(OrderItemsTable)
-            SchemaUtils.create(InvoicesTable)
-            SchemaUtils.create(InvoiceItemsTable)
+            SchemaUtils.createMissingTablesAndColumns(
+                ClientsTable,
+                BusinessProfilesTable,
+                OrdersTable,
+                OrderItemsTable,
+                PartnersTable,
+                OutsourceJobsTable,
+                InvoicesTable,
+                InvoiceLinesTable
+            )
         }
-
-        println("Database initialized: ${if (isDockerEnvironment()) "PostgreSQL" else "H2 (in-memory)"}")
     }
 
     private fun isDockerEnvironment(): Boolean {
@@ -57,18 +61,14 @@ object DatabaseFactory {
             username = dbUser
             password = dbPassword
 
-            // Connection pool settings
             maximumPoolSize = 10
             minimumIdle = 2
-            idleTimeout = 30000        // 30 seconds
-            connectionTimeout = 20000  // 20 seconds
-            maxLifetime = 1800000      // 30 minutes
-
-            // Validation
+            idleTimeout = 30_000
+            connectionTimeout = 20_000
+            maxLifetime = 1_800_000
             isAutoCommit = false
             transactionIsolation = "TRANSACTION_REPEATABLE_READ"
 
-            // Additional recommended settings
             addDataSourceProperty("cachePrepStmts", "true")
             addDataSourceProperty("prepStmtCacheSize", "250")
             addDataSourceProperty("prepStmtCacheSqlLimit", "2048")

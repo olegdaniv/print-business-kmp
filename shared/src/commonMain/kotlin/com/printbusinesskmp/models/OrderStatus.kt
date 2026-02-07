@@ -5,8 +5,15 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class OrderStatus {
     NEW,
-    IN_PROGRESS,
+    IN_PRODUCTION,
     READY,
     COMPLETED,
     CANCELLED
+}
+
+@Serializable
+enum class PaymentStatus {
+    UNPAID,
+    PARTIAL,
+    PAID
 }

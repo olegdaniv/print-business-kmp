@@ -35,6 +35,13 @@ object FormatUtils {
         return "$day.$month.${localDateTime.year} $hour:$minute"
     }
 
+    fun formatDecimal(value: Double): String {
+        val rounded = (value * 100).toInt() / 100.0
+        val intPart = rounded.toInt()
+        val decimalPart = kotlin.math.abs(((rounded - intPart) * 100).toInt())
+        return "$intPart.${decimalPart.toString().padStart(2, '0')}"
+    }
+
     fun formatPhone(phone: String): String {
         // Format Ukrainian phone numbers: +380 XX XXX XX XX
         if (phone.startsWith("+380") && phone.length == 13) {

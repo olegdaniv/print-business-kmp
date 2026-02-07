@@ -1,137 +1,175 @@
 package com.printbusinesskmp.repository
 
 import com.printbusinesskmp.database.DatabaseFactory.dbQuery
-import com.printbusinesskmp.database.tables.InvoiceItemsTable
+import com.printbusinesskmp.database.tables.InvoiceLinesTable
 import com.printbusinesskmp.database.tables.InvoicesTable
+import com.printbusinesskmp.models.ClientType
 import com.printbusinesskmp.models.Invoice
-import com.printbusinesskmp.models.InvoiceClient
-import com.printbusinesskmp.models.InvoiceItem
-import org.jetbrains.exposed.sql.*
+import com.printbusinesskmp.models.InvoiceClientSnapshot
+import com.printbusinesskmp.models.InvoiceLine
+import com.printbusinesskmp.models.InvoiceSellerSnapshot
+import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import java.util.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.update
+import java.time.LocalDate
+import java.util.UUID
 
 class InvoiceRepository {
 
     suspend fun allInvoices(): List<Invoice> = dbQuery {
-        InvoicesTable.selectAll().map { invoiceRow ->
-            val invoiceId = invoiceRow[InvoicesTable.id]
-            val items = getInvoiceItems(invoiceId)
-            toInvoice(invoiceRow, items)
+        InvoicesTable.selectAll().map { row ->
+            val invoiceId = row[InvoicesTable.id]
+            toInvoice(row, getLines(invoiceId))
         }
     }
 
     suspend fun invoiceById(id: String): Invoice? = dbQuery {
-        InvoicesTable.selectAll().where { InvoicesTable.id eq id }
-            .map { invoiceRow ->
-                val items = getInvoiceItems(id)
-                toInvoice(invoiceRow, items)
-            }
+        InvoicesTable.selectAll()
+            .where { InvoicesTable.id eq id }
+            .map { row -> toInvoice(row, getLines(id)) }
             .singleOrNull()
     }
 
     suspend fun invoicesByOrderId(orderId: String): List<Invoice> = dbQuery {
-        InvoicesTable.selectAll().where { InvoicesTable.orderId eq orderId }
-            .map { invoiceRow ->
-                val invoiceId = invoiceRow[InvoicesTable.id]
-                val items = getInvoiceItems(invoiceId)
-                toInvoice(invoiceRow, items)
+        InvoicesTable.selectAll()
+            .where { InvoicesTable.orderId eq orderId }
+            .map { row ->
+                val invoiceId = row[InvoicesTable.id]
+                toInvoice(row, getLines(invoiceId))
             }
     }
 
-    suspend fun getNextInvoiceNumber(): Int = dbQuery {
-        val maxNumber = InvoicesTable
-            .select(InvoicesTable.number)
-            .maxOfOrNull { it[InvoicesTable.number] } ?: 0
-        maxNumber + 1
+    suspend fun nextInvoiceNumber(): String = dbQuery {
+        val year = LocalDate.now().year
+        val prefix = "INV-$year-"
+
+        val maxForYear = InvoicesTable.selectAll()
+            .where { InvoicesTable.number like "$prefix%" }
+            .mapNotNull { row ->
+                row[InvoicesTable.number]
+                    .removePrefix(prefix)
+                    .toIntOrNull()
+            }
+            .maxOrNull() ?: 0
+
+        val next = maxForYear + 1
+        "$prefix${next.toString().padStart(4, '0')}"
     }
 
     suspend fun addInvoice(invoice: Invoice): Invoice = dbQuery {
-        val insertId = invoice.id.ifEmpty { UUID.randomUUID().toString() }
+        val id = invoice.id.ifBlank { UUID.randomUUID().toString() }
 
-        // Insert invoice
         InvoicesTable.insert {
-            it[id] = insertId
+            it[InvoicesTable.id] = id
             it[number] = invoice.number
-            it[date] = java.time.Instant.ofEpochMilli(invoice.date.toEpochMilliseconds())
             it[orderId] = invoice.orderId
+            it[issuedAt] = java.time.Instant.ofEpochMilli(invoice.issuedAt.toEpochMilliseconds())
+
+            it[sellerOwnerName] = invoice.seller.ownerName
+            it[sellerTaxId] = invoice.seller.taxId
+            it[sellerAddress] = invoice.seller.address
+            it[sellerIban] = invoice.seller.iban
+            it[sellerBankName] = invoice.seller.bankName
+            it[sellerTaxPercent] = invoice.seller.taxPercent
+
+            it[clientType] = invoice.client.type.name
             it[clientName] = invoice.client.name
+            it[clientAddress] = invoice.client.address
             it[clientPhone] = invoice.client.phone
             it[clientEmail] = invoice.client.email
-            it[clientAddress] = invoice.client.address
+
+            it[subtotal] = invoice.subtotal
+            it[taxAmount] = invoice.taxAmount
             it[totalAmount] = invoice.totalAmount
             it[notes] = invoice.notes
-            it[generatedAt] = java.time.Instant.ofEpochMilli(invoice.generatedAt.toEpochMilliseconds())
             it[filePath] = invoice.filePath
         }
 
-        // Insert invoice items
-        invoice.items.forEach { item ->
-            val itemId = UUID.randomUUID().toString()
-            InvoiceItemsTable.insert {
-                it[id] = itemId
-                it[invoiceId] = insertId
-                it[itemNumber] = item.number
-                it[description] = item.description
-                it[quantity] = item.quantity
-                it[unit] = item.unit
-                it[pricePerUnit] = item.pricePerUnit
-                it[totalPrice] = item.totalPrice
+        invoice.lines.forEach { line ->
+            InvoiceLinesTable.insert {
+                it[InvoiceLinesTable.id] = UUID.randomUUID().toString()
+                it[InvoiceLinesTable.invoiceId] = id
+                it[InvoiceLinesTable.lineNumber] = line.lineNumber
+                it[InvoiceLinesTable.description] = line.description
+                it[InvoiceLinesTable.quantity] = line.quantity
+                it[InvoiceLinesTable.unit] = line.unit
+                it[InvoiceLinesTable.usedMeters] = line.usedMeters
+                it[InvoiceLinesTable.unitPrice] = line.unitPrice
+                it[InvoiceLinesTable.lineTotal] = line.lineTotal
             }
         }
 
-        // Query directly within same transaction
-        val invoiceRow = InvoicesTable.selectAll().where { InvoicesTable.id eq insertId }.single()
-        val items = getInvoiceItems(insertId)
-        toInvoice(invoiceRow, items)
+        val row = InvoicesTable.selectAll().where { InvoicesTable.id eq id }.single()
+        toInvoice(row, getLines(id))
     }
 
     suspend fun updateInvoiceFilePath(id: String, filePath: String): Invoice? = dbQuery {
-        InvoicesTable.update({ InvoicesTable.id eq id }) {
+        val changed = InvoicesTable.update({ InvoicesTable.id eq id }) {
             it[InvoicesTable.filePath] = filePath
         }
-        invoiceById(id)
+
+        if (changed == 0) {
+            null
+        } else {
+            val row = InvoicesTable.selectAll().where { InvoicesTable.id eq id }.single()
+            toInvoice(row, getLines(id))
+        }
     }
 
     suspend fun deleteInvoice(id: String): Boolean = dbQuery {
-        InvoiceItemsTable.deleteWhere { invoiceId eq id }
+        InvoiceLinesTable.deleteWhere { invoiceId eq id }
         InvoicesTable.deleteWhere { InvoicesTable.id eq id } > 0
     }
 
-    private fun getInvoiceItems(invoiceId: String): List<InvoiceItem> {
-        return InvoiceItemsTable.selectAll().where { InvoiceItemsTable.invoiceId eq invoiceId }
-            .map { toInvoiceItem(it) }
+    private fun getLines(invoiceId: String): List<InvoiceLine> {
+        return InvoiceLinesTable.selectAll()
+            .where { InvoiceLinesTable.invoiceId eq invoiceId }
+            .map(::toLine)
     }
 
-    private fun toInvoice(row: ResultRow, items: List<InvoiceItem>): Invoice =
-        Invoice(
+    private fun toInvoice(row: ResultRow, lines: List<InvoiceLine>): Invoice {
+        return Invoice(
             id = row[InvoicesTable.id],
             number = row[InvoicesTable.number],
-            date = kotlin.time.Instant.fromEpochMilliseconds(
-                row[InvoicesTable.date].toEpochMilli()
+            orderId = row[InvoicesTable.orderId] ?: "",
+            issuedAt = kotlin.time.Instant.fromEpochMilliseconds(row[InvoicesTable.issuedAt].toEpochMilli()),
+            seller = InvoiceSellerSnapshot(
+                ownerName = row[InvoicesTable.sellerOwnerName],
+                taxId = row[InvoicesTable.sellerTaxId],
+                address = row[InvoicesTable.sellerAddress],
+                iban = row[InvoicesTable.sellerIban],
+                bankName = row[InvoicesTable.sellerBankName],
+                taxPercent = row[InvoicesTable.sellerTaxPercent]
             ),
-            orderId = row[InvoicesTable.orderId],
-            client = InvoiceClient(
+            client = InvoiceClientSnapshot(
+                type = ClientType.valueOf(row[InvoicesTable.clientType]),
                 name = row[InvoicesTable.clientName],
+                address = row[InvoicesTable.clientAddress],
                 phone = row[InvoicesTable.clientPhone],
-                email = row[InvoicesTable.clientEmail],
-                address = row[InvoicesTable.clientAddress]
+                email = row[InvoicesTable.clientEmail]
             ),
-            items = items,
+            lines = lines,
+            subtotal = row[InvoicesTable.subtotal],
+            taxAmount = row[InvoicesTable.taxAmount],
             totalAmount = row[InvoicesTable.totalAmount],
             notes = row[InvoicesTable.notes],
-            generatedAt = kotlin.time.Instant.fromEpochMilliseconds(
-                row[InvoicesTable.generatedAt].toEpochMilli()
-            ),
             filePath = row[InvoicesTable.filePath]
         )
+    }
 
-    private fun toInvoiceItem(row: ResultRow): InvoiceItem =
-        InvoiceItem(
-            number = row[InvoiceItemsTable.itemNumber],
-            description = row[InvoiceItemsTable.description],
-            quantity = row[InvoiceItemsTable.quantity],
-            unit = row[InvoiceItemsTable.unit],
-            pricePerUnit = row[InvoiceItemsTable.pricePerUnit],
-            totalPrice = row[InvoiceItemsTable.totalPrice]
+    private fun toLine(row: ResultRow): InvoiceLine {
+        return InvoiceLine(
+            lineNumber = row[InvoiceLinesTable.lineNumber],
+            description = row[InvoiceLinesTable.description],
+            quantity = row[InvoiceLinesTable.quantity],
+            unit = row[InvoiceLinesTable.unit],
+            usedMeters = row[InvoiceLinesTable.usedMeters],
+            unitPrice = row[InvoiceLinesTable.unitPrice],
+            lineTotal = row[InvoiceLinesTable.lineTotal]
         )
+    }
 }

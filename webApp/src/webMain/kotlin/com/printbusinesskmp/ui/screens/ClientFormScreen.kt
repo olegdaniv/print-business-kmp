@@ -1,8 +1,30 @@
 package com.printbusinesskmp.ui.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -10,256 +32,207 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.ClientCreateRequest
+import com.printbusinesskmp.models.ClientType
 import com.printbusinesskmp.models.ClientUpdateRequest
 import com.printbusinesskmp.navigation.Screen
-import com.printbusinesskmp.shared.resources.*
-import com.printbusinesskmp.theme.AppColors.DarkSlate
-import com.printbusinesskmp.theme.AppColors.PrimaryBlue
-import com.printbusinesskmp.theme.AppColors.White
-import com.printbusinesskmp.utils.ValidationErrorKeys
-import com.printbusinesskmp.utils.ValidationUtils
+import com.printbusinesskmp.theme.AppColors
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.getString
-import org.jetbrains.compose.resources.stringResource
 
-/**
- * Maps validation error keys to string resources.
- */
-@Composable
-private fun getValidationErrorString(errorKey: String): String {
-    return when (errorKey) {
-        ValidationErrorKeys.NAME_REQUIRED -> stringResource(Res.string.validation_name_required)
-        ValidationErrorKeys.PHONE_REQUIRED -> stringResource(Res.string.validation_phone_required)
-        ValidationErrorKeys.PHONE_FORMAT -> stringResource(Res.string.validation_phone_format)
-        ValidationErrorKeys.EMAIL_FORMAT -> stringResource(Res.string.validation_email_format)
-        else -> errorKey // Fallback to the key itself if not found
-    }
-}
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientFormScreen(
     clientId: String?,
     onNavigate: (Screen) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    val editMode = clientId != null
+
+    var type by remember { mutableStateOf(ClientType.PERSON) }
+    var displayName by remember { mutableStateOf("") }
+    var contactName by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var errors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
-    var isLoading by remember { mutableStateOf(clientId != null) }
-    var isSaving by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
+    var address by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
 
-    val isEditMode = clientId != null
+    var loading by remember { mutableStateOf(editMode) }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var typeExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(clientId) {
         if (clientId != null) {
-            scope.launch {
-                try {
-                    val client = ApiClient.getClient(clientId)
-                    name = client.name
-                    phone = client.phone
-                    email = client.email ?: ""
-                    isLoading = false
-                } catch (e: Exception) {
-                    errorMessage = getString(Res.string.error_client_load_failed) + ": ${e.message}"
-                    isLoading = false
-                }
-            }
-        }
-    }
-
-    fun handleSave() {
-        val validationErrors = ValidationUtils.validateClientForm(name, phone, email)
-        if (validationErrors.isNotEmpty()) {
-            errors = validationErrors
-            return
-        }
-
-        scope.launch {
             try {
-                isSaving = true
-
-                if (isEditMode) {
-                    val request = ClientUpdateRequest(
-                        name = name,
-                        phone = phone.replace(" ", ""),
-                        email = email.ifBlank { null }
-                    )
-                    ApiClient.updateClient(clientId, request)
-                } else {
-                    val request = ClientCreateRequest(
-                        name = name,
-                        phone = phone.replace(" ", ""),
-                        email = email.ifBlank { null }
-                    )
-                    ApiClient.createClient(request)
-                }
-
-                onNavigate(Screen.Clients)
+                val client = ApiClient.getClient(clientId)
+                type = client.type
+                displayName = client.displayName
+                contactName = client.contactName.orEmpty()
+                phone = client.phone
+                email = client.email.orEmpty()
+                address = client.address
+                notes = client.notes.orEmpty()
             } catch (e: Exception) {
-                errorMessage = getString(Res.string.error_save_client) + ": ${e.message}"
-                isSaving = false
+                error = e.message
+            } finally {
+                loading = false
             }
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Header
+    Column {
         Text(
-            text = if (isEditMode) stringResource(Res.string.client_form_title_edit) else stringResource(Res.string.client_form_title_new),
+            text = if (editMode) "Редагування клієнта" else "Новий клієнт",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
-            color = DarkSlate,
-            modifier = Modifier.padding(bottom = 24.dp)
+            color = AppColors.DarkSlate,
+            modifier = Modifier.padding(bottom = 20.dp)
         )
 
-        if (isLoading) {
+        if (loading) {
             CircularProgressIndicator()
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = White)
+            return@Column
+        }
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = AppColors.White),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    if (errorMessage != null) {
-                        Text(
-                            text = errorMessage ?: "",
-                            color = Color.Red,
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Тип: ${if (type == ClientType.PERSON) "Фізособа" else "Компанія"}")
+                    TextButton(onClick = { typeExpanded = true }) {
+                        Text("Змінити")
                     }
-
-                    // Name field
-                    Column {
-                        Text(
-                            text = stringResource(Res.string.client_form_label_name),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = DarkSlate,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        OutlinedTextField(
-                            value = name,
-                            onValueChange = {
-                                name = it
-                                errors = errors - "name"
-                            },
-                            placeholder = { Text(stringResource(Res.string.client_form_placeholder_name)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = errors.containsKey("name"),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = White,
-                                unfocusedContainerColor = White
-                            )
-                        )
-                        errors["name"]?.let { errorKey ->
-                            Text(
-                                text = getValidationErrorString(errorKey),
-                                color = Color.Red,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                    }
-
-                    // Phone field
-                    Column {
-                        Text(
-                            text = stringResource(Res.string.client_form_label_phone),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = DarkSlate,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        OutlinedTextField(
-                            value = phone,
-                            onValueChange = {
-                                phone = it
-                                errors = errors - "phone"
-                            },
-                            placeholder = { Text(stringResource(Res.string.client_form_placeholder_phone)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = errors.containsKey("phone"),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = White,
-                                unfocusedContainerColor = White
-                            )
-                        )
-                        errors["phone"]?.let { errorKey ->
-                            Text(
-                                text = getValidationErrorString(errorKey),
-                                color = Color.Red,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                    }
-
-                    // Email field
-                    Column {
-                        Text(
-                            text = stringResource(Res.string.client_form_label_email),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = DarkSlate,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = {
-                                email = it
-                                errors = errors - "email"
-                            },
-                            placeholder = { Text(stringResource(Res.string.client_form_placeholder_email)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = errors.containsKey("email"),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = White,
-                                unfocusedContainerColor = White
-                            )
-                        )
-                        errors["email"]?.let { errorKey ->
-                            Text(
-                                text = getValidationErrorString(errorKey),
-                                color = Color.Red,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                    }
-
-                    // Buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    DropdownMenu(
+                        expanded = typeExpanded,
+                        onDismissRequest = { typeExpanded = false }
                     ) {
-                        OutlinedButton(
-                            onClick = { onNavigate(Screen.Clients) },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(stringResource(Res.string.action_cancel))
-                        }
-
-                        Button(
-                            onClick = { handleSave() },
-                            modifier = Modifier.weight(1f),
-                            enabled = !isSaving,
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-                        ) {
-                            if (isSaving) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    color = White
-                                )
-                            } else {
-                                Text(stringResource(Res.string.action_save), color = White)
+                        DropdownMenuItem(
+                            text = { Text("Фізособа") },
+                            onClick = {
+                                type = ClientType.PERSON
+                                typeExpanded = false
                             }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Компанія") },
+                            onClick = {
+                                type = ClientType.COMPANY
+                                typeExpanded = false
+                            }
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = displayName,
+                    onValueChange = { displayName = it },
+                    label = { Text("Назва / Ім'я") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = contactName,
+                    onValueChange = { contactName = it },
+                    label = { Text("Контактна особа") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Телефон") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = { Text("Адреса") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Примітки") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (error != null) {
+                    Text(error ?: "", color = Color.Red)
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextButton(onClick = { onNavigate(Screen.Clients) }, modifier = Modifier.weight(1f)) {
+                        Text("Скасувати")
+                    }
+                    Button(
+                        onClick = {
+                            if (displayName.isBlank() || phone.isBlank() || address.isBlank()) {
+                                error = "Заповніть обов'язкові поля: назва, телефон, адреса"
+                                return@Button
+                            }
+
+                            saving = true
+                            error = null
+
+                            scope.launch {
+                                try {
+                                    if (editMode) {
+                                        ApiClient.updateClient(
+                                            clientId,
+                                            ClientUpdateRequest(
+                                                type = type,
+                                                displayName = displayName,
+                                                contactName = contactName.ifBlank { null },
+                                                phone = phone,
+                                                email = email.ifBlank { null },
+                                                address = address,
+                                                notes = notes.ifBlank { null }
+                                            )
+                                        )
+                                    } else {
+                                        ApiClient.createClient(
+                                            ClientCreateRequest(
+                                                type = type,
+                                                displayName = displayName,
+                                                contactName = contactName.ifBlank { null },
+                                                phone = phone,
+                                                email = email.ifBlank { null },
+                                                address = address,
+                                                notes = notes.ifBlank { null }
+                                            )
+                                        )
+                                    }
+                                    onNavigate(Screen.Clients)
+                                } catch (e: Exception) {
+                                    error = e.message ?: "Помилка збереження"
+                                } finally {
+                                    saving = false
+                                }
+                            }
+                        },
+                        enabled = !saving,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
+                    ) {
+                        if (saving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = AppColors.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Зберегти", color = AppColors.White)
                         }
                     }
                 }

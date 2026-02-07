@@ -1,48 +1,50 @@
 package com.printbusinesskmp.models
 
-import kotlinx.serialization.Serializable
 import kotlin.time.Instant
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class Invoice(
-    val id: String = "",
-    val number: Int = 0,
-    val date: Instant = Instant.fromEpochMilliseconds(0),
-    val orderId: String? = null,
-    val client: InvoiceClient = InvoiceClient(),
-    val items: List<InvoiceItem> = emptyList(),
-    val totalAmount: Double = 0.0,
+    val id: String,
+    val number: String,
+    val orderId: String,
+    val issuedAt: Instant,
+    val seller: InvoiceSellerSnapshot,
+    val client: InvoiceClientSnapshot,
+    val lines: List<InvoiceLine>,
+    val subtotal: Double,
+    val taxAmount: Double,
+    val totalAmount: Double,
     val notes: String? = null,
-    val generatedAt: Instant = Instant.fromEpochMilliseconds(0),
     val filePath: String? = null
 )
 
 @Serializable
-data class InvoiceClient(
-    val name: String = "",
-    val phone: String = "",
-    val email: String? = null,
-    val address: String? = null
-)
-
-@Serializable
-data class InvoiceItem(
-    val number: Int,
+data class InvoiceLine(
+    val lineNumber: Int,
     val description: String,
     val quantity: Int,
-    val unit: String = "шт.",
-    val pricePerUnit: Double,
-    val totalPrice: Double
+    val unit: String = "шт",
+    val usedMeters: Double,
+    val unitPrice: Double,
+    val lineTotal: Double
 )
 
 @Serializable
-data class FopDetails(
-    val fullName: String = "Данів Олег Романович",
-    val taxId: String = "3387102533",
-    val address: String = "Україна, 80105, Львівська обл., м. Червоноград пр-т Шевченка, буд. 6, кв. 12",
-    val iban: String = "UA653510050000026007879179119",
-    val bank: String = "АТ «УКРСИББАНК»",
-    val mfo: String = "351005",
-    val phone: String = "+380636355264",
-    val email: String = "oleg.daniv25@gmail.com"
+data class InvoiceSellerSnapshot(
+    val ownerName: String,
+    val taxId: String,
+    val address: String,
+    val iban: String,
+    val bankName: String,
+    val taxPercent: Double
+)
+
+@Serializable
+data class InvoiceClientSnapshot(
+    val type: ClientType,
+    val name: String,
+    val address: String,
+    val phone: String,
+    val email: String? = null
 )

@@ -1,11 +1,25 @@
 package com.printbusinesskmp.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -14,128 +28,120 @@ import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.Order
+import com.printbusinesskmp.models.OrderStatus
 import com.printbusinesskmp.navigation.Screen
-import com.printbusinesskmp.shared.resources.Res
-import com.printbusinesskmp.shared.resources.dashboard_active_orders
-import com.printbusinesskmp.shared.resources.dashboard_recent_orders
-import com.printbusinesskmp.shared.resources.dashboard_total_clients
-import com.printbusinesskmp.shared.resources.dashboard_total_orders
-import com.printbusinesskmp.shared.resources.dashboard_total_profit
-import com.printbusinesskmp.shared.resources.dashboard_unknown_client
-import com.printbusinesskmp.shared.resources.error_load_data
-import com.printbusinesskmp.shared.resources.format_currency_suffix
-import com.printbusinesskmp.shared.resources.format_order_id_prefix
-import com.printbusinesskmp.shared.resources.nav_dashboard
 import com.printbusinesskmp.theme.AppColors
-import com.printbusinesskmp.theme.AppColors.DarkGrayText
-import com.printbusinesskmp.theme.AppColors.DarkSlate
-import com.printbusinesskmp.theme.AppColors.MediumGray
-import com.printbusinesskmp.theme.AppColors.StatusBackground.Cancelled
-import com.printbusinesskmp.theme.AppColors.StatusBackground.Completed
-import com.printbusinesskmp.theme.AppColors.StatusBackground.InProgress
-import com.printbusinesskmp.theme.AppColors.StatusBackground.New
-import com.printbusinesskmp.theme.AppColors.StatusBackground.Ready
-import com.printbusinesskmp.theme.AppColors.StatusText
-import com.printbusinesskmp.theme.AppColors.VeryLightBluGray
-import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.FormatUtils
-import org.jetbrains.compose.resources.getString
-import org.jetbrains.compose.resources.stringResource
+import com.printbusinesskmp.utils.labelUa
 
 @Composable
-fun DashboardScreen(onNavigate: (Screen) -> Unit) {
+fun DashboardScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> Unit) {
     var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
     var orders by remember { mutableStateOf<List<Order>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         try {
-            println("DashboardScreen: Fetching data from API...")
             clients = ApiClient.getClients()
-            println("DashboardScreen: Clients loaded - count: ${clients.size}")
             orders = ApiClient.getOrders()
-            println("DashboardScreen: Orders loaded - count: ${orders.size}")
-            isLoading = false
-            println("DashboardScreen: Data loading complete")
         } catch (e: Exception) {
-            println("DashboardScreen: Error - ${e.message}")
-            e.printStackTrace()
-            errorMessage = "${getString(Res.string.error_load_data)}: ${e.message}"
-            isLoading = false
+            error = e.message ?: "Помилка завантаження"
+        } finally {
+            loading = false
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column {
         Text(
-            text = stringResource(Res.string.nav_dashboard),
+            text = "Огляд",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
-            color = DarkSlate,
-            modifier = Modifier.padding(bottom = 24.dp)
+            color = AppColors.DarkSlate,
+            modifier = Modifier.padding(bottom = 20.dp)
         )
 
-        if (isLoading) {
+        if (loading) {
             CircularProgressIndicator()
-        } else if (errorMessage != null) {
-            Text(
-                text = errorMessage ?: "",
-                color = Color.Red,
-                fontSize = 16.sp
+            return@Column
+        }
+
+        if (error != null) {
+            Text(error ?: "", color = Color.Red)
+            return@Column
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            DashboardCard("Клієнти", clients.size.toString(), Modifier.weight(1f))
+            DashboardCard("Замовлення", orders.size.toString(), Modifier.weight(1f))
+            DashboardCard(
+                "Прибуток",
+                FormatUtils.formatCurrency(orders.sumOf { it.profit }),
+                Modifier.weight(1f)
             )
-        } else {
-            // Stats Cards
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                StatCard(
-                    title = stringResource(Res.string.dashboard_total_clients),
-                    value = clients.size.toString(),
-                    modifier = Modifier.weight(1f)
-                )
-
-                StatCard(
-                    title = stringResource(Res.string.dashboard_total_orders),
-                    value = orders.size.toString(),
-                    modifier = Modifier.weight(1f)
-                )
-
-                StatCard(
-                    title = stringResource(Res.string.dashboard_total_profit),
-                    value = FormatUtils.formatCurrency(orders.sumOf { it.totalProfit }, stringResource(Res.string.format_currency_suffix)),
-                    modifier = Modifier.weight(1f)
-                )
-
-                StatCard(
-                    title = stringResource(Res.string.dashboard_active_orders),
-                    value = orders.count { it.status.name != "COMPLETED" && it.status.name != "CANCELLED" }.toString(),
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Recent Orders
-            Text(
-                text = stringResource(Res.string.dashboard_recent_orders),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = DarkSlate,
-                modifier = Modifier.padding(bottom = 16.dp)
+            DashboardCard(
+                "Активні",
+                orders.count { it.status !in listOf(OrderStatus.COMPLETED, OrderStatus.CANCELLED) }
+                    .toString(),
+                Modifier.weight(1f)
             )
+        }
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = White)
-            ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(orders.take(5)) { order ->
-                        RecentOrderItem(order = order, clients = clients)
-                        if (order != orders.take(5).last()) {
-                            HorizontalDivider()
+        Text(
+            text = "Останні замовлення",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = AppColors.DarkSlate,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+
+        val clientById = clients.associateBy { it.id }
+        val recent = orders.sortedByDescending { it.updatedAt }.take(8)
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = AppColors.White),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            LazyColumn {
+                items(recent) { order ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = "#${order.id.take(8)}",
+                                fontWeight = FontWeight.SemiBold,
+                                color = AppColors.DarkSlate
+                            )
+                            Text(
+                                text = clientById[order.clientId]?.displayName ?: "Невідомий клієнт",
+                                color = AppColors.MediumGray,
+                                fontSize = 13.sp
+                            )
+                        }
+
+                        Column {
+                            Text(
+                                text = order.status.labelUa(),
+                                color = AppColors.DarkGrayText,
+                                fontSize = 12.sp
+                            )
+                            Text(
+                                text = FormatUtils.formatCurrency(order.totalPrice),
+                                color = AppColors.DarkSlate,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = FormatUtils.formatDate(order.updatedAt),
+                                color = AppColors.MediumGray,
+                                fontSize = 12.sp
+                            )
                         }
                     }
                 }
@@ -145,104 +151,19 @@ fun DashboardScreen(onNavigate: (Screen) -> Unit) {
 }
 
 @Composable
-private fun StatCard(
-    title: String,
-    value: String,
-    modifier: Modifier = Modifier
-) {
+private fun DashboardCard(title: String, value: String, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = White)
+        colors = CardDefaults.cardColors(containerColor = AppColors.White)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(title, color = AppColors.MediumGray, fontSize = 13.sp)
             Text(
-                text = title,
-                fontSize = 14.sp,
-                color = MediumGray,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Text(
-                text = value,
-                fontSize = 28.sp,
+                value,
+                color = AppColors.DarkSlate,
                 fontWeight = FontWeight.Bold,
-                color = DarkSlate
+                fontSize = 24.sp
             )
         }
-    }
-}
-
-@Composable
-private fun RecentOrderItem(order: Order, clients: List<Client>) {
-    val client = clients.find { it.id == order.clientId }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(Res.string.format_order_id_prefix, order.id.take(8)),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = DarkSlate
-            )
-            Text(
-                text = client?.name ?: stringResource(Res.string.dashboard_unknown_client),
-                fontSize = 14.sp,
-                color = MediumGray,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-
-        Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
-            StatusBadge(status = order.status.name)
-            Text(
-                text = FormatUtils.formatCurrency(order.totalPrice, stringResource(Res.string.format_currency_suffix)),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = DarkSlate,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatusBadge(status: String) {
-    val backgroundColor = when (status) {
-        "NEW" -> New
-        "IN_PROGRESS" -> InProgress
-        "READY" -> Ready
-        "COMPLETED" -> Completed
-        "CANCELLED" -> Cancelled
-        else -> VeryLightBluGray
-    }
-
-    val textColor = when (status) {
-        "NEW" -> StatusText.New
-        "IN_PROGRESS" -> StatusText.InProgress
-        "READY" -> StatusText.Ready
-        "COMPLETED" -> StatusText.Completed
-        "CANCELLED" -> StatusText.Cancelled
-        else -> DarkGrayText
-    }
-
-    Box(
-        modifier = Modifier
-            .background(backgroundColor, shape = MaterialTheme.shapes.small)
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-    ) {
-        Text(
-            text = status.replace("_", " "),
-            fontSize = 12.sp,
-            color = textColor,
-            fontWeight = FontWeight.Medium
-        )
     }
 }

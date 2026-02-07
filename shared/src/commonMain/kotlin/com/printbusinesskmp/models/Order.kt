@@ -1,53 +1,37 @@
 package com.printbusinesskmp.models
 
-import kotlinx.serialization.Serializable
 import kotlin.time.Instant
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class Order(
     val id: String,
     val clientId: String,
-    val items: List<OrderItem>,
     val status: OrderStatus,
-    val createdAt: Instant,
-    val updatedAt: Instant,
-    val completedAt: Instant? = null,
+    val paymentStatus: PaymentStatus,
+    val items: List<OrderItem>,
     val totalCost: Double,
     val totalPrice: Double,
-    val totalProfit: Double,
+    val profit: Double,
     val notes: String? = null,
-    val invoiceGenerated: Boolean = false
-) {
-    companion object {
-        fun create(
-            id: String,
-            clientId: String,
-            items: List<OrderItem>,
-            status: OrderStatus,
-            createdAt: Instant,
-            updatedAt: Instant,
-            completedAt: Instant? = null,
-            notes: String? = null,
-            invoiceGenerated: Boolean = false
-        ): Order {
-            val totalCost = items.sumOf { it.totalCost }
-            val totalPrice = items.sumOf { it.sellingPrice }
-            val totalProfit = totalPrice - totalCost
+    val createdAt: Instant,
+    val updatedAt: Instant
+)
 
-            return Order(
-                id = id,
-                clientId = clientId,
-                items = items,
-                status = status,
-                createdAt = createdAt,
-                updatedAt = updatedAt,
-                completedAt = completedAt,
-                totalCost = totalCost,
-                totalPrice = totalPrice,
-                totalProfit = totalProfit,
-                notes = notes,
-                invoiceGenerated = invoiceGenerated
-            )
-        }
-    }
-}
+@Serializable
+data class OrderCreateRequest(
+    val clientId: String,
+    val status: OrderStatus = OrderStatus.NEW,
+    val paymentStatus: PaymentStatus = PaymentStatus.UNPAID,
+    val items: List<OrderItemDraft>,
+    val notes: String? = null
+)
+
+@Serializable
+data class OrderUpdateRequest(
+    val clientId: String,
+    val status: OrderStatus,
+    val paymentStatus: PaymentStatus,
+    val items: List<OrderItemDraft>,
+    val notes: String? = null
+)

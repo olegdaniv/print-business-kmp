@@ -2,29 +2,25 @@ package com.printbusinesskmp.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.navigation.Screen
-import com.printbusinesskmp.shared.resources.Res
-import com.printbusinesskmp.shared.resources.app_name
-import com.printbusinesskmp.shared.resources.nav_calculator
-import com.printbusinesskmp.shared.resources.nav_clients
-import com.printbusinesskmp.shared.resources.nav_dashboard
-import com.printbusinesskmp.shared.resources.nav_orders
-import com.printbusinesskmp.theme.AppColors.DarkSlate
-import com.printbusinesskmp.theme.AppColors.LightGray
-import com.printbusinesskmp.theme.AppColors.LightGrayText
-import com.printbusinesskmp.theme.AppColors.PrimaryBlue
-import com.printbusinesskmp.theme.AppColors.Transparent
-import com.printbusinesskmp.theme.AppColors.White
-import org.jetbrains.compose.resources.stringResource
+import com.printbusinesskmp.theme.AppColors
 
 @Composable
 fun AppLayout(
@@ -33,17 +29,12 @@ fun AppLayout(
     content: @Composable () -> Unit
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
-        // Sidebar
-        Sidebar(
-            currentScreen = currentScreen,
-            onNavigate = onNavigate
-        )
+        Sidebar(currentScreen = currentScreen, onNavigate = onNavigate)
 
-        // Main content area
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(LightGray)
+                .background(AppColors.LightGray)
                 .padding(24.dp)
         ) {
             content()
@@ -58,86 +49,71 @@ private fun Sidebar(
 ) {
     Column(
         modifier = Modifier
-            .width(250.dp)
+            .width(260.dp)
             .fillMaxHeight()
-            .background(DarkSlate)
-            .padding(vertical = 24.dp)
+            .background(AppColors.DarkSlate)
+            .padding(vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // Logo/Title
         Text(
-            text = stringResource(Res.string.app_name),
+            text = "Print Business",
+            color = AppColors.White,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            color = White,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Navigation items
         SidebarItem(
-            text =
-                stringResource(Res.string.nav_dashboard),
-            isSelected = currentScreen is Screen.Dashboard,
+            text = "Огляд",
+            selected = currentScreen is Screen.Dashboard,
             onClick = { onNavigate(Screen.Dashboard) }
         )
-
         SidebarItem(
-            text = stringResource(Res.string.nav_clients),
-            isSelected = currentScreen is Screen.Clients || currentScreen is Screen.ClientDetail,
+            text = "Профіль ФОП",
+            selected = currentScreen is Screen.BusinessProfile,
+            onClick = { onNavigate(Screen.BusinessProfile) }
+        )
+        SidebarItem(
+            text = "Клієнти",
+            selected = currentScreen is Screen.Clients || currentScreen is Screen.ClientForm,
             onClick = { onNavigate(Screen.Clients) }
         )
-
         SidebarItem(
-            text = stringResource(Res.string.nav_orders),
-            isSelected = currentScreen is Screen.Orders || currentScreen is Screen.OrderDetail || currentScreen is Screen.OrderForm,
+            text = "Замовлення",
+            selected = currentScreen is Screen.Orders || currentScreen is Screen.OrderDetail || currentScreen is Screen.OrderForm,
             onClick = { onNavigate(Screen.Orders) }
         )
-
         SidebarItem(
             text = "Рахунки",
-            isSelected = currentScreen is Screen.Invoices,
+            selected = currentScreen is Screen.Invoices,
             onClick = { onNavigate(Screen.Invoices) }
         )
-
-        SidebarItem(
-            text = stringResource(Res.string.nav_calculator),
-            isSelected = currentScreen is Screen.PricingCalculator,
-            onClick = { onNavigate(Screen.PricingCalculator) }
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Language switcher
-        LanguageSwitcher()
-
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
 @Composable
 private fun SidebarItem(
     text: String,
-    isSelected: Boolean,
+    selected: Boolean,
     onClick: () -> Unit
 ) {
-    val backgroundColor = if (isSelected) PrimaryBlue else Transparent
-    val textColor = if (isSelected) White else LightGrayText
+    val background = if (selected) AppColors.PrimaryBlue else AppColors.Transparent
+    val color = if (selected) AppColors.White else AppColors.LightGrayText
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp)
-            .background(backgroundColor)
+            .height(46.dp)
+            .background(background)
             .clickable(onClick = onClick)
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         Text(
             text = text,
-            fontSize = 16.sp,
-            color = textColor,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+            color = color,
+            fontSize = 15.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
         )
     }
 }

@@ -3,68 +3,41 @@ package com.printbusinesskmp.models
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class OrderItem(
-    val id: String,
+data class PricingConfig(
+    val costPerMeter: Double,
+    val overheadPerOrder: Double,
+    val wastePercent: Double,
+    val setupFee: Double,
+    val minOrderPrice: Double,
+    val marginPercent: Double,
+    val taxPercent: Double? = null
+)
+
+@Serializable
+data class OrderItemDraft(
+    val serviceType: ServiceType,
     val productType: ProductType,
     val quantity: Int,
-    val size: String? = null,
-    val color: String? = null,
-    val printArea: PrintArea,
-    val designUrl: String? = null,
-    val blankItemCost: Double,
-    val thermalPaperCost: Double,
-    val laborCost: Double,
-    val totalCost: Double,
-    val sellingPrice: Double,
-    val profit: Double,
-    val notes: String? = null,
-    val laborTimeUsed: Int? = null,
-    val laborRateUsed: Double? = null,
-    val profitMarginUsed: Double? = null,
-    val calculatedAt: Long? = null
-) {
-    companion object {
-        fun create(
-            id: String,
-            productType: ProductType,
-            quantity: Int,
-            size: String? = null,
-            color: String? = null,
-            printArea: PrintArea,
-            designUrl: String? = null,
-            blankItemCost: Double,
-            thermalPaperCost: Double,
-            laborCost: Double,
-            sellingPrice: Double,
-            notes: String? = null,
-            laborTimeUsed: Int? = null,
-            laborRateUsed: Double? = null,
-            profitMarginUsed: Double? = null,
-            calculatedAt: Long? = null
-        ): OrderItem {
-            val totalCost = blankItemCost + thermalPaperCost + laborCost
-            val profit = sellingPrice - totalCost
+    val usedMeters: Double,
+    val garmentCost: Double,
+    val pricing: PricingConfig,
+    val manualPrice: Double? = null,
+    val notes: String? = null
+)
 
-            return OrderItem(
-                id = id,
-                productType = productType,
-                quantity = quantity,
-                size = size,
-                color = color,
-                printArea = printArea,
-                designUrl = designUrl,
-                blankItemCost = blankItemCost,
-                thermalPaperCost = thermalPaperCost,
-                laborCost = laborCost,
-                totalCost = totalCost,
-                sellingPrice = sellingPrice,
-                profit = profit,
-                notes = notes,
-                laborTimeUsed = laborTimeUsed,
-                laborRateUsed = laborRateUsed,
-                profitMarginUsed = profitMarginUsed,
-                calculatedAt = calculatedAt
-            )
-        }
-    }
-}
+@Serializable
+data class OrderItem(
+    val id: String,
+    val serviceType: ServiceType,
+    val productType: ProductType,
+    val quantity: Int,
+    val usedMeters: Double,
+    val garmentCost: Double,
+    val pricing: PricingConfig,
+    val manualPrice: Double? = null,
+    val cost: Double,
+    val price: Double,
+    val taxAmount: Double,
+    val profit: Double,
+    val notes: String? = null
+)

@@ -2,7 +2,14 @@ package com.printbusinesskmp.ui.components
 
 import androidx.compose.runtime.Composable
 import com.printbusinesskmp.navigation.Screen
-import com.printbusinesskmp.ui.screens.*
+import com.printbusinesskmp.ui.screens.BusinessProfileScreen
+import com.printbusinesskmp.ui.screens.ClientFormScreen
+import com.printbusinesskmp.ui.screens.ClientsScreen
+import com.printbusinesskmp.ui.screens.DashboardScreen
+import com.printbusinesskmp.ui.screens.InvoiceScreen
+import com.printbusinesskmp.ui.screens.OrderDetailScreen
+import com.printbusinesskmp.ui.screens.OrderFormScreen
+import com.printbusinesskmp.ui.screens.OrdersScreen
 
 @Composable
 fun NavigationContent(
@@ -10,22 +17,13 @@ fun NavigationContent(
     onNavigate: (Screen) -> Unit
 ) {
     when (currentScreen) {
-        is Screen.Dashboard -> DashboardScreen(onNavigate)
-        is Screen.Clients -> ClientsScreen(onNavigate)
-        is Screen.ClientDetail -> ClientFormScreen(
-            clientId = currentScreen.clientId,
-            onNavigate = onNavigate
-        )
-        is Screen.Orders -> OrdersScreen(onNavigate)
-        is Screen.OrderDetail -> OrderDetailScreen(
-            orderId = currentScreen.orderId,
-            onNavigate = onNavigate
-        )
-        is Screen.OrderForm -> OrderFormScreen(
-            orderId = currentScreen.orderId,
-            onNavigate = onNavigate
-        )
-        is Screen.Invoices -> InvoiceScreen(onNavigate)
-        is Screen.PricingCalculator -> PricingCalculatorScreen(onNavigate)
+        Screen.Dashboard -> DashboardScreen(onNavigate)
+        Screen.BusinessProfile -> BusinessProfileScreen(onNavigate)
+        Screen.Clients -> ClientsScreen(onNavigate)
+        is Screen.ClientForm -> ClientFormScreen(currentScreen.clientId, onNavigate)
+        Screen.Orders -> OrdersScreen(onNavigate)
+        is Screen.OrderForm -> OrderFormScreen(currentScreen.orderId, onNavigate)
+        is Screen.OrderDetail -> OrderDetailScreen(currentScreen.orderId, onNavigate)
+        Screen.Invoices -> InvoiceScreen(onNavigate)
     }
 }

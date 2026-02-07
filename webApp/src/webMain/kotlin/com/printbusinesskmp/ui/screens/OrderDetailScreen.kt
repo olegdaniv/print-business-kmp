@@ -1,10 +1,33 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.printbusinesskmp.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -13,621 +36,318 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.Client
+import com.printbusinesskmp.models.Invoice
 import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.models.OrderStatus
+import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
-import com.printbusinesskmp.theme.AppColors.CardItemBg
-import com.printbusinesskmp.theme.AppColors.DarkGrayText
-import com.printbusinesskmp.theme.AppColors.DarkSlate
-import com.printbusinesskmp.theme.AppColors.MediumGray
-import com.printbusinesskmp.theme.AppColors.PrimaryBlue
-import com.printbusinesskmp.theme.AppColors.StatusBackground
-import com.printbusinesskmp.theme.AppColors.StatusBackground.Ready
-import com.printbusinesskmp.theme.AppColors.StatusText
-import com.printbusinesskmp.theme.AppColors.Success
-import com.printbusinesskmp.theme.AppColors.VeryLightBluGray
-import com.printbusinesskmp.theme.AppColors.White
 import com.printbusinesskmp.utils.FormatUtils
+import com.printbusinesskmp.utils.labelUa
+import kotlinx.browser.window
 import kotlinx.coroutines.launch
 
 @Composable
-fun OrderDetailScreen(
-    orderId: String,
-    onNavigate: (Screen) -> Unit
-) {
-    var order by remember { mutableStateOf<Order?>(null) }
-    var client by remember { mutableStateOf<Client?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
     val scope = rememberCoroutineScope()
 
-    fun loadOrder() {
+    var order by remember { mutableStateOf<Order?>(null) }
+    var client by remember { mutableStateOf<Client?>(null) }
+    var invoices by remember { mutableStateOf<List<Invoice>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var info by remember { mutableStateOf<String?>(null) }
+
+    var selectedStatus by remember { mutableStateOf(OrderStatus.NEW) }
+    var selectedPayment by remember { mutableStateOf(PaymentStatus.UNPAID) }
+
+    var confirmDelete by remember { mutableStateOf(false) }
+    var processing by remember { mutableStateOf(false) }
+
+    fun reload() {
         scope.launch {
+            loading = true
+            error = null
             try {
-                isLoading = true
-                order = ApiClient.getOrder(orderId)
-                order?.let {
-                    client = ApiClient.getClient(it.clientId)
-                }
-                isLoading = false
+                val loadedOrder = ApiClient.getOrder(orderId)
+                order = loadedOrder
+                selectedStatus = loadedOrder.status
+                selectedPayment = loadedOrder.paymentStatus
+                client = ApiClient.getClient(loadedOrder.clientId)
+                invoices = ApiClient.getInvoicesByOrderId(orderId)
             } catch (e: Exception) {
-                errorMessage = "Failed to load order: ${e.message}"
-                isLoading = false
+                error = e.message ?: "Помилка завантаження"
+            } finally {
+                loading = false
             }
         }
     }
 
-    LaunchedEffect(orderId) {
-        loadOrder()
-    }
+    LaunchedEffect(orderId) { reload() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Header
+    Column {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Order Details",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = DarkSlate
-            )
-
+            Text("Замовлення #${orderId.take(8)}", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = AppColors.DarkSlate)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = { onNavigate(Screen.OrderForm(orderId)) },
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-                ) {
-                    Text("Edit Order", color = White)
+                TextButton(onClick = { onNavigate(Screen.OrderForm(orderId)) }) {
+                    Text("Редагувати")
                 }
                 TextButton(onClick = { onNavigate(Screen.Orders) }) {
-                    Text("← Back to Orders", color = PrimaryBlue)
+                    Text("Назад")
                 }
             }
         }
 
-        if (isLoading) {
+        if (loading) {
             CircularProgressIndicator()
-        } else if (errorMessage != null) {
-            Text(
-                text = errorMessage ?: "",
-                color = Color.Red,
-                fontSize = 16.sp
-            )
+            return@Column
         }
 
-        val currentOrder = order
-        if (currentOrder != null) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                item {
-                    // Order Info Card
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = White)
-                    ) {
-                        Column(modifier = Modifier.padding(24.dp)) {
-                            Text(
-                                text = "Order Information",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = DarkSlate,
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            )
+        if (error != null) {
+            Text(error ?: "", color = Color.Red)
+            return@Column
+        }
 
-                            InfoRow("Order ID", "#${currentOrder.id}")
-                            InfoRow("Client", client?.name ?: "Unknown")
-                            InfoRow("Status", "")
-                            Box(modifier = Modifier.padding(start = 120.dp, top = 4.dp)) {
-                                StatusBadge(status = currentOrder.status.name)
-                            }
-                            InfoRow("Created", FormatUtils.formatDateTime(currentOrder.createdAt))
-                            InfoRow("Updated", FormatUtils.formatDateTime(currentOrder.updatedAt))
-                            currentOrder.completedAt?.let {
-                                InfoRow("Completed", FormatUtils.formatDateTime(it))
-                            }
+        val current = order ?: return@Column
 
-                            if (currentOrder.notes != null) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "Notes:",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MediumGray
-                                )
-                                Text(
-                                    text = currentOrder.notes ?: "",
-                                    fontSize = 14.sp,
-                                    color = DarkSlate,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
-                            }
+        Card(
+            colors = CardDefaults.cardColors(containerColor = AppColors.White),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Клієнт: ${client?.displayName ?: "-"}")
+                Text("Створено: ${FormatUtils.formatDateTime(current.createdAt)}")
+                Text("Оновлено: ${FormatUtils.formatDateTime(current.updatedAt)}")
 
-                            // Status Update
-                            if (currentOrder.status != OrderStatus.COMPLETED && currentOrder.status != OrderStatus.CANCELLED) {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                HorizontalDivider()
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Text(
-                                    text = "Update Status",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MediumGray,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    OrderStatus.entries.forEach { status ->
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    try {
-                                                        ApiClient.updateOrderStatus(orderId, status)
-                                                        loadOrder()
-                                                    } catch (e: Exception) {
-                                                        errorMessage =
-                                                            "Failed to update status: ${e.message}"
-                                                    }
-                                                }
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = if (status == currentOrder.status) PrimaryBlue else Color(
-                                                    0xFFE2E8F0
-                                                )
-                                            )
-                                        ) {
-                                            Text(
-                                                text = status.name.replace("_", " "),
-                                                color = if (status == currentOrder.status) White else Color(
-                                                    0xFF64748B
-                                                ),
-                                                fontSize = 12.sp
-                                            )
-                                        }
-                                    }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    EnumField(
+                        label = "Статус",
+                        values = OrderStatus.entries,
+                        selected = selectedStatus,
+                        onSelect = { selectedStatus = it },
+                        textMapper = { it.labelUa() },
+                        modifier = Modifier.weight(1f)
+                    )
+                    EnumField(
+                        label = "Оплата",
+                        values = PaymentStatus.entries,
+                        selected = selectedPayment,
+                        onSelect = { selectedPayment = it },
+                        textMapper = { it.labelUa() },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(
+                        onClick = {
+                            processing = true
+                            scope.launch {
+                                try {
+                                    ApiClient.updateOrderState(
+                                        id = orderId,
+                                        status = selectedStatus,
+                                        paymentStatus = selectedPayment
+                                    )
+                                    info = "Статус оновлено"
+                                    reload()
+                                } catch (e: Exception) {
+                                    error = e.message ?: "Не вдалося оновити статус"
+                                } finally {
+                                    processing = false
                                 }
                             }
+                        },
+                        enabled = !processing,
+                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
+                    ) {
+                        Text("Оновити", color = AppColors.White)
+                    }
+                }
+
+                current.notes?.takeIf { it.isNotBlank() }?.let { note ->
+                    Text("Примітки: $note", color = AppColors.MediumGray)
+                }
+            }
+        }
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = AppColors.White),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Позиції", fontWeight = FontWeight.SemiBold)
+                current.items.forEach { item ->
+                    Card(colors = CardDefaults.cardColors(containerColor = AppColors.CardItemBg)) {
+                        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("${item.serviceType.labelUa()} / ${item.productType.labelUa()}", fontWeight = FontWeight.SemiBold)
+                            Text("К-сть: ${item.quantity}, метри: ${FormatUtils.formatDecimal(item.usedMeters)}", fontSize = 13.sp)
+                            Text("Собівартість: ${FormatUtils.formatCurrency(item.cost)}", fontSize = 13.sp)
+                            Text("Ціна: ${FormatUtils.formatCurrency(item.price)}", fontSize = 13.sp)
+                            Text(
+                                "Прибуток: ${FormatUtils.formatCurrency(item.profit)}",
+                                color = if (item.profit >= 0) AppColors.Success else AppColors.Error,
+                                fontSize = 13.sp
+                            )
                         }
                     }
                 }
 
-                item {
-                    // Order Items Card
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = White)
-                    ) {
-                        Column(modifier = Modifier.padding(24.dp)) {
-                            Text(
-                                text = "Order Items (${currentOrder.items.size})",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = DarkSlate,
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            )
+                HorizontalDivider()
+                Text("Собівартість: ${FormatUtils.formatCurrency(current.totalCost)}")
+                Text("Ціна: ${FormatUtils.formatCurrency(current.totalPrice)}")
+                Text(
+                    "Прибуток: ${FormatUtils.formatCurrency(current.profit)}",
+                    color = if (current.profit >= 0) AppColors.Success else AppColors.Error,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
 
-                            currentOrder.items.forEach { item ->
-                                Card(
-                                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = CardItemBg)
-                                ) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Text(
-                                                text = item.productType.name.replace("_", " "),
-                                                fontSize = 16.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = DarkSlate
-                                            )
-                                            Text(
-                                                text = "Qty: ${item.quantity}",
-                                                fontSize = 14.sp,
-                                                color = MediumGray
-                                            )
-                                        }
+        Card(
+            colors = CardDefaults.cardColors(containerColor = AppColors.White),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Рахунки", fontWeight = FontWeight.SemiBold)
 
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        if (item.size != null || item.color != null) {
-                                            Text(
-                                                text = listOfNotNull(
-                                                    item.size,
-                                                    item.color
-                                                ).joinToString(", "),
-                                                fontSize = 14.sp,
-                                                color = MediumGray
-                                            )
-                                        }
-
-                                        Text(
-                                            text = "Print Area: ${item.printArea.name}",
-                                            fontSize = 14.sp,
-                                            color = MediumGray
-                                        )
-
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Column {
-                                                Text(
-                                                    text = "Costs",
-                                                    fontSize = 12.sp,
-                                                    color = MediumGray
-                                                )
-                                                Text(
-                                                    text = "Blank: ${FormatUtils.formatCurrency(item.blankItemCost)}",
-                                                    fontSize = 12.sp,
-                                                    color = DarkSlate
-                                                )
-                                                Text(
-                                                    text = "Paper: ${FormatUtils.formatCurrency(item.thermalPaperCost)}",
-                                                    fontSize = 12.sp,
-                                                    color = DarkSlate
-                                                )
-                                                Text(
-                                                    text = "Labor: ${FormatUtils.formatCurrency(item.laborCost)}",
-                                                    fontSize = 12.sp,
-                                                    color = DarkSlate
-                                                )
-                                            }
-
-                                            Column(horizontalAlignment = Alignment.End) {
-                                                Text(
-                                                    text = "Price: ${FormatUtils.formatCurrency(item.sellingPrice)}",
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    color = DarkSlate
-                                                )
-                                                Text(
-                                                    text = "Profit: ${
-                                                        FormatUtils.formatCurrency(
-                                                            item.profit
-                                                        )
-                                                    }",
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    color = if (item.profit >= 0) Success else Color(
-                                                        0xFFEF4444
-                                                    )
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
+                Button(
+                    onClick = {
+                        processing = true
+                        scope.launch {
+                            try {
+                                ApiClient.generateInvoice(orderId)
+                                info = "Рахунок згенеровано"
+                                reload()
+                            } catch (e: Exception) {
+                                error = e.message ?: "Не вдалося згенерувати рахунок"
+                            } finally {
+                                processing = false
                             }
                         }
-                    }
+                    },
+                    enabled = !processing,
+                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Success)
+                ) {
+                    Text("Згенерувати рахунок", color = AppColors.White)
                 }
 
-                item {
-                    // Order Summary Card
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = White)
-                    ) {
-                        Column(modifier = Modifier.padding(24.dp)) {
-                            Text(
-                                text = "Order Summary",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = DarkSlate,
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            )
-
-                            SummaryRow(
-                                "Total Cost",
-                                FormatUtils.formatCurrency(currentOrder.totalCost)
-                            )
-                            SummaryRow(
-                                "Total Price",
-                                FormatUtils.formatCurrency(currentOrder.totalPrice)
-                            )
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                            SummaryRow(
-                                "Total Profit",
-                                FormatUtils.formatCurrency(currentOrder.totalProfit),
-                                isProfit = true,
-                                profitValue = currentOrder.totalProfit
-                            )
-                        }
-                    }
-                }
-
-                item {
-                    // Invoice Generation Card
-                    var isGeneratingInvoice by remember { mutableStateOf(false) }
-                    var invoiceGenerationError by remember { mutableStateOf<String?>(null) }
-                    var showSuccessDialog by remember { mutableStateOf(false) }
-                    var generatedInvoiceId by remember { mutableStateOf<String?>(null) }
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = White)
-                    ) {
-                        Column(modifier = Modifier.padding(24.dp)) {
+                if (invoices.isEmpty()) {
+                    Text("Рахунків поки немає", color = AppColors.MediumGray)
+                } else {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(invoices) { invoice ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
-                                    Text(
-                                        text = "Рахунок (Акт наданих послуг)",
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = DarkSlate
-                                    )
-                                    if (currentOrder.invoiceGenerated) {
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = "✓ Рахунок вже згенеровано",
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = Success
-                                        )
+                                Text("${invoice.number} • ${FormatUtils.formatDate(invoice.issuedAt)}")
+                                Row {
+                                    TextButton(onClick = {
+                                        window.open(ApiClient.getInvoiceDownloadUrl(invoice.id), "_blank")
+                                    }) {
+                                        Text("PDF", color = AppColors.PrimaryBlue)
                                     }
-                                }
-
-                                Button(
-                                    onClick = {
-                                        scope.launch {
-                                            try {
-                                                isGeneratingInvoice = true
-                                                invoiceGenerationError = null
-                                                val invoice = ApiClient.generateInvoice(orderId)
-                                                generatedInvoiceId = invoice.id
-                                                showSuccessDialog = true
-                                                loadOrder() // Reload to update invoiceGenerated flag
-                                                isGeneratingInvoice = false
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                                invoiceGenerationError =
-                                                    "Помилка генерації рахунку: ${e.message}"
-                                                isGeneratingInvoice = false
-                                            }
-                                        }
-                                    },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Success),
-                                    enabled = !isGeneratingInvoice
-                                ) {
-                                    if (isGeneratingInvoice) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(20.dp),
-                                            color = White,
-                                            strokeWidth = 2.dp
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                    }
-                                    Text(
-                                        text = if (currentOrder.invoiceGenerated) "Згенерувати ще раз" else "Згенерувати рахунок",
-                                        color = White
-                                    )
-                                }
-                            }
-
-                            if (invoiceGenerationError != null) {
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Text(
-                                    text = invoiceGenerationError ?: "",
-                                    color = Color.Red,
-                                    fontSize = 14.sp
-                                )
-                            }
-                        }
-                    }
-
-                    // Success dialog
-                    if (showSuccessDialog && generatedInvoiceId != null) {
-                        AlertDialog(
-                            onDismissRequest = { showSuccessDialog = false },
-                            title = { Text("Рахунок успішно згенеровано") },
-                            text = {
-                                Text("Рахунок успішно створено. Ви можете завантажити PDF файл зараз або пізніше на сторінці 'Рахунки'.")
-                            },
-                            confirmButton = {
-                                Button(
-                                    onClick = {
-                                        val downloadUrl =
-                                            ApiClient.getInvoiceDownloadUrl(generatedInvoiceId!!)
-                                        kotlinx.browser.window.open(downloadUrl, "_blank")
-                                        showSuccessDialog = false
-                                    },
-                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-                                ) {
-                                    Text("Завантажити PDF", color = White)
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showSuccessDialog = false }) {
-                                    Text("Закрити")
-                                }
-                            }
-                        )
-                    }
-                }
-
-                item {
-                    // Delete Order Card
-                    var showDeleteDialog by remember { mutableStateOf(false) }
-                    var isDeleting by remember { mutableStateOf(false) }
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = White)
-                    ) {
-                        Column(modifier = Modifier.padding(24.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(
-                                        text = "Danger Zone",
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = AppColors.Error
-                                    )
-                                    Text(
-                                        text = "Deleting an order cannot be undone",
-                                        fontSize = 14.sp,
-                                        color = MediumGray
-                                    )
-                                }
-
-                                Button(
-                                    onClick = { showDeleteDialog = true },
-                                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Error),
-                                    enabled = !isDeleting
-                                ) {
-                                    if (isDeleting) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(20.dp),
-                                            color = White,
-                                            strokeWidth = 2.dp
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                    }
-                                    Text("Delete Order", color = White)
                                 }
                             }
                         }
-                    }
-
-                    if (showDeleteDialog) {
-                        AlertDialog(
-                            onDismissRequest = { showDeleteDialog = false },
-                            title = { Text("Delete Order?") },
-                            text = {
-                                Text("Are you sure you want to delete this order? This action cannot be undone and will also delete all associated order items.")
-                            },
-                            confirmButton = {
-                                Button(
-                                    onClick = {
-                                        scope.launch {
-                                            try {
-                                                isDeleting = true
-                                                ApiClient.deleteOrder(orderId)
-                                                showDeleteDialog = false
-                                                onNavigate(Screen.Orders)
-                                            } catch (e: Exception) {
-                                                errorMessage = "Failed to delete order: ${e.message}"
-                                                isDeleting = false
-                                                showDeleteDialog = false
-                                            }
-                                        }
-                                    },
-                                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Error),
-                                    enabled = !isDeleting
-                                ) {
-                                    Text("Delete", color = White)
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showDeleteDialog = false }) {
-                                    Text("Cancel")
-                                }
-                            }
-                        )
                     }
                 }
             }
         }
-    }
-}
 
-@Composable
-private fun InfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-    ) {
-        Text(
-            text = "$label:",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = MediumGray,
-            modifier = Modifier.width(120.dp)
-        )
-        Text(
-            text = value,
-            fontSize = 14.sp,
-            color = DarkSlate
-        )
-    }
-}
+        Card(
+            colors = CardDefaults.cardColors(containerColor = AppColors.White),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("Видалення замовлення", color = AppColors.Error, fontWeight = FontWeight.SemiBold)
+                    Text("Дія незворотна", color = AppColors.MediumGray, fontSize = 13.sp)
+                }
+                Button(
+                    onClick = { confirmDelete = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Error)
+                ) {
+                    Text("Видалити", color = AppColors.White)
+                }
+            }
+        }
 
-@Composable
-private fun SummaryRow(
-    label: String,
-    value: String,
-    isProfit: Boolean = false,
-    profitValue: Double = 0.0
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            fontSize = if (isProfit) 18.sp else 14.sp,
-            fontWeight = if (isProfit) FontWeight.Bold else FontWeight.Medium,
-            color = DarkSlate
-        )
-        Text(
-            text = value,
-            fontSize = if (isProfit) 18.sp else 14.sp,
-            fontWeight = if (isProfit) FontWeight.Bold else FontWeight.Medium,
-            color = if (isProfit && profitValue >= 0) Success else if (isProfit) AppColors.Error else Color(
-                0xFF1E293B
+        if (info != null) {
+            Text(info ?: "", color = AppColors.Success, modifier = Modifier.padding(top = 8.dp))
+        }
+
+        if (confirmDelete) {
+            AlertDialog(
+                onDismissRequest = { confirmDelete = false },
+                title = { Text("Підтвердження") },
+                text = { Text("Видалити замовлення без можливості відновлення?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            processing = true
+                            scope.launch {
+                                try {
+                                    ApiClient.deleteOrder(orderId)
+                                    confirmDelete = false
+                                    onNavigate(Screen.Orders)
+                                } catch (e: Exception) {
+                                    error = e.message ?: "Помилка видалення"
+                                    processing = false
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.Error)
+                    ) {
+                        Text("Видалити", color = AppColors.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { confirmDelete = false }) {
+                        Text("Скасувати")
+                    }
+                }
             )
-        )
+        }
     }
 }
 
 @Composable
-private fun StatusBadge(status: String) {
-    val backgroundColor = when (status) {
-        "NEW" -> StatusBackground.New
-        "IN_PROGRESS" -> StatusBackground.InProgress
-        "READY" -> Ready
-        "COMPLETED" -> StatusBackground.Completed
-        "CANCELLED" -> StatusBackground.Cancelled
-        else -> VeryLightBluGray
-    }
+private fun <T> EnumField(
+    label: String,
+    values: List<T>,
+    selected: T,
+    onSelect: (T) -> Unit,
+    textMapper: (T) -> String = { value -> value.toString() },
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
 
-    val textColor = when (status) {
-        "NEW" -> StatusText.New
-        "IN_PROGRESS" -> StatusText.InProgress
-        "READY" -> StatusText.Ready
-        "COMPLETED" -> StatusText.Completed
-        "CANCELLED" -> StatusText.Cancelled
-        else -> DarkGrayText
-    }
+    Column(modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("$label: ${textMapper(selected)}")
+            TextButton(onClick = { expanded = true }) {
+                Text("Змінити")
+            }
+        }
 
-    Box(
-        modifier = Modifier
-            .background(backgroundColor, shape = MaterialTheme.shapes.small)
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-    ) {
-        Text(
-            text = status.replace("_", " "),
-            fontSize = 12.sp,
-            color = textColor,
-            fontWeight = FontWeight.Medium
-        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            values.forEach { value ->
+                DropdownMenuItem(
+                    text = { Text(textMapper(value)) },
+                    onClick = {
+                        onSelect(value)
+                        expanded = false
+                    }
+                )
+            }
+        }
     }
 }

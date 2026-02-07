@@ -1,12 +1,30 @@
 package com.printbusinesskmp.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,135 +34,116 @@ import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.navigation.Screen
-import com.printbusinesskmp.shared.resources.*
 import com.printbusinesskmp.theme.AppColors
-import com.printbusinesskmp.theme.AppColors.CardItemBg
-import com.printbusinesskmp.theme.AppColors.DarkGrayText
-import com.printbusinesskmp.theme.AppColors.DarkSlate
-import com.printbusinesskmp.theme.AppColors.MediumGray
-import com.printbusinesskmp.theme.AppColors.PrimaryBlue
-import com.printbusinesskmp.theme.AppColors.White
-import com.printbusinesskmp.utils.FormatUtils
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.getString
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ClientsScreen(onNavigate: (Screen) -> Unit) {
-    var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
-    var searchQuery by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    val filteredClients = clients.filter {
-        it.name.contains(searchQuery, ignoreCase = true) ||
-                it.phone.contains(searchQuery, ignoreCase = true) ||
-                (it.email?.contains(searchQuery, ignoreCase = true) == true)
-    }
+    var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
+    var search by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
 
-    fun loadClients() {
+    fun reload() {
         scope.launch {
+            loading = true
+            error = null
             try {
-                isLoading = true
                 clients = ApiClient.getClients()
-                isLoading = false
             } catch (e: Exception) {
-                errorMessage = getString(Res.string.error_client_load_failed) + ": ${e.message}"
-                isLoading = false
+                error = e.message ?: "Помилка завантаження"
+            } finally {
+                loading = false
             }
         }
     }
 
     LaunchedEffect(Unit) {
-        loadClients()
+        reload()
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Header
+    val filtered = clients.filter { client ->
+        client.displayName.contains(search, ignoreCase = true) ||
+            client.phone.contains(search, ignoreCase = true) ||
+            client.address.contains(search, ignoreCase = true)
+    }
+
+    Column {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(Res.string.nav_clients),
+                text = "Клієнти",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = DarkSlate
+                color = AppColors.DarkSlate
             )
 
             Button(
-                onClick = { onNavigate(Screen.ClientDetail(null)) },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                onClick = { onNavigate(Screen.ClientForm(null)) },
+                colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
             ) {
-                Text(stringResource(Res.string.clients_add_button), color = White)
+                Text("+ Додати", color = AppColors.White)
             }
         }
 
-        // Search
         OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text(stringResource(Res.string.clients_search_placeholder)) },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = White,
-                unfocusedContainerColor = White
-            )
+            value = search,
+            onValueChange = { search = it },
+            label = { Text("Пошук") },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
         )
 
-        if (isLoading) {
+        if (loading) {
             CircularProgressIndicator()
-        } else if (errorMessage != null) {
-            Text(
-                text = errorMessage ?: "",
-                color = Color.Red,
-                fontSize = 16.sp
-            )
-        } else {
-            // Table
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = White)
+            return@Column
+        }
+
+        if (error != null) {
+            Text(error ?: "", color = Color.Red)
+            return@Column
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = AppColors.White)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AppColors.CardItemBg)
+                    .padding(14.dp)
             ) {
-                Column {
-                    // Table Header
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(CardItemBg)
-                            .padding(16.dp)
-                    ) {
-                        TableHeaderCell(stringResource(Res.string.table_header_name), Modifier.weight(2f))
-                        TableHeaderCell(stringResource(Res.string.table_header_phone), Modifier.weight(1.5f))
-                        TableHeaderCell(stringResource(Res.string.table_header_email), Modifier.weight(2f))
-                        TableHeaderCell(stringResource(Res.string.table_header_total_orders), Modifier.weight(1f))
-                        TableHeaderCell(stringResource(Res.string.table_header_actions), Modifier.weight(2f))
-                    }
+                HeaderCell("Назва", Modifier.weight(2f))
+                HeaderCell("Тип", Modifier.weight(1f))
+                HeaderCell("Телефон", Modifier.weight(1.2f))
+                HeaderCell("Адреса", Modifier.weight(2f))
+                HeaderCell("Зам.", Modifier.weight(0.7f))
+                HeaderCell("Дії", Modifier.weight(1.2f))
+            }
+            HorizontalDivider()
 
-                    HorizontalDivider()
-
-                    // Table Rows
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(filteredClients) { client ->
-                            ClientRow(
-                                client = client,
-                                onEdit = { onNavigate(Screen.ClientDetail(client.id)) },
-                                onDelete = {
-                                    scope.launch {
-                                        try {
-                                            ApiClient.deleteClient(client.id)
-                                            loadClients()
-                                        } catch (e: Exception) {
-                                            errorMessage = getString(Res.string.error_delete_client) + ": ${e.message}"
-                                        }
-                                    }
+            LazyColumn {
+                items(filtered) { client ->
+                    ClientRow(
+                        client = client,
+                        onEdit = { onNavigate(Screen.ClientForm(client.id)) },
+                        onDelete = {
+                            scope.launch {
+                                try {
+                                    ApiClient.deleteClient(client.id)
+                                    reload()
+                                } catch (e: Exception) {
+                                    error = e.message ?: "Помилка видалення"
                                 }
-                            )
-                            HorizontalDivider()
+                            }
                         }
-                    }
+                    )
+                    HorizontalDivider()
                 }
             }
         }
@@ -152,12 +151,12 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
 }
 
 @Composable
-private fun TableHeaderCell(text: String, modifier: Modifier = Modifier) {
+private fun HeaderCell(text: String, modifier: Modifier) {
     Text(
         text = text,
-        fontSize = 14.sp,
         fontWeight = FontWeight.SemiBold,
-        color = DarkGrayText,
+        color = AppColors.DarkGrayText,
+        fontSize = 13.sp,
         modifier = modifier
     )
 }
@@ -168,74 +167,46 @@ private fun ClientRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxWidth().padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = client.name,
-            fontSize = 14.sp,
-            color = DarkSlate,
-            modifier = Modifier.weight(2f)
-        )
+        Text(client.displayName, Modifier.weight(2f), color = AppColors.DarkSlate)
+        Text(client.type.name, Modifier.weight(1f), color = AppColors.MediumGray, fontSize = 13.sp)
+        Text(client.phone, Modifier.weight(1.2f), color = AppColors.MediumGray, fontSize = 13.sp)
+        Text(client.address, Modifier.weight(2f), color = AppColors.MediumGray, fontSize = 13.sp)
+        Text(client.orderCount.toString(), Modifier.weight(0.7f), color = AppColors.DarkSlate)
 
-        Text(
-            text = FormatUtils.formatPhone(client.phone),
-            fontSize = 14.sp,
-            color = MediumGray,
-            modifier = Modifier.weight(1.5f)
-        )
-
-        Text(
-            text = client.email ?: stringResource(Res.string.clients_empty_indicator),
-            fontSize = 14.sp,
-            color = MediumGray,
-            modifier = Modifier.weight(2f)
-        )
-
-        Text(
-            text = client.totalOrders.toString(),
-            fontSize = 14.sp,
-            color = DarkSlate,
-            modifier = Modifier.weight(1f)
-        )
-
-        Row(
-            modifier = Modifier.weight(2f),
-//            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Row(modifier = Modifier.weight(1.2f)) {
             TextButton(onClick = onEdit) {
-                Text(stringResource(Res.string.action_edit), color = PrimaryBlue)
+                Text("Редагувати", color = AppColors.PrimaryBlue, fontSize = 12.sp)
             }
-
-            TextButton(onClick = { showDeleteDialog = true }) {
-                Text(stringResource(Res.string.action_delete), color = AppColors.Error)
+            TextButton(onClick = { confirmDelete = true }) {
+                Text("Видалити", color = AppColors.Error, fontSize = 12.sp)
             }
         }
     }
 
-    if (showDeleteDialog) {
+    if (confirmDelete) {
         AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text(stringResource(Res.string.confirm_delete_client_title)) },
-            text = { Text(stringResource(Res.string.confirm_delete_client_message, client.name)) },
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Видалити клієнта") },
+            text = { Text("Підтвердьте видалення клієнта ${client.displayName}") },
             confirmButton = {
                 TextButton(
                     onClick = {
+                        confirmDelete = false
                         onDelete()
-                        showDeleteDialog = false
                     }
                 ) {
-                    Text(stringResource(Res.string.action_delete), color = AppColors.Error)
+                    Text("Видалити", color = AppColors.Error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text(stringResource(Res.string.action_cancel))
+                TextButton(onClick = { confirmDelete = false }) {
+                    Text("Скасувати")
                 }
             }
         )

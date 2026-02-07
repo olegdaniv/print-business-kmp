@@ -1,11 +1,28 @@
 package com.printbusinesskmp.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,139 +34,125 @@ import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
-import com.printbusinesskmp.theme.AppColors.CardItemBg
-import com.printbusinesskmp.theme.AppColors.DarkGrayText
-import com.printbusinesskmp.theme.AppColors.DarkSlate
-import com.printbusinesskmp.theme.AppColors.MediumGray
-import com.printbusinesskmp.theme.AppColors.PrimaryBlue
-import com.printbusinesskmp.theme.AppColors.StatusBackground
-import com.printbusinesskmp.theme.AppColors.Success
-import com.printbusinesskmp.theme.AppColors.White
-import com.printbusinesskmp.shared.resources.*
-import com.printbusinesskmp.theme.AppColors.StatusText
-import com.printbusinesskmp.theme.AppColors.VeryLightBluGray
 import com.printbusinesskmp.utils.FormatUtils
+import com.printbusinesskmp.utils.labelUa
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.getString
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun OrdersScreen(onNavigate: (Screen) -> Unit) {
-    var orders by remember { mutableStateOf<List<Order>>(emptyList()) }
-    var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    fun loadData() {
+    var orders by remember { mutableStateOf<List<Order>>(emptyList()) }
+    var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    fun load() {
         scope.launch {
+            loading = true
+            error = null
             try {
-                isLoading = true
-                orders = ApiClient.getOrders()
                 clients = ApiClient.getClients()
-                isLoading = false
+                orders = ApiClient.getOrders()
             } catch (e: Exception) {
-                errorMessage = "${getString(Res.string.error_load_orders)}: ${e.message}"
-                isLoading = false
+                error = e.message
+            } finally {
+                loading = false
             }
         }
     }
 
-    LaunchedEffect(Unit) {
-        loadData()
-    }
+    LaunchedEffect(Unit) { load() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Header
+    Column {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(Res.string.orders_title),
+                text = "Замовлення",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = DarkSlate
+                color = AppColors.DarkSlate
             )
 
             Button(
-                onClick = { onNavigate(Screen.OrderForm()) },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                onClick = { onNavigate(Screen.OrderForm(null)) },
+                colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
             ) {
-                Text(stringResource(Res.string.orders_new_button), color = White)
+                Text("+ Нове замовлення", color = AppColors.White)
             }
         }
 
-        if (isLoading) {
+        if (loading) {
             CircularProgressIndicator()
-        } else if (errorMessage != null) {
-            Text(
-                text = errorMessage ?: "",
-                color = Color.Red,
-                fontSize = 16.sp
-            )
-        } else {
-            // Table
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = White)
+            return@Column
+        }
+
+        if (error != null) {
+            Text(error ?: "", color = Color.Red)
+            return@Column
+        }
+
+        val clientById = clients.associateBy { it.id }
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = AppColors.White),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AppColors.CardItemBg)
+                    .padding(14.dp)
             ) {
-                Column {
-                    // Table Header
+                Header("ID", Modifier.weight(1f))
+                Header("Клієнт", Modifier.weight(1.8f))
+                Header("Статус", Modifier.weight(1f))
+                Header("Оплата", Modifier.weight(1f))
+                Header("Позиції", Modifier.weight(0.8f))
+                Header("Сума", Modifier.weight(1f))
+                Header("Прибуток", Modifier.weight(1f))
+                Header("Оновлено", Modifier.weight(1f))
+                Header("", Modifier.weight(0.8f))
+            }
+            HorizontalDivider()
+
+            LazyColumn {
+                items(orders.sortedByDescending { it.updatedAt }) { order ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(CardItemBg)
-                            .padding(16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TableHeaderCell(
-                            stringResource(Res.string.table_header_order_id),
-                            Modifier.weight(1f)
+                        Text("#${order.id.take(8)}", Modifier.weight(1f), color = AppColors.DarkSlate)
+                        Text(
+                            clientById[order.clientId]?.displayName ?: "Невідомий",
+                            Modifier.weight(1.8f),
+                            color = AppColors.MediumGray,
+                            fontSize = 13.sp
                         )
-                        TableHeaderCell(
-                            stringResource(Res.string.table_header_client),
-                            Modifier.weight(1.5f)
+                        Text(order.status.labelUa(), Modifier.weight(1f), color = AppColors.DarkGrayText, fontSize = 12.sp)
+                        Text(order.paymentStatus.labelUa(), Modifier.weight(1f), color = AppColors.DarkGrayText, fontSize = 12.sp)
+                        Text(order.items.size.toString(), Modifier.weight(0.8f), color = AppColors.DarkSlate)
+                        Text(FormatUtils.formatCurrency(order.totalPrice), Modifier.weight(1f), color = AppColors.DarkSlate)
+                        Text(
+                            FormatUtils.formatCurrency(order.profit),
+                            Modifier.weight(1f),
+                            color = if (order.profit >= 0) AppColors.Success else AppColors.Error,
+                            fontSize = 13.sp
                         )
-                        TableHeaderCell(
-                            stringResource(Res.string.table_header_status),
-                            Modifier.weight(1f)
+                        Text(
+                            FormatUtils.formatDate(order.updatedAt),
+                            Modifier.weight(1f),
+                            color = AppColors.MediumGray,
+                            fontSize = 12.sp
                         )
-                        TableHeaderCell(
-                            stringResource(Res.string.table_header_items),
-                            Modifier.weight(0.8f)
-                        )
-                        TableHeaderCell(
-                            stringResource(Res.string.table_header_total_price),
-                            Modifier.weight(1f)
-                        )
-                        TableHeaderCell(
-                            stringResource(Res.string.table_header_profit),
-                            Modifier.weight(1f)
-                        )
-                        TableHeaderCell(
-                            stringResource(Res.string.table_header_date),
-                            Modifier.weight(1f)
-                        )
-                        TableHeaderCell(
-                            stringResource(Res.string.table_header_actions),
-                            Modifier.weight(1f)
-                        )
-                    }
-
-                    HorizontalDivider()
-
-                    // Table Rows
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(orders) { order ->
-                            OrderRow(
-                                order = order,
-                                clients = clients,
-                                onView = { onNavigate(Screen.OrderDetail(order.id)) }
-                            )
-                            HorizontalDivider()
+                        TextButton(onClick = { onNavigate(Screen.OrderDetail(order.id)) }, modifier = Modifier.weight(0.8f)) {
+                            Text("Відкрити", color = AppColors.PrimaryBlue, fontSize = 12.sp)
                         }
                     }
+                    HorizontalDivider()
                 }
             }
         }
@@ -157,123 +160,6 @@ fun OrdersScreen(onNavigate: (Screen) -> Unit) {
 }
 
 @Composable
-private fun TableHeaderCell(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text = text,
-        fontSize = 14.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = DarkGrayText,
-        modifier = modifier
-    )
-}
-
-@Composable
-private fun OrderRow(
-    order: Order,
-    clients: List<Client>,
-    onView: () -> Unit
-) {
-    val client = clients.find { it.id == order.clientId }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "#${order.id.take(8)}",
-            fontSize = 14.sp,
-            color = DarkSlate,
-            modifier = Modifier.weight(1f)
-        )
-
-        Text(
-            text = client?.name ?: stringResource(Res.string.orders_unknown_client),
-            fontSize = 14.sp,
-            color = MediumGray,
-            modifier = Modifier.weight(1.5f)
-        )
-
-        Box(modifier = Modifier.weight(1f)) {
-            StatusBadge(status = order.status.name)
-        }
-
-        Text(
-            text = order.items.size.toString(),
-            fontSize = 14.sp,
-            color = DarkSlate,
-            modifier = Modifier.weight(0.8f)
-        )
-
-        Text(
-            text = FormatUtils.formatCurrency(
-                order.totalPrice,
-                stringResource(Res.string.format_currency_suffix)
-            ),
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = DarkSlate,
-            modifier = Modifier.weight(1f)
-        )
-
-        Text(
-            text = FormatUtils.formatCurrency(
-                order.totalProfit,
-                stringResource(Res.string.format_currency_suffix)
-            ),
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (order.totalProfit >= 0) Success else AppColors.Error,
-            modifier = Modifier.weight(1f)
-        )
-
-        Text(
-            text = FormatUtils.formatDate(order.createdAt),
-            fontSize = 14.sp,
-            color = MediumGray,
-            modifier = Modifier.weight(1f)
-        )
-
-        TextButton(
-            onClick = onView,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(stringResource(Res.string.action_view), color = PrimaryBlue)
-        }
-    }
-}
-
-@Composable
-private fun StatusBadge(status: String) {
-    val backgroundColor = when (status) {
-        "NEW" -> StatusBackground.New
-        "IN_PROGRESS" -> StatusBackground.InProgress
-        "READY" -> StatusBackground.Ready
-        "COMPLETED" -> StatusBackground.Completed
-        "CANCELLED" -> StatusBackground.Cancelled
-        else -> VeryLightBluGray
-    }
-
-    val textColor = when (status) {
-        "NEW" -> StatusText.New
-        "IN_PROGRESS" -> StatusText.InProgress
-        "READY" -> StatusText.Ready
-        "COMPLETED" -> StatusText.Completed
-        "CANCELLED" -> StatusText.Cancelled
-        else -> DarkGrayText
-    }
-
-    Box(
-        modifier = Modifier
-            .background(backgroundColor, shape = MaterialTheme.shapes.small)
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-    ) {
-        Text(
-            text = status.replace("_", " "),
-            fontSize = 12.sp,
-            color = textColor,
-            fontWeight = FontWeight.Medium
-        )
-    }
+private fun Header(text: String, modifier: Modifier) {
+    Text(text, modifier = modifier, fontWeight = FontWeight.SemiBold, color = AppColors.DarkGrayText, fontSize = 13.sp)
 }

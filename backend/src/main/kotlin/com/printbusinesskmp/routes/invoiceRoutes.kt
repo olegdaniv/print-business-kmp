@@ -1,271 +1,191 @@
 package com.printbusinesskmp.routes
 
-import com.printbusinesskmp.models.*
+import com.printbusinesskmp.models.Invoice
+import com.printbusinesskmp.models.InvoiceClientSnapshot
+import com.printbusinesskmp.models.InvoiceLine
+import com.printbusinesskmp.models.InvoiceSellerSnapshot
+import com.printbusinesskmp.models.ProductType
+import com.printbusinesskmp.models.ServiceType
+import com.printbusinesskmp.repository.BusinessProfileRepository
 import com.printbusinesskmp.repository.ClientRepository
 import com.printbusinesskmp.repository.InvoiceRepository
 import com.printbusinesskmp.repository.OrderRepository
 import com.printbusinesskmp.services.InvoiceGenerator
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.ContentDisposition
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.response.header
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondFile
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
 import java.io.File
-import java.util.*
+import java.util.UUID
+import kotlin.time.Clock
 
 private val invoiceRepository = InvoiceRepository()
 private val orderRepository = OrderRepository()
 private val clientRepository = ClientRepository()
+private val businessProfileRepository = BusinessProfileRepository()
 private val invoiceGenerator = InvoiceGenerator()
-private val fopDetails = FopDetails()
 
 fun Route.configureInvoiceRoutes() {
     route("/api/invoices") {
-
-        // POST /api/invoices/generate/{orderId} - Generate invoice for an order
         post("/generate/{orderId}") {
-            try {
-                val orderId = call.parameters["orderId"] ?: return@post call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("error" to "Missing order ID")
+            val orderId = call.parameters["orderId"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing order ID"))
+
+            val order = orderRepository.orderById(orderId)
+                ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Order not found"))
+
+            val client = clientRepository.clientById(order.clientId)
+                ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Client not found"))
+
+            val profile = businessProfileRepository.getProfile()
+                ?: return@post call.respond(
+                    HttpStatusCode.PreconditionFailed,
+                    mapOf("error" to "Business profile must be configured before invoice generation")
                 )
 
-                // Fetch order with items
-                val order = orderRepository.orderById(orderId)
-                if (order == null) {
-                    return@post call.respond(
-                        HttpStatusCode.NotFound,
-                        mapOf("error" to "Order not found")
-                    )
+            val number = invoiceRepository.nextInvoiceNumber()
+            val now = Clock.System.now()
+
+            val lines = order.items.mapIndexed { index, item ->
+                val lineTotal = item.price
+                val unitPrice = if (item.quantity > 0) {
+                    lineTotal / item.quantity
+                } else {
+                    lineTotal
                 }
 
-                // Fetch client details
-                val client = clientRepository.clientById(order.clientId)
-                if (client == null) {
-                    return@post call.respond(
-                        HttpStatusCode.NotFound,
-                        mapOf("error" to "Client not found")
-                    )
-                }
+                InvoiceLine(
+                    lineNumber = index + 1,
+                    description = buildDescription(item.serviceType, item.productType, item.usedMeters),
+                    quantity = item.quantity,
+                    usedMeters = item.usedMeters,
+                    unitPrice = unitPrice,
+                    lineTotal = lineTotal
+                )
+            }
 
-                // Get next invoice number
-                val invoiceNumber = invoiceRepository.getNextInvoiceNumber()
+            val subtotal = order.items.sumOf { item -> item.price - item.taxAmount }
+            val taxAmount = order.items.sumOf { item -> item.taxAmount }
+            val totalAmount = order.items.sumOf { item -> item.price }
 
-                // Create invoice client object
-                val invoiceClient = InvoiceClient(
-                    name = client.name,
+            val invoice = Invoice(
+                id = UUID.randomUUID().toString(),
+                number = number,
+                orderId = order.id,
+                issuedAt = now,
+                seller = InvoiceSellerSnapshot(
+                    ownerName = profile.ownerName,
+                    taxId = profile.taxId,
+                    address = profile.address,
+                    iban = profile.iban,
+                    bankName = profile.bankName,
+                    taxPercent = profile.taxPercent
+                ),
+                client = InvoiceClientSnapshot(
+                    type = client.type,
+                    name = client.displayName,
+                    address = client.address,
                     phone = client.phone,
-                    email = client.email,
-                    address = null // Could be added to client model if needed
-                )
+                    email = client.email
+                ),
+                lines = lines,
+                subtotal = subtotal,
+                taxAmount = taxAmount,
+                totalAmount = totalAmount,
+                notes = order.notes
+            )
 
-                // Create invoice items from order items
-                val invoiceItems = order.items.mapIndexed { index, orderItem ->
-                    val description = buildItemDescription(orderItem)
-                    InvoiceItem(
-                        number = index + 1,
-                        description = description,
-                        quantity = orderItem.quantity,
-                        unit = "шт.",
-                        pricePerUnit = orderItem.sellingPrice / orderItem.quantity,
-                        totalPrice = orderItem.sellingPrice
-                    )
-                }
+            val saved = invoiceRepository.addInvoice(invoice)
+            val filePath = invoiceGenerator.generateInvoicePdf(saved)
+            val withFile = invoiceRepository.updateInvoiceFilePath(saved.id, filePath) ?: saved
 
-                // Create invoice object (without filePath initially)
-                val invoice = Invoice(
-                    id = UUID.randomUUID().toString(),
-                    number = invoiceNumber,
-                    date = kotlin.time.Clock.System.now(),
-                    orderId = orderId,
-                    client = invoiceClient,
-                    items = invoiceItems,
-                    totalAmount = order.totalPrice,
-                    notes = order.notes,
-                    generatedAt = kotlin.time.Clock.System.now(),
-                    filePath = null
-                )
-
-                // Save invoice to database first
-                val savedInvoice = invoiceRepository.addInvoice(invoice)
-
-                // Generate PDF
-                val pdfFilePath = invoiceGenerator.generateInvoicePdf(savedInvoice, fopDetails)
-
-                // Update invoice with file path
-                val updatedInvoice = invoiceRepository.updateInvoiceFilePath(savedInvoice.id, pdfFilePath)
-
-                // Update order to mark invoice as generated
-                orderRepository.updateOrder(orderId, order.copy(invoiceGenerated = true))
-
-                call.respond(HttpStatusCode.Created, updatedInvoice ?: savedInvoice)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    mapOf("error" to (e.message ?: "Unknown error"))
-                )
-            }
+            call.respond(HttpStatusCode.Created, withFile)
         }
 
-        // GET /api/invoices/{id} - Get invoice by ID
-        get("{id}") {
-            try {
-                val id = call.parameters["id"] ?: return@get call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("error" to "Missing invoice ID")
-                )
-
-                val invoice = invoiceRepository.invoiceById(id)
-                if (invoice != null) {
-                    call.respond(HttpStatusCode.OK, invoice)
-                } else {
-                    call.respond(
-                        HttpStatusCode.NotFound,
-                        mapOf("error" to "Invoice not found")
-                    )
-                }
-            } catch (e: Exception) {
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    mapOf("error" to (e.message ?: "Unknown error"))
-                )
-            }
-        }
-
-        // GET /api/invoices/order/{orderId} - Get invoices for specific order
-        get("/order/{orderId}") {
-            try {
-                val orderId = call.parameters["orderId"] ?: return@get call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("error" to "Missing order ID")
-                )
-
-                val invoices = invoiceRepository.invoicesByOrderId(orderId)
-                call.respond(HttpStatusCode.OK, invoices)
-            } catch (e: Exception) {
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    mapOf("error" to (e.message ?: "Unknown error"))
-                )
-            }
-        }
-
-        // GET /api/invoices/download/{id} - Download PDF file
-        get("/download/{id}") {
-            try {
-                val id = call.parameters["id"] ?: return@get call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("error" to "Missing invoice ID")
-                )
-
-                val invoice = invoiceRepository.invoiceById(id)
-                if (invoice == null) {
-                    return@get call.respond(
-                        HttpStatusCode.NotFound,
-                        mapOf("error" to "Invoice not found")
-                    )
-                }
-
-                if (invoice.filePath == null) {
-                    return@get call.respond(
-                        HttpStatusCode.NotFound,
-                        mapOf("error" to "Invoice PDF file not found")
-                    )
-                }
-
-                val file = File(invoice.filePath)
-                if (!file.exists()) {
-                    return@get call.respond(
-                        HttpStatusCode.NotFound,
-                        mapOf("error" to "Invoice PDF file does not exist")
-                    )
-                }
-
-                call.response.header(
-                    HttpHeaders.ContentDisposition,
-                    ContentDisposition.Attachment.withParameter(
-                        ContentDisposition.Parameters.FileName,
-                        "invoice_${invoice.number}.pdf"
-                    ).toString()
-                )
-                call.respondFile(file)
-            } catch (e: Exception) {
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    mapOf("error" to (e.message ?: "Unknown error"))
-                )
-            }
-        }
-
-        // GET /api/invoices - List all invoices
         get {
-            try {
-                val invoices = invoiceRepository.allInvoices()
-                call.respond(HttpStatusCode.OK, invoices)
-            } catch (e: Exception) {
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    mapOf("error" to (e.message ?: "Unknown error"))
-                )
+            call.respond(HttpStatusCode.OK, invoiceRepository.allInvoices())
+        }
+
+        get("{id}") {
+            val id = call.parameters["id"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing invoice ID"))
+
+            val invoice = invoiceRepository.invoiceById(id)
+            if (invoice == null) {
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Invoice not found"))
+            } else {
+                call.respond(HttpStatusCode.OK, invoice)
             }
         }
 
-        // DELETE /api/invoices/{id} - Delete invoice
+        get("/order/{orderId}") {
+            val orderId = call.parameters["orderId"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing order ID"))
+
+            call.respond(HttpStatusCode.OK, invoiceRepository.invoicesByOrderId(orderId))
+        }
+
+        get("/download/{id}") {
+            val id = call.parameters["id"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing invoice ID"))
+
+            val invoice = invoiceRepository.invoiceById(id)
+                ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Invoice not found"))
+
+            val filePath = invoice.filePath
+                ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "PDF file not found"))
+
+            val file = File(filePath)
+            if (!file.exists()) {
+                return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "PDF file does not exist"))
+            }
+
+            call.response.header(
+                HttpHeaders.ContentDisposition,
+                ContentDisposition.Attachment
+                    .withParameter(ContentDisposition.Parameters.FileName, "${invoice.number}.pdf")
+                    .toString()
+            )
+            call.respondFile(file)
+        }
+
         delete("{id}") {
-            try {
-                val id = call.parameters["id"] ?: return@delete call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("error" to "Missing invoice ID")
-                )
+            val id = call.parameters["id"]
+                ?: return@delete call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing invoice ID"))
 
-                // Get invoice to delete PDF file
-                val invoice = invoiceRepository.invoiceById(id)
-                if (invoice?.filePath != null) {
-                    val file = File(invoice.filePath)
-                    if (file.exists()) {
-                        file.delete()
-                    }
-                }
+            invoiceRepository.invoiceById(id)?.filePath?.let { path ->
+                File(path).takeIf { file -> file.exists() }?.delete()
+            }
 
-                val deleted = invoiceRepository.deleteInvoice(id)
-                if (deleted) {
-                    call.respond(
-                        HttpStatusCode.OK,
-                        mapOf("message" to "Invoice deleted successfully")
-                    )
-                } else {
-                    call.respond(
-                        HttpStatusCode.NotFound,
-                        mapOf("error" to "Invoice not found")
-                    )
-                }
-            } catch (e: Exception) {
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    mapOf("error" to (e.message ?: "Unknown error"))
-                )
+            val deleted = invoiceRepository.deleteInvoice(id)
+            if (deleted) {
+                call.respond(HttpStatusCode.OK, mapOf("message" to "Invoice deleted"))
+            } else {
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Invoice not found"))
             }
         }
     }
 }
 
-private fun buildItemDescription(orderItem: OrderItem): String {
-    // Build a human-readable description in Ukrainian
-    val productType = when (orderItem.productType) {
+private fun buildDescription(serviceType: ServiceType, productType: ProductType, usedMeters: Double): String {
+    val serviceText = when (serviceType) {
+        ServiceType.DTF -> "DTF друк"
+        ServiceType.UV_DTF -> "UV DTF друк"
+    }
+
+    val productText = when (productType) {
         ProductType.T_SHIRT -> "футболка"
         ProductType.HOODIE -> "худі"
-        ProductType.CAP -> "кепка"
-        ProductType.BAG -> "сумка"
-        ProductType.CUSTOM -> "кастомний виріб"
+        ProductType.OTHER -> "інший виріб"
     }
 
-    val printArea = when (orderItem.printArea) {
-        PrintArea.FRONT -> "друк спереду"
-        PrintArea.BACK -> "друк на спині"
-        PrintArea.BOTH -> "друк з обох сторін"
-        PrintArea.SLEEVE -> "друк на рукаві"
-        PrintArea.CUSTOM -> "кастомний друк"
-    }
-
-    return "Термодрук на виробі: $productType (${orderItem.color}, розмір ${orderItem.size}, $printArea)"
+    return "$serviceText на $productText (${String.format("%.2f", usedMeters)} м)"
 }
