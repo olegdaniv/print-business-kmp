@@ -1,8 +1,10 @@
 package com.printbusinesskmp.services
 
 import com.itextpdf.io.font.PdfEncodings
+import com.itextpdf.io.font.constants.StandardFonts
 import com.itextpdf.kernel.font.PdfFont
 import com.itextpdf.kernel.font.PdfFontFactory
+import com.itextpdf.kernel.font.PdfFontFactory.EmbeddingStrategy
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.layout.Document
@@ -115,15 +117,43 @@ class InvoiceGenerator {
     }
 
     private fun loadUkrainianFont(): PdfFont {
-        val fontBytes = javaClass.classLoader
-            .getResourceAsStream("fonts/DejaVuSans.ttf")
-            ?.use { stream -> stream.readBytes() }
+        val classpathFont = runCatching {
+            javaClass.classLoader
+                .getResourceAsStream("fonts/DejaVuSans.ttf")
+                ?.use { stream -> stream.readBytes() }
+        }.getOrNull()
 
-        return if (fontBytes != null) {
-            PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H)
-        } else {
-            PdfFontFactory.createFont()
+        if (classpathFont != null && classpathFont.isNotEmpty()) {
+            runCatching {
+                return PdfFontFactory.createFont(
+                    classpathFont,
+                    PdfEncodings.IDENTITY_H,
+                    EmbeddingStrategy.PREFER_EMBEDDED
+                )
+            }
         }
+
+        val localFont = runCatching {
+            File("backend/src/main/resources/fonts/DejaVuSans.ttf")
+                .takeIf { file -> file.exists() }
+                ?.readBytes()
+        }.getOrNull()
+
+        if (localFont != null && localFont.isNotEmpty()) {
+            runCatching {
+                return PdfFontFactory.createFont(
+                    localFont,
+                    PdfEncodings.IDENTITY_H,
+                    EmbeddingStrategy.PREFER_EMBEDDED
+                )
+            }
+        }
+
+        return PdfFontFactory.createFont(
+            StandardFonts.HELVETICA,
+            PdfEncodings.WINANSI,
+            EmbeddingStrategy.PREFER_NOT_EMBEDDED
+        )
     }
 
     private fun formatDate(instant: kotlin.time.Instant): String {

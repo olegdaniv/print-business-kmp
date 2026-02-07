@@ -36,78 +36,94 @@ private val invoiceGenerator = InvoiceGenerator()
 fun Route.configureInvoiceRoutes() {
     route("/api/invoices") {
         post("/generate/{orderId}") {
-            val orderId = call.parameters["orderId"]
-                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing order ID"))
+            try {
+                val orderId = call.parameters["orderId"]
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing order ID"))
 
-            val order = orderRepository.orderById(orderId)
-                ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Order not found"))
+                val order = orderRepository.orderById(orderId)
+                    ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Order not found"))
 
-            val client = clientRepository.clientById(order.clientId)
-                ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Client not found"))
+                val client = clientRepository.clientById(order.clientId)
+                    ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Client not found"))
 
-            val profile = businessProfileRepository.getProfile()
-                ?: return@post call.respond(
-                    HttpStatusCode.PreconditionFailed,
-                    mapOf("error" to "Business profile must be configured before invoice generation")
-                )
+                val profile = businessProfileRepository.getProfile()
+                    ?: return@post call.respond(
+                        HttpStatusCode.PreconditionFailed,
+                        mapOf("error" to "Business profile must be configured before invoice generation")
+                    )
 
-            val number = invoiceRepository.nextInvoiceNumber()
-            val now = Clock.System.now()
-
-            val lines = order.items.mapIndexed { index, item ->
-                val lineTotal = item.price
-                val unitPrice = if (item.quantity > 0) {
-                    lineTotal / item.quantity
-                } else {
-                    lineTotal
+                if (order.items.isEmpty()) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Order must contain at least one item to generate invoice")
+                    )
                 }
 
-                InvoiceLine(
-                    lineNumber = index + 1,
-                    description = buildDescription(item.serviceType, item.productType, item.usedMeters),
-                    quantity = item.quantity,
-                    usedMeters = item.usedMeters,
-                    unitPrice = unitPrice,
-                    lineTotal = lineTotal
+                val number = invoiceRepository.nextInvoiceNumber()
+                val now = Clock.System.now()
+
+                val lines = order.items.mapIndexed { index, item ->
+                    val lineTotal = item.price
+                    val unitPrice = if (item.quantity > 0) {
+                        lineTotal / item.quantity
+                    } else {
+                        lineTotal
+                    }
+
+                    InvoiceLine(
+                        lineNumber = index + 1,
+                        description = buildDescription(item.serviceType, item.productType, item.usedMeters),
+                        quantity = item.quantity,
+                        usedMeters = item.usedMeters,
+                        unitPrice = unitPrice,
+                        lineTotal = lineTotal
+                    )
+                }
+
+                val subtotal = order.items.sumOf { item -> item.price - item.taxAmount }
+                val taxAmount = order.items.sumOf { item -> item.taxAmount }
+                val totalAmount = order.items.sumOf { item -> item.price }
+
+                val invoice = Invoice(
+                    id = UUID.randomUUID().toString(),
+                    number = number,
+                    orderId = order.id,
+                    issuedAt = now,
+                    seller = InvoiceSellerSnapshot(
+                        ownerName = profile.ownerName,
+                        taxId = profile.taxId,
+                        address = profile.address,
+                        iban = profile.iban,
+                        bankName = profile.bankName,
+                        taxPercent = profile.taxPercent
+                    ),
+                    client = InvoiceClientSnapshot(
+                        type = client.type,
+                        name = client.displayName,
+                        address = client.address,
+                        phone = client.phone,
+                        email = client.email
+                    ),
+                    lines = lines,
+                    subtotal = subtotal,
+                    taxAmount = taxAmount,
+                    totalAmount = totalAmount,
+                    notes = order.notes
+                )
+
+                val saved = invoiceRepository.addInvoice(invoice)
+                val filePath = invoiceGenerator.generateInvoicePdf(saved)
+                val withFile = invoiceRepository.updateInvoiceFilePath(saved.id, filePath) ?: saved
+
+                call.respond(HttpStatusCode.Created, withFile)
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Invalid invoice request")))
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to "Invoice generation failed", "details" to (e.message ?: "unknown error"))
                 )
             }
-
-            val subtotal = order.items.sumOf { item -> item.price - item.taxAmount }
-            val taxAmount = order.items.sumOf { item -> item.taxAmount }
-            val totalAmount = order.items.sumOf { item -> item.price }
-
-            val invoice = Invoice(
-                id = UUID.randomUUID().toString(),
-                number = number,
-                orderId = order.id,
-                issuedAt = now,
-                seller = InvoiceSellerSnapshot(
-                    ownerName = profile.ownerName,
-                    taxId = profile.taxId,
-                    address = profile.address,
-                    iban = profile.iban,
-                    bankName = profile.bankName,
-                    taxPercent = profile.taxPercent
-                ),
-                client = InvoiceClientSnapshot(
-                    type = client.type,
-                    name = client.displayName,
-                    address = client.address,
-                    phone = client.phone,
-                    email = client.email
-                ),
-                lines = lines,
-                subtotal = subtotal,
-                taxAmount = taxAmount,
-                totalAmount = totalAmount,
-                notes = order.notes
-            )
-
-            val saved = invoiceRepository.addInvoice(invoice)
-            val filePath = invoiceGenerator.generateInvoicePdf(saved)
-            val withFile = invoiceRepository.updateInvoiceFilePath(saved.id, filePath) ?: saved
-
-            call.respond(HttpStatusCode.Created, withFile)
         }
 
         get {
