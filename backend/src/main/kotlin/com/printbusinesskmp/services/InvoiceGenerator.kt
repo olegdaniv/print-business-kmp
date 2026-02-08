@@ -31,45 +31,51 @@ class InvoiceGenerator {
         val pdfDocument = PdfDocument(writer)
         val document = Document(pdfDocument)
 
-        val font = loadUkrainianFont()
-        document.setFont(font)
+        document.setFont(loadUkrainianFont())
 
+//        // Approval block
+//        document.add(Paragraph("ЗАТВЕРДЖУЮ").setFontSize(10f))
+//        document.add(Paragraph("ВИКОНАВЕЦЬ").setFontSize(10f))
+//        document.add(Paragraph("Фізична особа-підприємець").setFontSize(10f))
+//        document.add(Paragraph(invoice.seller.ownerName).setFontSize(10f))
+//        document.add(Paragraph("________________________").setFontSize(10f))
+//        document.add(Paragraph("(підпис)").setFontSize(8f))
+//
+//        document.add(Paragraph("\n"))
+
+        // Act title
         document.add(
-            Paragraph("Рахунок ${invoice.number}")
+            Paragraph("АКТ наданих послуг")
                 .setTextAlignment(TextAlignment.CENTER)
                 .setBold()
-                .setFontSize(18f)
+                .setFontSize(16f)
         )
         document.add(
-            Paragraph("Дата: ${formatDate(invoice.issuedAt)}")
+            Paragraph("№${invoice.number} від ${formatDate(invoice.issuedAt)}")
                 .setTextAlignment(TextAlignment.CENTER)
-                .setFontSize(11f)
+                .setFontSize(12f)
         )
+
         document.add(Paragraph("\n"))
 
-        document.add(Paragraph("Продавець (ФОП)").setBold())
-        document.add(Paragraph(invoice.seller.ownerName))
-        document.add(Paragraph("РНОКПП: ${invoice.seller.taxId}"))
-        document.add(Paragraph("Адреса: ${invoice.seller.address}"))
-        document.add(Paragraph("IBAN: ${invoice.seller.iban}"))
-        document.add(Paragraph("Банк: ${invoice.seller.bankName}"))
+        // Intro
+        document.add(
+            Paragraph(
+                "Я, що нижче підписався, Виконавець ФОП ${invoice.seller.ownerName}, " +
+                    "(РНОКПП: ${invoice.seller.taxId}) підтверджую, що були надані такі послуги:"
+            ).setFontSize(10f)
+        )
+
         document.add(Paragraph("\n"))
 
-        document.add(Paragraph("Покупець").setBold())
-        document.add(Paragraph(invoice.client.name))
-        document.add(Paragraph("Адреса: ${invoice.client.address}"))
-        document.add(Paragraph("Телефон: ${invoice.client.phone}"))
-        invoice.client.email?.let { email ->
-            document.add(Paragraph("Email: $email"))
-        }
-        document.add(Paragraph("\n"))
-
-        val table = Table(floatArrayOf(0.7f, 4f, 1f, 1.2f, 1.5f, 1.5f))
+        // Service table
+        val table = Table(floatArrayOf(0.8f, 4.4f, 1.3f, 1.3f, 1.8f, 1.8f))
         table.setWidth(UnitValue.createPercentValue(100f))
+
         table.addHeaderCell("№")
-        table.addHeaderCell("Послуга")
-        table.addHeaderCell("К-сть")
-        table.addHeaderCell("Метри")
+        table.addHeaderCell("Найменування послуг")
+        table.addHeaderCell("Кількість")
+        table.addHeaderCell("Одиниця")
         table.addHeaderCell("Ціна")
         table.addHeaderCell("Сума")
 
@@ -77,78 +83,138 @@ class InvoiceGenerator {
             table.addCell(line.lineNumber.toString())
             table.addCell(line.description)
             table.addCell(line.quantity.toString())
-            table.addCell("%.2f".format(line.usedMeters))
-            table.addCell("%.2f".format(line.unitPrice))
-            table.addCell("%.2f".format(line.lineTotal))
+            table.addCell(line.unit)
+            table.addCell(formatNumber(line.unitPrice))
+            table.addCell(formatNumber(line.lineTotal))
         }
 
         document.add(table)
+
         document.add(Paragraph("\n"))
 
+        // Totals
         document.add(
-            Paragraph("Сума без податку: %.2f грн".format(invoice.subtotal))
+            Paragraph("Сума без податку: ${formatNumber(invoice.subtotal)} грн")
                 .setTextAlignment(TextAlignment.RIGHT)
+                .setFontSize(11f)
         )
         document.add(
-            Paragraph("Податок: %.2f грн".format(invoice.taxAmount))
+            Paragraph("Податок: ${formatNumber(invoice.taxAmount)} грн")
                 .setTextAlignment(TextAlignment.RIGHT)
+                .setFontSize(11f)
         )
         document.add(
-            Paragraph("До сплати: %.2f грн".format(invoice.totalAmount))
+            Paragraph("Всього до сплати: ${formatNumber(invoice.totalAmount)} грн")
                 .setTextAlignment(TextAlignment.RIGHT)
                 .setBold()
-                .setFontSize(13f)
+                .setFontSize(12f)
         )
 
+        document.add(Paragraph("\n"))
+        document.add(Paragraph("Замовник претензій по об'єму, якості та строкам надання послуг не має.").setFontSize(10f))
+
         val taxNote = if (invoice.seller.taxPercent > 0.0) {
-            "Податок ${invoice.seller.taxPercent}% застосовано до рахунку."
+            "Податок ${formatNumber(invoice.seller.taxPercent)}% застосовано до рахунку."
         } else {
             "Податок не застосовано."
         }
-        document.add(Paragraph("\n"))
-        document.add(Paragraph(taxNote))
+        document.add(Paragraph(taxNote).setFontSize(10f))
 
-        invoice.notes?.takeIf { it.isNotBlank() }?.let { note ->
-            document.add(Paragraph("Примітки: $note"))
+        invoice.notes?.takeIf { it.isNotBlank() }?.let { notes ->
+            document.add(Paragraph("Примітки: $notes").setFontSize(10f))
         }
+
+        document.add(Paragraph("\n"))
+        document.add(Paragraph("Реквізити сторін").setTextAlignment(TextAlignment.CENTER).setBold().setFontSize(12f))
+
+        // Requisites block
+        val parties = Table(floatArrayOf(1f, 1f)).setWidth(UnitValue.createPercentValue(100f))
+
+        val sellerBlock = listOf(
+            "Виконавець:",
+            "ФОП ${invoice.seller.ownerName}",
+            "РНОКПП: ${invoice.seller.taxId}",
+            "Адреса: ${invoice.seller.address}",
+            "IBAN: ${invoice.seller.iban}",
+            "Банк: ${invoice.seller.bankName}",
+            "",
+            "_____________________",
+            "(підпис)"
+        ).joinToString("\n")
+
+        val buyerBlock = listOf(
+            "Замовник:",
+            invoice.client.name,
+            "Адреса: ${invoice.client.address}",
+            "Телефон: ${invoice.client.phone}",
+            invoice.client.email?.let { "Email: $it" } ?: "",
+            "",
+            "_____________________",
+            "(підпис)"
+        ).joinToString("\n")
+
+        parties.addCell(Paragraph(sellerBlock).setFontSize(10f))
+        parties.addCell(Paragraph(buyerBlock).setFontSize(10f))
+
+        document.add(parties)
 
         document.close()
         return filePath
     }
 
     private fun loadUkrainianFont(): PdfFont {
-        val classpathFont = runCatching {
-            javaClass.classLoader
-                .getResourceAsStream("fonts/DejaVuSans.ttf")
-                ?.use { stream -> stream.readBytes() }
+        // 1) bundled resource font
+        val bundled = runCatching {
+            javaClass.classLoader.getResourceAsStream("fonts/DejaVuSans.ttf")?.use { it.readBytes() }
         }.getOrNull()
 
-        if (classpathFont != null && classpathFont.isNotEmpty()) {
+        if (bundled != null && bundled.isNotEmpty()) {
             runCatching {
                 return PdfFontFactory.createFont(
-                    classpathFont,
+                    bundled,
                     PdfEncodings.IDENTITY_H,
                     EmbeddingStrategy.PREFER_EMBEDDED
                 )
             }
         }
 
-        val localFont = runCatching {
-            File("backend/src/main/resources/fonts/DejaVuSans.ttf")
-                .takeIf { file -> file.exists() }
-                ?.readBytes()
-        }.getOrNull()
-
-        if (localFont != null && localFont.isNotEmpty()) {
+        // 2) local project font (dev mode)
+        val localProjectFont = File("backend/src/main/resources/fonts/DejaVuSans.ttf")
+        if (localProjectFont.exists()) {
             runCatching {
                 return PdfFontFactory.createFont(
-                    localFont,
+                    localProjectFont.absolutePath,
                     PdfEncodings.IDENTITY_H,
                     EmbeddingStrategy.PREFER_EMBEDDED
                 )
             }
         }
 
+        // 3) known system fonts with Cyrillic on macOS/Linux/Windows paths
+        val systemCandidates = listOf(
+            "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+            "/System/Library/Fonts/Supplemental/Arial.ttf",
+            "/Library/Fonts/Arial Unicode.ttf",
+            "C:/Windows/Fonts/arial.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        )
+
+        for (path in systemCandidates) {
+            val fontFile = File(path)
+            if (!fontFile.exists()) continue
+
+            val loaded = runCatching {
+                PdfFontFactory.createFont(
+                    fontFile.absolutePath,
+                    PdfEncodings.IDENTITY_H,
+                    EmbeddingStrategy.PREFER_EMBEDDED
+                )
+            }.getOrNull()
+
+            if (loaded != null) return loaded
+        }
+
+        // 4) last resort: built-in font (document still generated)
         return PdfFontFactory.createFont(
             StandardFonts.HELVETICA,
             PdfEncodings.WINANSI,
@@ -158,8 +224,11 @@ class InvoiceGenerator {
 
     private fun formatDate(instant: kotlin.time.Instant): String {
         val converted = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-
         return "${converted.day.toString().padStart(2, '0')}." +
             "${converted.month.number.toString().padStart(2, '0')}.${converted.year}"
+    }
+
+    private fun formatNumber(value: Double): String {
+        return String.format("%.2f", value)
     }
 }
