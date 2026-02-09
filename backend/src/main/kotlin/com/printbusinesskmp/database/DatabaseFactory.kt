@@ -4,6 +4,7 @@ import com.printbusinesskmp.database.tables.BusinessProfilesTable
 import com.printbusinesskmp.database.tables.ClientsTable
 import com.printbusinesskmp.database.tables.InvoiceLinesTable
 import com.printbusinesskmp.database.tables.InvoicesTable
+import com.printbusinesskmp.database.tables.LayoutsTable
 import com.printbusinesskmp.database.tables.OrderItemsTable
 import com.printbusinesskmp.database.tables.OrdersTable
 import com.printbusinesskmp.database.tables.OutsourceJobsTable
@@ -15,18 +16,20 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.io.File
 
 object DatabaseFactory {
 
     fun init() {
         val database = if (isDockerEnvironment()) {
-            Database.connect(createHikariDataSource())
+            Database.connect(createPostgresDataSource())
         } else {
+            val localConfig = createLocalH2Config()
             Database.connect(
-                url = "jdbc:h2:mem:printbusiness;DB_CLOSE_DELAY=-1",
+                url = localConfig.url,
                 driver = "org.h2.Driver",
-                user = "root",
-                password = ""
+                user = localConfig.user,
+                password = localConfig.password
             )
         }
 
@@ -39,7 +42,8 @@ object DatabaseFactory {
                 PartnersTable,
                 OutsourceJobsTable,
                 InvoicesTable,
-                InvoiceLinesTable
+                InvoiceLinesTable,
+                LayoutsTable
             )
         }
     }
@@ -48,7 +52,44 @@ object DatabaseFactory {
         return System.getenv("DB_HOST") != null
     }
 
-    private fun createHikariDataSource(): HikariDataSource {
+    private data class LocalH2Config(
+        val url: String,
+        val user: String,
+        val password: String
+    )
+
+    private fun createLocalH2Config(): LocalH2Config {
+        val customUrl = System.getenv("H2_URL")?.trim()?.takeIf { it.isNotEmpty() }
+        val user = System.getenv("H2_USER")?.trim()?.takeIf { it.isNotEmpty() } ?: "sa"
+        val password = System.getenv("H2_PASSWORD") ?: ""
+
+        if (customUrl != null) {
+            return LocalH2Config(
+                url = customUrl,
+                user = user,
+                password = password
+            )
+        }
+
+        val cwd = File(System.getProperty("user.dir"))
+        val dbDir = if (cwd.name == "backend") {
+            File(cwd, "data")
+        } else {
+            File(cwd, "backend/data")
+        }
+        if (!dbDir.exists()) {
+            dbDir.mkdirs()
+        }
+        val dbPath = File(dbDir, "printbusiness").absolutePath
+
+        return LocalH2Config(
+            url = "jdbc:h2:file:$dbPath;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1",
+            user = user,
+            password = password
+        )
+    }
+
+    private fun createPostgresDataSource(): HikariDataSource {
         val dbHost = System.getenv("DB_HOST") ?: "localhost"
         val dbPort = System.getenv("DB_PORT") ?: "5432"
         val dbName = System.getenv("DB_NAME") ?: "printbusiness_db"

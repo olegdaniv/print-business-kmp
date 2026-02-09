@@ -38,6 +38,7 @@ fun Route.configureBusinessProfileRoutes() {
 
 private fun validateBusinessProfile(request: BusinessProfileUpsertRequest) {
     if (request.ownerName.isBlank()) throw IllegalArgumentException("Owner name is required")
+    if (request.phone.isNullOrBlank()) throw IllegalArgumentException("Phone is required")
     if (request.taxId.isBlank()) throw IllegalArgumentException("Tax ID is required")
     if (request.address.isBlank()) throw IllegalArgumentException("Address is required")
     if (request.iban.isBlank()) throw IllegalArgumentException("IBAN is required")

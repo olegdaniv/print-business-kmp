@@ -11,7 +11,10 @@ object ClientsTable : Table("clients") {
     val contactName = varchar("contact_name", 255).nullable()
     val phone = varchar("phone", 50)
     val email = varchar("email", 255).nullable()
+    val taxId = varchar("tax_id", 50).nullable()
     val address = varchar("address", 500)
+    val iban = varchar("iban", 64).nullable()
+    val bankName = varchar("bank_name", 255).nullable()
     val notes = text("notes").nullable()
     val createdAt = timestamp("created_at").clientDefault { Instant.now() }
     val updatedAt = timestamp("updated_at").clientDefault { Instant.now() }

@@ -7,6 +7,8 @@ import java.time.Instant
 object BusinessProfilesTable : Table("business_profiles") {
     val id = varchar("id", 36)
     val ownerName = varchar("owner_name", 255)
+    val email = varchar("email", 255).nullable()
+    val phone = varchar("phone", 50).nullable()
     val taxId = varchar("tax_id", 50)
     val address = varchar("address", 500)
     val iban = varchar("iban", 64)

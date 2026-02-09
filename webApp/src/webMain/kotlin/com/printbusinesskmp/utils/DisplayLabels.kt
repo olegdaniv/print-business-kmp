@@ -4,6 +4,7 @@ import com.printbusinesskmp.models.OrderStatus
 import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.models.ProductType
 import com.printbusinesskmp.models.ServiceType
+import com.printbusinesskmp.models.LayoutStatus
 
 fun OrderStatus.labelUa(): String = when (this) {
     OrderStatus.NEW -> "Нове"
@@ -28,4 +29,12 @@ fun ProductType.labelUa(): String = when (this) {
     ProductType.T_SHIRT -> "Футболка"
     ProductType.HOODIE -> "Худі"
     ProductType.OTHER -> "Інше"
+}
+
+fun LayoutStatus.labelUa(): String = when (this) {
+    LayoutStatus.FUTURE -> "Майбутнє"
+    LayoutStatus.IN_PROGRESS -> "В роботі"
+    LayoutStatus.READY -> "Готово"
+    LayoutStatus.PRINTED -> "Надруковано"
+    LayoutStatus.ARCHIVED -> "Архів"
 }

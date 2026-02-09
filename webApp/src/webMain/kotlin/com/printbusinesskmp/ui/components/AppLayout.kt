@@ -84,6 +84,11 @@ private fun Sidebar(
             onClick = { onNavigate(Screen.Orders) }
         )
         SidebarItem(
+            text = "Макети",
+            selected = currentScreen is Screen.Layouts,
+            onClick = { onNavigate(Screen.Layouts) }
+        )
+        SidebarItem(
             text = "Рахунки",
             selected = currentScreen is Screen.Invoices,
             onClick = { onNavigate(Screen.Invoices) }

@@ -50,9 +50,12 @@ fun ClientFormScreen(
     var type by remember { mutableStateOf(ClientType.PERSON) }
     var displayName by remember { mutableStateOf("") }
     var contactName by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var taxId by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
+    var iban by remember { mutableStateOf("") }
+    var bankName by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
 
     var loading by remember { mutableStateOf(editMode) }
@@ -67,9 +70,12 @@ fun ClientFormScreen(
                 type = client.type
                 displayName = client.displayName
                 contactName = client.contactName.orEmpty()
-                phone = client.phone
                 email = client.email.orEmpty()
+                phone = client.phone
+                taxId = client.taxId.orEmpty()
                 address = client.address
+                iban = client.iban.orEmpty()
+                bankName = client.bankName.orEmpty()
                 notes = client.notes.orEmpty()
             } catch (e: Exception) {
                 error = e.message
@@ -136,13 +142,7 @@ fun ClientFormScreen(
                 OutlinedTextField(
                     value = contactName,
                     onValueChange = { contactName = it },
-                    label = { Text("Контактна особа") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = phone,
-                    onValueChange = { phone = it },
-                    label = { Text("Телефон") },
+                    label = { Text("Контактна особа (опціонально)") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -152,9 +152,33 @@ fun ClientFormScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Телефон") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = taxId,
+                    onValueChange = { taxId = it },
+                    label = { Text("ЄДРПОУ / РНОКПП") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
                     value = address,
                     onValueChange = { address = it },
                     label = { Text("Адреса") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = iban,
+                    onValueChange = { iban = it },
+                    label = { Text("IBAN") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = bankName,
+                    onValueChange = { bankName = it },
+                    label = { Text("Банк") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -196,7 +220,10 @@ fun ClientFormScreen(
                                                 contactName = contactName.ifBlank { null },
                                                 phone = phone,
                                                 email = email.ifBlank { null },
+                                                taxId = taxId.ifBlank { null },
                                                 address = address,
+                                                iban = iban.ifBlank { null },
+                                                bankName = bankName.ifBlank { null },
                                                 notes = notes.ifBlank { null }
                                             )
                                         )
@@ -208,7 +235,10 @@ fun ClientFormScreen(
                                                 contactName = contactName.ifBlank { null },
                                                 phone = phone,
                                                 email = email.ifBlank { null },
+                                                taxId = taxId.ifBlank { null },
                                                 address = address,
+                                                iban = iban.ifBlank { null },
+                                                bankName = bankName.ifBlank { null },
                                                 notes = notes.ifBlank { null }
                                             )
                                         )

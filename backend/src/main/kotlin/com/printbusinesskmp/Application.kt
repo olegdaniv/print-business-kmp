@@ -4,6 +4,7 @@ import com.printbusinesskmp.database.DatabaseFactory
 import com.printbusinesskmp.routes.configureBusinessProfileRoutes
 import com.printbusinesskmp.routes.configureClientRoutes
 import com.printbusinesskmp.routes.configureInvoiceRoutes
+import com.printbusinesskmp.routes.configureLayoutRoutes
 import com.printbusinesskmp.routes.configureOrderRoutes
 import com.printbusinesskmp.routes.configureOutsourceRoutes
 import com.printbusinesskmp.routes.configurePartnerRoutes
@@ -70,6 +71,7 @@ fun Application.module() {
         configureOutsourceRoutes()
         configureOrderRoutes()
         configureInvoiceRoutes()
+        configureLayoutRoutes()
         configurePricingRoutes()
     }
 }

@@ -30,6 +30,8 @@ class BusinessProfileRepository {
             BusinessProfilesTable.insert {
                 it[BusinessProfilesTable.id] = id
                 it[ownerName] = request.ownerName.trim()
+                it[email] = request.email?.trim()?.takeIf { value -> value.isNotEmpty() }
+                it[phone] = request.phone?.trim()?.takeIf { value -> value.isNotEmpty() }
                 it[taxId] = request.taxId.trim()
                 it[address] = request.address.trim()
                 it[iban] = request.iban.trim()
@@ -47,6 +49,8 @@ class BusinessProfileRepository {
             val id = existing[BusinessProfilesTable.id]
             BusinessProfilesTable.update({ BusinessProfilesTable.id eq id }) {
                 it[ownerName] = request.ownerName.trim()
+                it[email] = request.email?.trim()?.takeIf { value -> value.isNotEmpty() }
+                it[phone] = request.phone?.trim()?.takeIf { value -> value.isNotEmpty() }
                 it[taxId] = request.taxId.trim()
                 it[address] = request.address.trim()
                 it[iban] = request.iban.trim()
@@ -67,6 +71,8 @@ class BusinessProfileRepository {
         return BusinessProfile(
             id = row[BusinessProfilesTable.id],
             ownerName = row[BusinessProfilesTable.ownerName],
+            email = row[BusinessProfilesTable.email],
+            phone = row[BusinessProfilesTable.phone],
             taxId = row[BusinessProfilesTable.taxId],
             address = row[BusinessProfilesTable.address],
             iban = row[BusinessProfilesTable.iban],

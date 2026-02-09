@@ -36,6 +36,8 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
     val scope = rememberCoroutineScope()
 
     var ownerName by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var taxId by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var iban by remember { mutableStateOf("") }
@@ -53,6 +55,8 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
             val profile = ApiClient.getBusinessProfile()
             if (profile != null) {
                 ownerName = profile.ownerName
+                email = profile.email.orEmpty()
+                phone = profile.phone.orEmpty()
                 taxId = profile.taxId
                 address = profile.address
                 iban = profile.iban
@@ -92,7 +96,19 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                 OutlinedTextField(
                     value = ownerName,
                     onValueChange = { ownerName = it },
-                    label = { Text("Власник") },
+                    label = { Text("Назва ФОП / ПІБ") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Телефон") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -143,7 +159,7 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                     Button(
                         onClick = {
                             val parsedTax = taxPercent.toDoubleOrNull()
-                            if (ownerName.isBlank() || taxId.isBlank() || address.isBlank() || iban.isBlank() || bankName.isBlank() || parsedTax == null || parsedTax < 0) {
+                            if (ownerName.isBlank() || phone.isBlank() || taxId.isBlank() || address.isBlank() || iban.isBlank() || bankName.isBlank() || parsedTax == null || parsedTax < 0) {
                                 error = "Заповніть всі обов'язкові поля коректно"
                                 return@Button
                             }
@@ -157,6 +173,8 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                                     ApiClient.upsertBusinessProfile(
                                         BusinessProfileUpsertRequest(
                                             ownerName = ownerName,
+                                            email = email.ifBlank { null },
+                                            phone = phone,
                                             taxId = taxId,
                                             address = address,
                                             iban = iban,

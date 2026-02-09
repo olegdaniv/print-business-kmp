@@ -8,5 +8,6 @@ sealed class Screen {
     data object Orders : Screen()
     data class OrderForm(val orderId: String? = null) : Screen()
     data class OrderDetail(val orderId: String) : Screen()
+    data object Layouts : Screen()
     data object Invoices : Screen()
 }

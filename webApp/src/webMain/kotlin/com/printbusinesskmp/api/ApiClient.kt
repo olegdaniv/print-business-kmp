@@ -6,6 +6,10 @@ import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.ClientCreateRequest
 import com.printbusinesskmp.models.ClientUpdateRequest
 import com.printbusinesskmp.models.Invoice
+import com.printbusinesskmp.models.Layout
+import com.printbusinesskmp.models.LayoutCreateRequest
+import com.printbusinesskmp.models.LayoutStatus
+import com.printbusinesskmp.models.LayoutUpdateRequest
 import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.models.OrderCreateRequest
 import com.printbusinesskmp.models.OrderStatus
@@ -161,5 +165,47 @@ object ApiClient {
 
     fun getInvoiceDownloadUrl(id: String): String {
         return "$BASE_URL/api/invoices/download/$id"
+    }
+
+    suspend fun getLayouts(
+        search: String? = null,
+        clientId: String? = null,
+        status: LayoutStatus? = null
+    ): List<Layout> {
+        return client.get("$BASE_URL/api/layouts") {
+            url {
+                search?.trim()?.takeIf { it.isNotEmpty() }?.let { value ->
+                    parameters.append("search", value)
+                }
+                clientId?.trim()?.takeIf { it.isNotEmpty() }?.let { value ->
+                    parameters.append("clientId", value)
+                }
+                status?.let { value ->
+                    parameters.append("status", value.name)
+                }
+            }
+        }.body()
+    }
+
+    suspend fun getLayout(id: String): Layout {
+        return client.get("$BASE_URL/api/layouts/$id").body()
+    }
+
+    suspend fun createLayout(request: LayoutCreateRequest): Layout {
+        return client.post("$BASE_URL/api/layouts") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun updateLayout(id: String, request: LayoutUpdateRequest): Layout {
+        return client.put("$BASE_URL/api/layouts/$id") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun deleteLayout(id: String) {
+        client.delete("$BASE_URL/api/layouts/$id")
     }
 }

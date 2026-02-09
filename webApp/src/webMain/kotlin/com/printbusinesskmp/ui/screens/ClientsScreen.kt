@@ -67,6 +67,10 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
     val filtered = clients.filter { client ->
         client.displayName.contains(search, ignoreCase = true) ||
             client.phone.contains(search, ignoreCase = true) ||
+            (client.email?.contains(search, ignoreCase = true) == true) ||
+            (client.taxId?.contains(search, ignoreCase = true) == true) ||
+            (client.iban?.contains(search, ignoreCase = true) == true) ||
+            (client.bankName?.contains(search, ignoreCase = true) == true) ||
             client.address.contains(search, ignoreCase = true)
     }
 
@@ -118,10 +122,11 @@ fun ClientsScreen(onNavigate: (Screen) -> Unit) {
                     .background(AppColors.CardItemBg)
                     .padding(14.dp)
             ) {
-                HeaderCell("Назва", Modifier.weight(2f))
-                HeaderCell("Тип", Modifier.weight(1f))
+                HeaderCell("Назва", Modifier.weight(1.8f))
+                HeaderCell("Email", Modifier.weight(1.6f))
                 HeaderCell("Телефон", Modifier.weight(1.2f))
-                HeaderCell("Адреса", Modifier.weight(2f))
+                HeaderCell("ЄДРПОУ", Modifier.weight(1.1f))
+                HeaderCell("Адреса", Modifier.weight(1.8f))
                 HeaderCell("Зам.", Modifier.weight(0.7f))
                 HeaderCell("Дії", Modifier.weight(1.2f))
             }
@@ -173,10 +178,11 @@ private fun ClientRow(
         modifier = Modifier.fillMaxWidth().padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(client.displayName, Modifier.weight(2f), color = AppColors.DarkSlate)
-        Text(client.type.name, Modifier.weight(1f), color = AppColors.MediumGray, fontSize = 13.sp)
+        Text(client.displayName, Modifier.weight(1.8f), color = AppColors.DarkSlate)
+        Text(client.email.orEmpty(), Modifier.weight(1.6f), color = AppColors.MediumGray, fontSize = 13.sp)
         Text(client.phone, Modifier.weight(1.2f), color = AppColors.MediumGray, fontSize = 13.sp)
-        Text(client.address, Modifier.weight(2f), color = AppColors.MediumGray, fontSize = 13.sp)
+        Text(client.taxId.orEmpty(), Modifier.weight(1.1f), color = AppColors.MediumGray, fontSize = 13.sp)
+        Text(client.address, Modifier.weight(1.8f), color = AppColors.MediumGray, fontSize = 13.sp)
         Text(client.orderCount.toString(), Modifier.weight(0.7f), color = AppColors.DarkSlate)
 
         Row(modifier = Modifier.weight(1.2f)) {

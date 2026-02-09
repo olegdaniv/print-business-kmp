@@ -54,7 +54,10 @@ class ClientRepository {
             it[contactName] = request.contactName?.trim()?.takeIf { value -> value.isNotEmpty() }
             it[phone] = request.phone.trim()
             it[email] = request.email?.trim()?.takeIf { value -> value.isNotEmpty() }
+            it[taxId] = request.taxId?.trim()?.takeIf { value -> value.isNotEmpty() }
             it[address] = request.address.trim()
+            it[iban] = request.iban?.trim()?.takeIf { value -> value.isNotEmpty() }
+            it[bankName] = request.bankName?.trim()?.takeIf { value -> value.isNotEmpty() }
             it[notes] = request.notes?.trim()?.takeIf { value -> value.isNotEmpty() }
             it[createdAt] = now
             it[updatedAt] = now
@@ -73,7 +76,10 @@ class ClientRepository {
             it[contactName] = request.contactName?.trim()?.takeIf { value -> value.isNotEmpty() }
             it[phone] = request.phone.trim()
             it[email] = request.email?.trim()?.takeIf { value -> value.isNotEmpty() }
+            it[taxId] = request.taxId?.trim()?.takeIf { value -> value.isNotEmpty() }
             it[address] = request.address.trim()
+            it[iban] = request.iban?.trim()?.takeIf { value -> value.isNotEmpty() }
+            it[bankName] = request.bankName?.trim()?.takeIf { value -> value.isNotEmpty() }
             it[notes] = request.notes?.trim()?.takeIf { value -> value.isNotEmpty() }
             it[updatedAt] = Instant.now()
         }
@@ -106,7 +112,10 @@ class ClientRepository {
             contactName = row[ClientsTable.contactName],
             phone = row[ClientsTable.phone],
             email = row[ClientsTable.email],
+            taxId = row[ClientsTable.taxId],
             address = row[ClientsTable.address],
+            iban = row[ClientsTable.iban],
+            bankName = row[ClientsTable.bankName],
             notes = row[ClientsTable.notes],
             orderCount = orderCount,
             createdAt = kotlin.time.Instant.fromEpochMilliseconds(row[ClientsTable.createdAt].toEpochMilli()),

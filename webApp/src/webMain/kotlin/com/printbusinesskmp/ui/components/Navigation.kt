@@ -7,6 +7,7 @@ import com.printbusinesskmp.ui.screens.ClientFormScreen
 import com.printbusinesskmp.ui.screens.ClientsScreen
 import com.printbusinesskmp.ui.screens.DashboardScreen
 import com.printbusinesskmp.ui.screens.InvoiceScreen
+import com.printbusinesskmp.ui.screens.LayoutsScreen
 import com.printbusinesskmp.ui.screens.OrderDetailScreen
 import com.printbusinesskmp.ui.screens.OrderFormScreen
 import com.printbusinesskmp.ui.screens.OrdersScreen
@@ -24,6 +25,7 @@ fun NavigationContent(
         Screen.Orders -> OrdersScreen(onNavigate)
         is Screen.OrderForm -> OrderFormScreen(currentScreen.orderId, onNavigate)
         is Screen.OrderDetail -> OrderDetailScreen(currentScreen.orderId, onNavigate)
+        Screen.Layouts -> LayoutsScreen(onNavigate)
         Screen.Invoices -> InvoiceScreen(onNavigate)
     }
 }
