@@ -1,0 +1,171 @@
+name: Release Windows MSI
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v3
+
+      - name: Resolve release metadata
+        id: meta
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ($tag -notmatch '^v(\d+\.\d+\.\d+)$') {
+            throw "Release tag must match vX.Y.Z. Got: $tag"
+          }
+
+          $version = $Matches[1]
+          $repo = "${{ github.repository }}"
+          $owner, $repoName = $repo.Split("/")
+          $pagesHost = "$owner.github.io"
+
+          if ($repoName.ToLowerInvariant() -eq "$($owner.ToLowerInvariant()).github.io") {
+            $pagesBase = "https://$pagesHost"
+          } else {
+            $pagesBase = "https://$pagesHost/$repoName"
+          }
+
+          $feedUrl = "$pagesBase/updates/latest.json"
+          $msiName = "PrintBusiness-$version.msi"
+
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "pages_base=$pagesBase" >> $env:GITHUB_OUTPUT
+          "pages_host=$pagesHost" >> $env:GITHUB_OUTPUT
+          "feed_url=$feedUrl" >> $env:GITHUB_OUTPUT
+          "msi_name=$msiName" >> $env:GITHUB_OUTPUT
+
+      - name: Detect MSI packaging task
+        id: detect_task
+        shell: pwsh
+        run: |
+          $tasksOutput = ./gradlew :desktopApp:tasks --all --console=plain
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to list desktop tasks."
+          }
+
+          if ($tasksOutput -match '(?m)^\s*packageMsi\b') {
+            $task = ":desktopApp:packageMsi"
+          } elseif ($tasksOutput -match '(?m)^\s*packageReleaseMsi\b') {
+            $task = ":desktopApp:packageReleaseMsi"
+          } else {
+            throw "Could not find MSI packaging task."
+          }
+
+          "task=$task" >> $env:GITHUB_OUTPUT
+
+      - name: Build MSI
+        shell: pwsh
+        run: |
+          ./gradlew --no-daemon ${{ steps.detect_task.outputs.task }} `
+            -PdesktopAppVersion=${{ steps.meta.outputs.version }} `
+            -PdesktopUpdateFeedUrl=${{ steps.meta.outputs.feed_url }} `
+            -PdesktopUpdateAllowedHosts=${{ steps.meta.outputs.pages_host }} `
+            -PdesktopAllowUpdatesWithoutChecksum=false
+
+      - name: Prepare release artifacts and update feed
+        id: feed
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          $msi = Get-ChildItem -Path "desktopApp/build/compose/binaries/main/msi" -Recurse -Filter *.msi |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $msi) {
+            throw "MSI file not found in desktopApp/build/compose/binaries/main/msi."
+          }
+
+          $updatesDir = Join-Path $PWD "dist/updates"
+          New-Item -ItemType Directory -Force -Path $updatesDir | Out-Null
+
+          $targetMsiPath = Join-Path $updatesDir "${{ steps.meta.outputs.msi_name }}"
+          Copy-Item -Path $msi.FullName -Destination $targetMsiPath -Force
+
+          $sha256 = (Get-FileHash -Algorithm SHA256 $targetMsiPath).Hash.ToLowerInvariant()
+
+          $releaseNotes = ""
+          $releaseApiUrl = "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ steps.meta.outputs.tag }}"
+          $headers = @{
+            Authorization = "Bearer $env:GITHUB_TOKEN"
+            Accept = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+            "User-Agent" = "printbusiness-release-workflow"
+          }
+          try {
+            $release = Invoke-RestMethod -Method Get -Uri $releaseApiUrl -Headers $headers
+            if ($release -and -not [string]::IsNullOrWhiteSpace($release.body)) {
+              $releaseNotes = $release.body.Trim()
+            }
+          } catch {
+            # no pre-existing release for this tag
+          }
+
+          if ([string]::IsNullOrWhiteSpace($releaseNotes)) {
+            $releaseNotes = "New release ${{ steps.meta.outputs.version }}"
+          }
+
+          $msiUrl = "${{ steps.meta.outputs.pages_base }}/updates/${{ steps.meta.outputs.msi_name }}"
+          $latestJsonPath = Join-Path $updatesDir "latest.json"
+          pwsh ./scripts/generate-latest-json.ps1 `
+            -Version "${{ steps.meta.outputs.version }}" `
+            -Notes $releaseNotes `
+            -MsiUrl $msiUrl `
+            -Sha256 $sha256 `
+            -OutputPath $latestJsonPath
+
+          "msi_path=$targetMsiPath" >> $env:GITHUB_OUTPUT
+          "latest_json_path=$latestJsonPath" >> $env:GITHUB_OUTPUT
+          "sha256=$sha256" >> $env:GITHUB_OUTPUT
+          "release_notes<<EOF" >> $env:GITHUB_OUTPUT
+          $releaseNotes >> $env:GITHUB_OUTPUT
+          "EOF" >> $env:GITHUB_OUTPUT
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: PrintBusiness v${{ steps.meta.outputs.version }}
+          body: ${{ steps.feed.outputs.release_notes }}
+          files: ${{ steps.feed.outputs.msi_path }}
+
+      - name: Publish updates to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./dist
+          keep_files: true
+          enable_jekyll: false
+
+      - name: Job summary
+        shell: pwsh
+        run: |
+          @"
+          Released version: ${{ steps.meta.outputs.version }}
+          Feed URL: ${{ steps.meta.outputs.feed_url }}
+          MSI URL: ${{ steps.meta.outputs.pages_base }}/updates/${{ steps.meta.outputs.msi_name }}
+          SHA256: ${{ steps.feed.outputs.sha256 }}
+          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
