@@ -33,6 +33,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.browser.window
 
 @Serializable
 private data class OrderStateRequest(
@@ -41,7 +42,24 @@ private data class OrderStateRequest(
 )
 
 object ApiClient {
-    private const val BASE_URL = "http://localhost:8080"
+    private val BASE_URL = resolveBaseUrl()
+
+    private fun resolveBaseUrl(): String {
+        val explicitBaseUrl = (window.asDynamic().__API_BASE_URL as? String)
+            ?.trim()
+            ?.removeSuffix("/")
+
+        if (!explicitBaseUrl.isNullOrEmpty()) {
+            return explicitBaseUrl
+        }
+
+        // Keep local dev behavior (web dev server on 8081 -> backend on 8080).
+        return if (window.location.port == "8081") {
+            "http://localhost:8080"
+        } else {
+            window.location.origin
+        }
+    }
 
     private val client = HttpClient {
         install(ContentNegotiation) {
