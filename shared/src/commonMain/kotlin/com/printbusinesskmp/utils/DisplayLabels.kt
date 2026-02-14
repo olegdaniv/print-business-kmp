@@ -1,10 +1,10 @@
 package com.printbusinesskmp.utils
 
+import com.printbusinesskmp.models.LayoutStatus
 import com.printbusinesskmp.models.OrderStatus
 import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.models.ProductType
 import com.printbusinesskmp.models.ServiceType
-import com.printbusinesskmp.models.LayoutStatus
 
 fun OrderStatus.labelUa(): String = when (this) {
     OrderStatus.NEW -> "Нове"

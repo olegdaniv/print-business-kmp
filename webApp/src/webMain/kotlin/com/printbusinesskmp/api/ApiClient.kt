@@ -45,14 +45,6 @@ object ApiClient {
     private val BASE_URL = resolveBaseUrl()
 
     private fun resolveBaseUrl(): String {
-        val explicitBaseUrl = (window.asDynamic().__API_BASE_URL as? String)
-            ?.trim()
-            ?.removeSuffix("/")
-
-        if (!explicitBaseUrl.isNullOrEmpty()) {
-            return explicitBaseUrl
-        }
-
         // Keep local dev behavior (web dev server on 8081 -> backend on 8080).
         return if (window.location.port == "8081") {
             "http://localhost:8080"
