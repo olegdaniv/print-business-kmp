@@ -1,0 +1,8 @@
+{
+  "version": "1.2.3",
+  "notes": "Bug fixes, invoice improvements",
+  "windows": {
+    "url": "https://updates.example.com/printbusiness/updates/PrintBusiness-1.2.3.msi",
+    "sha256": "4fd8d4a3356eb7aa8d42f1b4069f99f8a55f83c58e5f56f5c3df2bf42a5c8f66"
+  }
+}
