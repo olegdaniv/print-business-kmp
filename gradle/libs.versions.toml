@@ -4,6 +4,7 @@ composeMultiplatform = "1.9.3"
 exposed = "0.58.0"
 h2 = "2.3.232"
 hikari = "5.1.0"
+flyway = "11.15.0"
 kotlin = "2.3.0"
 kotlinx-serialization = "1.10.0-RC"
 kotlinx-datetime = "0.7.1"
@@ -33,6 +34,8 @@ exposed-javaTime = { module = "org.jetbrains.exposed:exposed-java-time", version
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
 hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 postgres = { module = "org.postgresql:postgresql", version.ref = "postgres" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 
 [plugins]
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
@@ -41,3 +44,4 @@ kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }

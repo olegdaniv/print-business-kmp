@@ -1,11 +1,15 @@
 package com.printbusinesskmp
 
 import com.printbusinesskmp.auth.AppJwtService
+import com.printbusinesskmp.auth.DatabaseAllowlistService
+import com.printbusinesskmp.auth.DbFirstAllowlistService
 import com.printbusinesskmp.auth.EnvAllowlistService
 import com.printbusinesskmp.auth.EnvironmentConfig
 import com.printbusinesskmp.auth.GoogleIdTokenVerifier
 import com.printbusinesskmp.auth.configureJwtAuthentication
 import com.printbusinesskmp.database.DatabaseFactory
+import com.printbusinesskmp.repository.AllowedEmailRepository
+import com.printbusinesskmp.routes.configureAllowlistAdminRoutes
 import com.printbusinesskmp.routes.configureAuthRoutes
 import com.printbusinesskmp.routes.configureBusinessProfileRoutes
 import com.printbusinesskmp.routes.configureClientRoutes
@@ -42,7 +46,12 @@ fun Application.module() {
     DatabaseFactory.init()
     val appJwtService = AppJwtService.fromEnvironment()
     val googleIdTokenVerifier = GoogleIdTokenVerifier.fromEnvironment()
-    val allowlistService = EnvAllowlistService.fromEnvironment()
+    val envAllowlistService = EnvAllowlistService.fromEnvironment()
+    val dbAllowlistService = DatabaseAllowlistService(AllowedEmailRepository())
+    val allowlistService = DbFirstAllowlistService(
+        dbAllowlistService = dbAllowlistService,
+        envAllowlistService = envAllowlistService
+    )
 
     install(ContentNegotiation) {
         json(
@@ -88,6 +97,9 @@ fun Application.module() {
             googleIdTokenVerifier = googleIdTokenVerifier,
             allowlistService = allowlistService,
             appJwtService = appJwtService
+        )
+        configureAllowlistAdminRoutes(
+            allowlistService = allowlistService
         )
 
         configureClientRoutes()

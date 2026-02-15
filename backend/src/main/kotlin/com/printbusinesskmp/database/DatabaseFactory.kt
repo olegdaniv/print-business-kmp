@@ -1,5 +1,6 @@
 package com.printbusinesskmp.database
 
+import com.printbusinesskmp.database.tables.AllowedEmailsTable
 import com.printbusinesskmp.database.tables.BusinessProfilesTable
 import com.printbusinesskmp.database.tables.ClientsTable
 import com.printbusinesskmp.database.tables.InvoiceLinesTable
@@ -13,6 +14,7 @@ import com.printbusinesskmp.platform.AppDataPaths
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.Dispatchers
+import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -20,6 +22,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import javax.sql.DataSource
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
@@ -28,7 +31,9 @@ object DatabaseFactory {
 
     fun init() {
         val database = if (isDockerEnvironment()) {
-            Database.connect(createPostgresDataSource())
+            val postgresDataSource = createPostgresDataSource()
+            migrateWithFlyway(postgresDataSource)
+            Database.connect(postgresDataSource)
         } else {
             val localConfig = createLocalH2Config()
             localConfig.dbBasePath?.let { basePath ->
@@ -37,6 +42,11 @@ object DatabaseFactory {
                     backupDir = AppDataPaths.resolved.backupDir
                 )
             }
+            migrateWithFlyway(
+                jdbcUrl = localConfig.url,
+                user = localConfig.user,
+                password = localConfig.password
+            )
             Database.connect(
                 url = localConfig.url,
                 driver = "org.h2.Driver",
@@ -57,7 +67,8 @@ object DatabaseFactory {
                 OutsourceJobsTable,
                 InvoicesTable,
                 InvoiceLinesTable,
-                LayoutsTable
+                LayoutsTable,
+                AllowedEmailsTable
             )
         }
     }
@@ -127,6 +138,26 @@ object DatabaseFactory {
         }
 
         return HikariDataSource(config)
+    }
+
+    private fun migrateWithFlyway(dataSource: DataSource) {
+        Flyway.configure()
+            .dataSource(dataSource)
+            .locations("classpath:db/migration")
+            .baselineOnMigrate(true)
+            .baselineVersion("0")
+            .load()
+            .migrate()
+    }
+
+    private fun migrateWithFlyway(jdbcUrl: String, user: String, password: String) {
+        Flyway.configure()
+            .dataSource(jdbcUrl, user, password)
+            .locations("classpath:db/migration")
+            .baselineOnMigrate(true)
+            .baselineVersion("0")
+            .load()
+            .migrate()
     }
 
     suspend fun <T> dbQuery(block: suspend () -> T): T =
