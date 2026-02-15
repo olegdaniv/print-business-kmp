@@ -24,6 +24,9 @@ dependencies {
     implementation(libs.ktor.serializationKotlinxJson)
     implementation(libs.ktor.serverCors)
     implementation(libs.ktor.serverCallLogging)
+    implementation("io.ktor:ktor-server-auth-jwt-jvm:3.3.3")
+    implementation("com.auth0:java-jwt:4.5.0")
+    implementation("com.auth0:jwks-rsa:0.22.1")
 
     // Serialization
     implementation(libs.kotlinx.serialization.json)

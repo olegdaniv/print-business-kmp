@@ -3,6 +3,7 @@ package com.printbusinesskmp.routes
 import com.printbusinesskmp.models.BusinessProfileUpsertRequest
 import com.printbusinesskmp.repository.BusinessProfileRepository
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -13,24 +14,26 @@ import io.ktor.server.routing.route
 private val businessProfileRepository = BusinessProfileRepository()
 
 fun Route.configureBusinessProfileRoutes() {
-    route("/api/business-profile") {
-        get {
-            val profile = businessProfileRepository.getProfile()
-            if (profile == null) {
-                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Business profile not configured"))
-            } else {
-                call.respond(HttpStatusCode.OK, profile)
+    authenticate("app-jwt") {
+        route("/api/business-profile") {
+            get {
+                val profile = businessProfileRepository.getProfile()
+                if (profile == null) {
+                    call.respond(HttpStatusCode.NotFound, mapOf("error" to "Business profile not configured"))
+                } else {
+                    call.respond(HttpStatusCode.OK, profile)
+                }
             }
-        }
 
-        put {
-            try {
-                val request = call.receive<BusinessProfileUpsertRequest>()
-                validateBusinessProfile(request)
-                val profile = businessProfileRepository.upsert(request)
-                call.respond(HttpStatusCode.OK, profile)
-            } catch (e: IllegalArgumentException) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Validation error")))
+            put {
+                try {
+                    val request = call.receive<BusinessProfileUpsertRequest>()
+                    validateBusinessProfile(request)
+                    val profile = businessProfileRepository.upsert(request)
+                    call.respond(HttpStatusCode.OK, profile)
+                } catch (e: IllegalArgumentException) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Validation error")))
+                }
             }
         }
     }

@@ -1,6 +1,12 @@
 package com.printbusinesskmp
 
+import com.printbusinesskmp.auth.AppJwtService
+import com.printbusinesskmp.auth.EnvAllowlistService
+import com.printbusinesskmp.auth.EnvironmentConfig
+import com.printbusinesskmp.auth.GoogleIdTokenVerifier
+import com.printbusinesskmp.auth.configureJwtAuthentication
 import com.printbusinesskmp.database.DatabaseFactory
+import com.printbusinesskmp.routes.configureAuthRoutes
 import com.printbusinesskmp.routes.configureBusinessProfileRoutes
 import com.printbusinesskmp.routes.configureClientRoutes
 import com.printbusinesskmp.routes.configureInvoiceRoutes
@@ -15,12 +21,15 @@ import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.Url
 import kotlinx.serialization.json.Json
 
 fun main() {
@@ -31,6 +40,9 @@ fun main() {
 
 fun Application.module() {
     DatabaseFactory.init()
+    val appJwtService = AppJwtService.fromEnvironment()
+    val googleIdTokenVerifier = GoogleIdTokenVerifier.fromEnvironment()
+    val allowlistService = EnvAllowlistService.fromEnvironment()
 
     install(ContentNegotiation) {
         json(
@@ -43,19 +55,27 @@ fun Application.module() {
         )
     }
 
+    val corsOrigins = EnvironmentConfig.csv("CORS_ALLOWED_ORIGINS")
+    require(corsOrigins.isNotEmpty()) {
+        "CORS_ALLOWED_ORIGINS environment variable must contain at least one origin"
+    }
+
     install(CORS) {
-        anyHost()
-        allowHeader("Content-Type")
-        allowHeader("Authorization")
-        allowMethod(io.ktor.http.HttpMethod.Get)
-        allowMethod(io.ktor.http.HttpMethod.Post)
-        allowMethod(io.ktor.http.HttpMethod.Put)
-        allowMethod(io.ktor.http.HttpMethod.Patch)
-        allowMethod(io.ktor.http.HttpMethod.Delete)
-        allowMethod(io.ktor.http.HttpMethod.Options)
+        corsOrigins.map(::parseCorsOrigin).forEach { origin ->
+            allowHost(origin.host, schemes = listOf(origin.scheme))
+        }
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.Authorization)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Patch)
+        allowMethod(HttpMethod.Delete)
+        allowMethod(HttpMethod.Options)
     }
 
     install(CallLogging)
+    configureJwtAuthentication(appJwtService)
 
     routing {
         get("/") {
@@ -64,6 +84,11 @@ fun Application.module() {
         get("/health") {
             call.respondText("OK")
         }
+        configureAuthRoutes(
+            googleIdTokenVerifier = googleIdTokenVerifier,
+            allowlistService = allowlistService,
+            appJwtService = appJwtService
+        )
 
         configureClientRoutes()
         configureBusinessProfileRoutes()
@@ -74,4 +99,34 @@ fun Application.module() {
         configureLayoutRoutes()
         configurePricingRoutes()
     }
+}
+
+private data class CorsOrigin(
+    val host: String,
+    val scheme: String
+)
+
+private fun parseCorsOrigin(origin: String): CorsOrigin {
+    val url = runCatching { Url(origin) }.getOrElse {
+        throw IllegalArgumentException("Invalid origin in CORS_ALLOWED_ORIGINS: '$origin'")
+    }
+
+    val scheme = url.protocol.name.lowercase()
+    require(scheme == "http" || scheme == "https") {
+        "CORS origin must use http or https: '$origin'"
+    }
+
+    val hostWithOptionalPort = if (url.port == url.protocol.defaultPort) {
+        url.host
+    } else {
+        "${url.host}:${url.port}"
+    }
+    require(hostWithOptionalPort.isNotBlank()) {
+        "CORS origin host is invalid: '$origin'"
+    }
+
+    return CorsOrigin(
+        host = hostWithOptionalPort,
+        scheme = scheme
+    )
 }

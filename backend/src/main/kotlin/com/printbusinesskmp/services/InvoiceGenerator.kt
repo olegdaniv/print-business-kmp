@@ -13,19 +13,21 @@ import com.itextpdf.layout.element.Table
 import com.itextpdf.layout.properties.TextAlignment
 import com.itextpdf.layout.properties.UnitValue
 import com.printbusinesskmp.models.Invoice
+import com.printbusinesskmp.platform.AppDataPaths
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import java.io.File
+import java.nio.file.Files
 
 class InvoiceGenerator {
 
     fun generateInvoicePdf(invoice: Invoice): String {
-        val invoicesDir = File("invoices")
-        invoicesDir.mkdirs()
+        val invoicesDir = AppDataPaths.resolved.invoiceDir
+        Files.createDirectories(invoicesDir)
 
         val safeNumber = invoice.number.replace(Regex("[^A-Za-z0-9_-]"), "_")
-        val filePath = File(invoicesDir, "$safeNumber.pdf").absolutePath
+        val filePath = invoicesDir.resolve("$safeNumber.pdf").toAbsolutePath().normalize().toString()
 
         val writer = PdfWriter(filePath)
         val pdfDocument = PdfDocument(writer)
