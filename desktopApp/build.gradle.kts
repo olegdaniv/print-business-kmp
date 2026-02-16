@@ -21,6 +21,7 @@ val allowUpdatesWithoutChecksum = providers.gradleProperty("desktopAllowUpdatesW
     .orElse("true")
     .get()
     .toBoolean()
+val googleClientId = providers.gradleProperty("desktopGoogleClientId").orElse("").get()
 
 version = appVersion
 
@@ -51,7 +52,8 @@ compose.desktop {
             "-Dprintbusiness.app.version=$appVersion",
             "-Dprintbusiness.update.feedUrl=$updateFeedUrl",
             "-Dprintbusiness.update.allowedHosts=$updateAllowedHosts",
-            "-Dprintbusiness.update.allowWithoutChecksum=$allowUpdatesWithoutChecksum"
+            "-Dprintbusiness.update.allowWithoutChecksum=$allowUpdatesWithoutChecksum",
+            "-Dprintbusiness.google.clientId=$googleClientId"
         )
         nativeDistributions {
             targetFormats(TargetFormat.Msi)

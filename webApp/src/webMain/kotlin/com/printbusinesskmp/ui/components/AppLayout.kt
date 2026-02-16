@@ -26,10 +26,15 @@ import com.printbusinesskmp.theme.AppColors
 fun AppLayout(
     currentScreen: Screen,
     onNavigate: (Screen) -> Unit,
+    signedInLabel: String? = null,
     content: @Composable () -> Unit
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
-        Sidebar(currentScreen = currentScreen, onNavigate = onNavigate)
+        Sidebar(
+            currentScreen = currentScreen,
+            onNavigate = onNavigate,
+            signedInLabel = signedInLabel
+        )
 
         Box(
             modifier = Modifier
@@ -45,7 +50,8 @@ fun AppLayout(
 @Composable
 private fun Sidebar(
     currentScreen: Screen,
-    onNavigate: (Screen) -> Unit
+    onNavigate: (Screen) -> Unit,
+    signedInLabel: String?
 ) {
     Column(
         modifier = Modifier
@@ -62,6 +68,14 @@ private fun Sidebar(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
         )
+        if (!signedInLabel.isNullOrBlank()) {
+            Text(
+                text = signedInLabel,
+                color = AppColors.LightGrayText,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
+            )
+        }
 
         SidebarItem(
             text = "Огляд",

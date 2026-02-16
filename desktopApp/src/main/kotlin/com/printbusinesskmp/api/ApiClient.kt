@@ -21,6 +21,8 @@ import com.printbusinesskmp.models.modelsJson
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.DefaultRequest
+import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -29,11 +31,14 @@ import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
 
 @Serializable
 private data class OrderStateRequest(
@@ -41,12 +46,69 @@ private data class OrderStateRequest(
     val paymentStatus: PaymentStatus? = null
 )
 
+@Serializable
+private data class GoogleAuthRequest(
+    val idToken: String
+)
+
+@Serializable
+private data class GoogleAuthResponse(
+    val accessToken: String,
+    val expiresInSeconds: Long,
+    val email: String,
+    val name: String? = null
+)
+
+@Serializable
+private data class ApiErrorResponse(
+    val error: String? = null,
+    val message: String? = null
+)
+
+data class AuthSession(
+    val accessToken: String,
+    val expiresInSeconds: Long,
+    val email: String,
+    val name: String? = null
+)
+
+class NotAllowlistedException(message: String) : RuntimeException(message)
+
+class SessionExpiredException(message: String = "Session expired. Please sign in again.") : RuntimeException(message)
+
+class AuthRequestException(
+    val status: HttpStatusCode,
+    message: String
+) : RuntimeException(message)
+
 object ApiClient {
     private val baseUrl: String = resolveBaseUrl()
+
+    @Volatile
+    private var accessToken: String? = null
+    private var onUnauthorized: (() -> Unit)? = null
 
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(modelsJson)
+        }
+        HttpResponseValidator {
+            validateResponse { response ->
+                val requestPath = response.call.request.url.encodedPath
+                if (response.status == HttpStatusCode.Unauthorized && requiresAppJwt(requestPath)) {
+                    accessToken = null
+                    onUnauthorized?.invoke()
+                    throw SessionExpiredException()
+                }
+            }
+        }
+        install(DefaultRequest) {
+            val requestPath = url.build().encodedPath
+            if (requiresAppJwt(requestPath)) {
+                accessToken?.let { token ->
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
+            }
         }
     }
 
@@ -66,6 +128,49 @@ object ApiClient {
         }
 
         return "http://localhost:8080"
+    }
+
+    fun setAccessToken(token: String?) {
+        accessToken = token?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
+    fun setUnauthorizedHandler(handler: (() -> Unit)?) {
+        onUnauthorized = handler
+    }
+
+    suspend fun exchangeGoogleIdToken(idToken: String): AuthSession {
+        val response = client.post("$baseUrl/auth/google") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(GoogleAuthRequest(idToken = idToken))
+        }
+
+        return when (response.status) {
+            HttpStatusCode.OK -> {
+                val payload = response.body<GoogleAuthResponse>()
+                AuthSession(
+                    accessToken = payload.accessToken,
+                    expiresInSeconds = payload.expiresInSeconds,
+                    email = payload.email,
+                    name = payload.name
+                )
+            }
+
+            HttpStatusCode.Forbidden -> {
+                val message = parseErrorMessage(
+                    response = response,
+                    fallback = "This Google account is not allowlisted for this app."
+                )
+                throw NotAllowlistedException(message)
+            }
+
+            else -> {
+                val message = parseErrorMessage(
+                    response = response,
+                    fallback = "Sign-in failed (${response.status.value})."
+                )
+                throw AuthRequestException(response.status, message)
+            }
+        }
     }
 
     suspend fun getBusinessProfile(): BusinessProfile? {
@@ -222,5 +327,17 @@ object ApiClient {
 
     suspend fun deleteLayout(id: String) {
         client.delete("$baseUrl/api/layouts/$id")
+    }
+
+    private fun requiresAppJwt(path: String): Boolean {
+        return path.startsWith("/api/") || path.startsWith("/admin/")
+    }
+
+    private suspend fun parseErrorMessage(response: HttpResponse, fallback: String): String {
+        val bodyText = response.bodyAsText()
+        if (bodyText.isBlank()) return fallback
+        return runCatching {
+            modelsJson.decodeFromString<ApiErrorResponse>(bodyText).message?.ifBlank { null }
+        }.getOrNull() ?: fallback
     }
 }

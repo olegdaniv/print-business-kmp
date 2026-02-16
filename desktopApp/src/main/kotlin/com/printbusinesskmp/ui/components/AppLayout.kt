@@ -27,13 +27,15 @@ fun AppLayout(
     currentScreen: Screen,
     onNavigate: (Screen) -> Unit,
     updateAvailable: Boolean,
+    signedInLabel: String? = null,
     content: @Composable () -> Unit
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
         Sidebar(
             currentScreen = currentScreen,
             onNavigate = onNavigate,
-            updateAvailable = updateAvailable
+            updateAvailable = updateAvailable,
+            signedInLabel = signedInLabel
         )
 
         Box(
@@ -51,7 +53,8 @@ fun AppLayout(
 private fun Sidebar(
     currentScreen: Screen,
     onNavigate: (Screen) -> Unit,
-    updateAvailable: Boolean
+    updateAvailable: Boolean,
+    signedInLabel: String?
 ) {
     Column(
         modifier = Modifier
@@ -68,6 +71,14 @@ private fun Sidebar(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
         )
+        if (!signedInLabel.isNullOrBlank()) {
+            Text(
+                text = signedInLabel,
+                color = AppColors.LightGrayText,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
+            )
+        }
 
         SidebarItem(
             text = "Огляд",
