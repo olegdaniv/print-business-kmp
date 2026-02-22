@@ -127,7 +127,7 @@ object ApiClient {
             return env
         }
 
-        return "http://localhost:8080"
+        return com.printbusinesskmp.shared.BuildKonfig.BASE_URL
     }
 
     fun setAccessToken(token: String?) {

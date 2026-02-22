@@ -94,11 +94,7 @@ object ApiClient {
     private var onUnauthorized: (() -> Unit)? = null
 
     private fun resolveBaseUrl(): String {
-        return if (window.location.port == "8081") {
-            "http://localhost:8080"
-        } else {
-            window.location.origin
-        }
+        return com.printbusinesskmp.shared.BuildKonfig.BASE_URL
     }
 
     private val client = HttpClient {

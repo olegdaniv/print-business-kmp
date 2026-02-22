@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.buildkonfig)
 }
 
 kotlin {
@@ -39,3 +40,18 @@ compose.resources {
     generateResClass = always
 }
 
+buildkonfig {
+    packageName = "com.printbusinesskmp.shared"
+    defaultConfigs {
+        val host = project.findProperty("printbusiness.api.host")?.toString() ?: "localhost"
+        val port = project.findProperty("printbusiness.api.port")?.toString() ?: "8080"
+        val scheme = project.findProperty("printbusiness.api.scheme")?.toString() ?: "http"
+
+        val portSuffix = if (port == "80" || port == "443" || port.isBlank()) "" else ":$port"
+        buildConfigField(
+            com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING,
+            "BASE_URL",
+            "$scheme://$host$portSuffix"
+        )
+    }
+}
