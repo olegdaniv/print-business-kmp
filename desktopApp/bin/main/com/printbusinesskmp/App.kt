@@ -1,0 +1,101 @@
+package com.printbusinesskmp
+
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import com.printbusinesskmp.api.ApiClient
+import com.printbusinesskmp.api.AuthRequestException
+import com.printbusinesskmp.api.AuthSession
+import com.printbusinesskmp.api.NotAllowlistedException
+import com.printbusinesskmp.auth.DesktopGoogleSignInService
+import com.printbusinesskmp.desktop.update.UpdateService
+import com.printbusinesskmp.navigation.Screen
+import com.printbusinesskmp.ui.components.AppLayout
+import com.printbusinesskmp.ui.components.NavigationContent
+import com.printbusinesskmp.ui.screens.LoginScreen
+import kotlinx.coroutines.launch
+
+@Composable
+fun App() {
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.Orders) }
+    var authSession by remember { mutableStateOf<AuthSession?>(null) }
+    var authMessage by remember { mutableStateOf<String?>(null) }
+    var isSigningIn by remember { mutableStateOf(false) }
+    val updateService = remember { UpdateService() }
+    val googleSignInService = remember { DesktopGoogleSignInService() }
+    val updateState by updateService.uiState.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        ApiClient.setUnauthorizedHandler {
+            ApiClient.setAccessToken(null)
+            authSession = null
+            authMessage = "Your session expired. Please sign in again."
+        }
+    }
+
+    if (authSession == null) {
+        MaterialTheme {
+            LoginScreen(
+                title = "Print Business",
+                message = authMessage,
+                isLoading = isSigningIn,
+                onSignInClick = {
+                    coroutineScope.launch {
+                        isSigningIn = true
+                        authMessage = null
+                        try {
+                            val googleIdToken = googleSignInService.requestIdToken()
+                            val signedInSession = ApiClient.exchangeGoogleIdToken(googleIdToken)
+                            authSession = signedInSession
+                            ApiClient.setAccessToken(signedInSession.accessToken)
+                            currentScreen = Screen.Orders
+                            updateService.checkForUpdates()
+                        } catch (error: NotAllowlistedException) {
+                            authMessage = "This Google account is not authorized for this workspace."
+                        } catch (error: AuthRequestException) {
+                            authMessage = error.message ?: "Sign-in failed. Please try again."
+                        } catch (error: Exception) {
+                            authMessage = error.message ?: "Sign-in failed. Please try again."
+                        } finally {
+                            isSigningIn = false
+                        }
+                    }
+                }
+            )
+        }
+        return
+    }
+
+    MaterialTheme {
+        AppLayout(
+            currentScreen = currentScreen,
+            onNavigate = { screen -> currentScreen = screen },
+            updateAvailable = updateState.updateAvailable,
+            signedInLabel = signedInLabel(authSession)
+        ) {
+            NavigationContent(
+                currentScreen = currentScreen,
+                onNavigate = { screen -> currentScreen = screen },
+                updateState = updateState,
+                onCheckForUpdates = updateService::checkForUpdates,
+                onDownloadUpdate = updateService::downloadLatestUpdate,
+                onCancelUpdateDownload = updateService::cancelDownload,
+                onInstallUpdate = updateService::installDownloadedUpdateAndExit,
+                onDismissUpdateError = updateService::clearError
+            )
+        }
+    }
+}
+
+private fun signedInLabel(session: AuthSession?): String? {
+    session ?: return null
+    val displayName = session.name?.trim()?.takeIf { it.isNotEmpty() } ?: session.email
+    return "Signed in as $displayName"
+}
