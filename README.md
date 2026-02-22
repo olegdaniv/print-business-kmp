@@ -74,6 +74,31 @@ To run the Windows/Desktop Compose application locally:
 
 ---
 
+## ⚙️ API Configuration (Local vs Production)
+
+To allow the frontend (`webApp`, `desktopApp`) to dynamically connect to either your local backend or a deployed production endpoint, the project uses **BuildKonfig** to generate API endpoints at compile-time.
+
+By default, the endpoints bind to the properties inside your `gradle.properties`:
+```properties
+printbusiness.api.host=localhost
+printbusiness.api.port=8080
+printbusiness.api.scheme=http
+```
+
+### Overriding for Production Builds
+
+When you build your application for production (e.g. via GitHub Actions or Render), you should override these properties using standard Gradle command-line flags so the UI targets your real backend domain:
+
+```bash
+# Example: Building the Web App for production
+./gradlew :webApp:wasmJsBrowserDistribution \
+  -Pprintbusiness.api.scheme=https \
+  -Pprintbusiness.api.host=print-business-kmp.onrender.com \
+  -Pprintbusiness.api.port=443
+```
+
+---
+
 ## 📦 Build & Test Commands
 
 ### Project-Wide
