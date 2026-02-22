@@ -19,6 +19,8 @@ class GoogleIdTokenVerifier(
         .build(),
     private val clock: Clock = Clock.systemUTC()
 ) {
+    fun clientId(): String = googleClientId
+
     fun verify(idToken: String): GoogleUserClaims {
         val token = idToken.trim()
         if (token.isEmpty()) {

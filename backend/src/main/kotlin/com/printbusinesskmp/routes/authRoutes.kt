@@ -5,12 +5,14 @@ import com.printbusinesskmp.auth.AppJwtService
 import com.printbusinesskmp.auth.AuthException
 import com.printbusinesskmp.auth.GoogleAuthRequest
 import com.printbusinesskmp.auth.GoogleAuthResponse
+import com.printbusinesskmp.auth.GoogleClientIdResponse
 import com.printbusinesskmp.auth.GoogleIdTokenVerifier
 import com.printbusinesskmp.auth.respondApiError
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
+import io.ktor.server.routing.get
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
@@ -21,6 +23,13 @@ fun Route.configureAuthRoutes(
     appJwtService: AppJwtService
 ) {
     route("/auth") {
+        get("/google/client-id") {
+            call.respond(
+                HttpStatusCode.OK,
+                GoogleClientIdResponse(clientId = googleIdTokenVerifier.clientId())
+            )
+        }
+
         post("/google") {
             val request = try {
                 call.receive<GoogleAuthRequest>()

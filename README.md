@@ -67,11 +67,12 @@ Access the web app at [http://localhost:8081/](http://localhost:8081/).
 
 ### Google Sign-In Configuration (Web)
 The web app resolves the Google client ID in this order:
-1. `window.__PRINTBUSINESS_GOOGLE_CLIENT_ID` in `index.html`
-2. Gradle property `-Pprintbusiness.google.clientId=...`
-3. `GOOGLE_CLIENT_ID` from the environment or root `.env` file
+1. `window.__PRINTBUSINESS_GOOGLE_CLIENT_ID` in `index.html` (runtime override)
+2. Backend runtime config from `GET /auth/google/client-id` (uses backend `GOOGLE_CLIENT_ID`)
+3. Build-time fallback from `-Pprintbusiness.google.clientId=...`
+4. Build-time fallback from `GOOGLE_CLIENT_ID` in environment or root `.env`
 
-For local development, setting `GOOGLE_CLIENT_ID` in `.env` is usually enough.
+For local development, setting backend `GOOGLE_CLIENT_ID` in `.env` is usually enough.
 
 ### 3. Start the Desktop Application
 To run the Windows/Desktop Compose application locally:

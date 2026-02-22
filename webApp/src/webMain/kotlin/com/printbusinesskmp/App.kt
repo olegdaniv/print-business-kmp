@@ -28,8 +28,10 @@ fun App() {
     var persistedSession by remember { mutableStateOf(WebAuthStorage.load()) }
     var loginMessage by remember { mutableStateOf<String?>(null) }
     var isSigningIn by remember { mutableStateOf(false) }
+    var googleClientId by remember {
+        mutableStateOf(normalizeGoogleClientId(GoogleIdentityService.readClientId()))
+    }
     val coroutineScope = rememberCoroutineScope()
-    val googleClientId = remember { GoogleIdentityService.readClientId() }
 
     LaunchedEffect(Unit) {
         ApiClient.setUnauthorizedHandler {
@@ -42,17 +44,19 @@ fun App() {
         ApiClient.setAccessToken(persistedSession?.accessToken)
     }
 
-    LaunchedEffect(googleClientId) {
+    LaunchedEffect(Unit) {
+        if (!googleClientId.isNullOrBlank()) return@LaunchedEffect
+        val backendClientId = runCatching { ApiClient.fetchGoogleClientId() }.getOrNull()
+        googleClientId = normalizeGoogleClientId(backendClientId)
+    }
+
+    LaunchedEffect(googleClientId, persistedSession) {
         if (persistedSession != null) return@LaunchedEffect
         val clientId = googleClientId
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
-            ?.takeUnless { isPlaceholderGoogleClientId(it) }
         if (clientId.isNullOrBlank()) {
             loginMessage =
-                "Google client ID is missing/placeholder. Set a real Web OAuth client ID in GOOGLE_CLIENT_ID (.env) " +
-                    "or -Pprintbusiness.google.clientId, " +
-                    "or set window.__PRINTBUSINESS_GOOGLE_CLIENT_ID in index.html."
+                "Google client ID is missing/placeholder. Set a real Web OAuth client ID in backend GOOGLE_CLIENT_ID " +
+                    "(.env), or set window.__PRINTBUSINESS_GOOGLE_CLIENT_ID in index.html."
             return@LaunchedEffect
         }
 
@@ -143,4 +147,11 @@ private fun isPlaceholderGoogleClientId(clientId: String): Boolean {
     return normalized.contains("dummy-google-client-id") ||
         normalized.contains("your-google-client-id") ||
         normalized == "changeme"
+}
+
+private fun normalizeGoogleClientId(clientId: String?): String? {
+    return clientId
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?.takeUnless { isPlaceholderGoogleClientId(it) }
 }

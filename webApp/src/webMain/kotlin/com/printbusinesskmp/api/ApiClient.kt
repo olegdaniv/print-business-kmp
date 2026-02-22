@@ -17,6 +17,7 @@ import com.printbusinesskmp.models.OrderUpdateRequest
 import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.models.PricingRequest
 import com.printbusinesskmp.models.PricingResult
+import com.printbusinesskmp.shared.baseUrlFromBuildConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.DefaultRequest
@@ -60,6 +61,11 @@ private data class GoogleAuthResponse(
 )
 
 @Serializable
+private data class GoogleClientIdResponse(
+    val clientId: String
+)
+
+@Serializable
 private data class ApiErrorResponse(
     val error: String? = null,
     val message: String? = null
@@ -94,7 +100,7 @@ object ApiClient {
     private var onUnauthorized: (() -> Unit)? = null
 
     private fun resolveBaseUrl(): String {
-        return BASE_URL
+        return baseUrlFromBuildConfig()
     }
 
     private val client = HttpClient {
@@ -127,6 +133,13 @@ object ApiClient {
 
     fun setUnauthorizedHandler(handler: (() -> Unit)?) {
         onUnauthorized = handler
+    }
+
+    suspend fun fetchGoogleClientId(): String? {
+        val response = client.get("$BASE_URL/auth/google/client-id")
+        if (response.status != HttpStatusCode.OK) return null
+        val payload = response.body<GoogleClientIdResponse>()
+        return payload.clientId.trim().takeIf { it.isNotEmpty() }
     }
 
     suspend fun exchangeGoogleIdToken(idToken: String): AuthSession {
