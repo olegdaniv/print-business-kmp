@@ -1,5 +1,7 @@
 package com.printbusinesskmp.auth
 
+import com.printbusinesskmp.shared.webGoogleClientIdFromBuildConfig
+
 @OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
 @JsFun(
     "(clientId, callback) => {" +
@@ -54,5 +56,6 @@ internal actual object GoogleIdentityService {
 
     actual fun readClientId(): String? {
         return readGoogleClientIdFromWindow()?.trim()?.takeIf { it.isNotEmpty() }
+            ?: webGoogleClientIdFromBuildConfig().trim().takeIf { it.isNotEmpty() }
     }
 }

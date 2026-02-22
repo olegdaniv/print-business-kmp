@@ -7,7 +7,8 @@
     <link type="text/css" rel="stylesheet" href="styles.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
-        // Set this value from deployment config.
+        // Optional runtime override.
+        // If empty, web build config is used (GOOGLE_CLIENT_ID / -Pprintbusiness.google.clientId).
         // Example: window.__PRINTBUSINESS_GOOGLE_CLIENT_ID = "123.apps.googleusercontent.com"
         window.__PRINTBUSINESS_GOOGLE_CLIENT_ID = "";
     </script>

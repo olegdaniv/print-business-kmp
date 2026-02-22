@@ -1,5 +1,7 @@
 package com.printbusinesskmp.auth
 
+import com.printbusinesskmp.shared.webGoogleClientIdFromBuildConfig
+
 @Suppress("UnsafeCastFromDynamic")
 internal actual object GoogleIdentityService {
     private var initializedClientId: String? = null
@@ -36,5 +38,6 @@ internal actual object GoogleIdentityService {
     actual fun readClientId(): String? {
         val value = js("window.__PRINTBUSINESS_GOOGLE_CLIENT_ID") as String?
         return value?.trim()?.takeIf { it.isNotEmpty() }
+            ?: webGoogleClientIdFromBuildConfig().trim().takeIf { it.isNotEmpty() }
     }
 }

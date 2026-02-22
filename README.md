@@ -65,6 +65,14 @@ The web app runs on port `8081`. You can run it using the modern Wasm target or 
 ```
 Access the web app at [http://localhost:8081/](http://localhost:8081/).
 
+### Google Sign-In Configuration (Web)
+The web app resolves the Google client ID in this order:
+1. `window.__PRINTBUSINESS_GOOGLE_CLIENT_ID` in `index.html`
+2. Gradle property `-Pprintbusiness.google.clientId=...`
+3. `GOOGLE_CLIENT_ID` from the environment or root `.env` file
+
+For local development, setting `GOOGLE_CLIENT_ID` in `.env` is usually enough.
+
 ### 3. Start the Desktop Application
 To run the Windows/Desktop Compose application locally:
 

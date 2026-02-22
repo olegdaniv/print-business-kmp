@@ -45,8 +45,14 @@ fun App() {
     LaunchedEffect(googleClientId) {
         if (persistedSession != null) return@LaunchedEffect
         val clientId = googleClientId
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.takeUnless { isPlaceholderGoogleClientId(it) }
         if (clientId.isNullOrBlank()) {
-            loginMessage = "Google client ID is not configured. Set window.__PRINTBUSINESS_GOOGLE_CLIENT_ID in index.html."
+            loginMessage =
+                "Google client ID is missing/placeholder. Set a real Web OAuth client ID in GOOGLE_CLIENT_ID (.env) " +
+                    "or -Pprintbusiness.google.clientId, " +
+                    "or set window.__PRINTBUSINESS_GOOGLE_CLIENT_ID in index.html."
             return@LaunchedEffect
         }
 
@@ -130,4 +136,11 @@ private fun signedInLabel(session: PersistedAuthSession?): String? {
     session ?: return null
     val displayName = session.name?.trim()?.takeIf { it.isNotEmpty() } ?: session.email
     return "Signed in as $displayName"
+}
+
+private fun isPlaceholderGoogleClientId(clientId: String): Boolean {
+    val normalized = clientId.trim().lowercase()
+    return normalized.contains("dummy-google-client-id") ||
+        normalized.contains("your-google-client-id") ||
+        normalized == "changeme"
 }

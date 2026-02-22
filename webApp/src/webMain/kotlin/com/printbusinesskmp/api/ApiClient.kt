@@ -94,7 +94,7 @@ object ApiClient {
     private var onUnauthorized: (() -> Unit)? = null
 
     private fun resolveBaseUrl(): String {
-        return com.printbusinesskmp.shared.BuildKonfig.BASE_URL
+        return BASE_URL
     }
 
     private val client = HttpClient {
