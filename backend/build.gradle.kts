@@ -88,3 +88,18 @@ flyway {
     baselineOnMigrate = true
     baselineVersion = "0"
 }
+
+tasks.named<JavaExec>("run") {
+    val envFile = File(project.rootDir, ".env")
+    if (envFile.exists()) {
+        envFile.readLines().forEach {
+            val line = it.trim()
+            if (line.isNotEmpty() && !line.startsWith("#")) {
+                val parts = line.split("=", limit = 2)
+                if (parts.size == 2) {
+                    environment[parts[0].trim()] = parts[1].trim()
+                }
+            }
+        }
+    }
+}

@@ -42,11 +42,8 @@ object DatabaseFactory {
                     backupDir = AppDataPaths.resolved.backupDir
                 )
             }
-            migrateWithFlyway(
-                jdbcUrl = localConfig.url,
-                user = localConfig.user,
-                password = localConfig.password
-            )
+            // Note: Flyway 10+ dropped H2 support. We rely completely on Exposed SchemaUtils
+            // below to generate the schema for the local H2 dev database.
             Database.connect(
                 url = localConfig.url,
                 driver = "org.h2.Driver",
@@ -150,15 +147,7 @@ object DatabaseFactory {
             .migrate()
     }
 
-    private fun migrateWithFlyway(jdbcUrl: String, user: String, password: String) {
-        Flyway.configure()
-            .dataSource(jdbcUrl, user, password)
-            .locations("classpath:db/migration")
-            .baselineOnMigrate(true)
-            .baselineVersion("0")
-            .load()
-            .migrate()
-    }
+
 
     suspend fun <T> dbQuery(block: suspend () -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block() }
