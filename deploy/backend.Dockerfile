@@ -1,4 +1,4 @@
-FROM gradle:8.14.3-jdk17 AS builder
+FROM gradle:8.14.3-jdk21 AS builder
 
 WORKDIR /workspace
 
@@ -14,7 +14,7 @@ COPY shared/ shared/
 RUN chmod +x gradlew
 RUN ./gradlew :backend:shadowJar --no-daemon
 
-FROM amazoncorretto:17-alpine
+FROM amazoncorretto:21-alpine
 
 WORKDIR /app
 

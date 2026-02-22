@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM gradle:8.5-jdk17 AS builder
+FROM gradle:8.5-jdk21 AS builder
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ COPY webApp/ webApp/
 RUN ./gradlew :backend:buildFatJar --no-daemon
 
 # Stage 2: Run the application
-FROM amazoncorretto:17-alpine
+FROM amazoncorretto:21-alpine
 
 WORKDIR /app
 
