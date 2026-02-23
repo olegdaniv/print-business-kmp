@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import java.io.File
 import java.security.MessageDigest
 
 plugins {
@@ -22,7 +23,39 @@ val allowUpdatesWithoutChecksum = providers.gradleProperty("desktopAllowUpdatesW
     .orElse("true")
     .get()
     .toBoolean()
-val googleClientId: String? = providers.gradleProperty("desktopGoogleClientId").orElse("").get()
+
+val envFromFile = File(rootDir, ".env")
+    .takeIf { it.exists() }
+    ?.readLines()
+    ?.asSequence()
+    ?.map { it.trim() }
+    ?.filter { it.isNotEmpty() && !it.startsWith("#") && it.contains("=") }
+    ?.associate { line ->
+        val parts = line.split("=", limit = 2)
+        parts[0].trim() to parts[1].trim()
+    }
+    ?: emptyMap()
+
+fun firstNonBlank(vararg values: String?): String? =
+    values.firstOrNull { !it.isNullOrBlank() }?.trim()
+
+val googleClientId: String = firstNonBlank(
+    providers.gradleProperty("desktopGoogleClientId").orNull,
+    System.getenv("GOOGLE_DESKTOP_CLIENT_ID"),
+    envFromFile["GOOGLE_DESKTOP_CLIENT_ID"]
+).orEmpty()
+
+val googleRedirectHost: String? = firstNonBlank(
+    providers.gradleProperty("desktopGoogleRedirectHost").orNull,
+    System.getenv("GOOGLE_DESKTOP_REDIRECT_HOST"),
+    envFromFile["GOOGLE_DESKTOP_REDIRECT_HOST"]
+)
+
+val googleRedirectPort: String? = firstNonBlank(
+    providers.gradleProperty("desktopGoogleRedirectPort").orNull,
+    System.getenv("GOOGLE_DESKTOP_REDIRECT_PORT"),
+    envFromFile["GOOGLE_DESKTOP_REDIRECT_PORT"]
+)
 
 version = appVersion
 
@@ -48,14 +81,22 @@ dependencies {
 compose.desktop {
     application {
         mainClass = "com.printbusinesskmp.desktop.MainKt"
-        jvmArgs += listOf(
+        jvmArgs += mutableListOf(
             "-Dprintbusiness.app.name=$appName",
             "-Dprintbusiness.app.version=$appVersion",
             "-Dprintbusiness.update.feedUrl=$updateFeedUrl",
             "-Dprintbusiness.update.allowedHosts=$updateAllowedHosts",
-            "-Dprintbusiness.update.allowWithoutChecksum=$allowUpdatesWithoutChecksum",
-            "-Dprintbusiness.google.clientId=$googleClientId"
+            "-Dprintbusiness.update.allowWithoutChecksum=$allowUpdatesWithoutChecksum"
         )
+        if (googleClientId.isNotBlank()) {
+            jvmArgs += "-Dprintbusiness.google.clientId=$googleClientId"
+        }
+        if (!googleRedirectHost.isNullOrBlank()) {
+            jvmArgs += "-Dprintbusiness.google.redirectHost=$googleRedirectHost"
+        }
+        if (!googleRedirectPort.isNullOrBlank()) {
+            jvmArgs += "-Dprintbusiness.google.redirectPort=$googleRedirectPort"
+        }
         nativeDistributions {
             targetFormats(TargetFormat.Msi)
             packageName = appName

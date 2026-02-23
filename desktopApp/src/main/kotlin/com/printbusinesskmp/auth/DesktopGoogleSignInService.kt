@@ -13,12 +13,14 @@ import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import java.awt.Desktop
+import java.net.BindException
 import java.net.InetSocketAddress
 import java.net.URI
 import java.net.URLDecoder
@@ -40,12 +42,20 @@ class DesktopGoogleSignInService(
         val codeVerifier = generateCodeVerifier()
         val codeChallenge = generateCodeChallenge(codeVerifier)
         val expectedState = UUID.randomUUID().toString()
+        val redirectHost = resolveRedirectHost()
+        val preferredRedirectPort = resolveRedirectPort()
 
         val callbackDeferred = CompletableDeferred<OAuthCallback>()
-        val loopbackServer = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
-        val redirectUri = "http://127.0.0.1:${loopbackServer.address.port}/oauth2/callback"
+        val loopbackServer = try {
+            HttpServer.create(InetSocketAddress("127.0.0.1", preferredRedirectPort), 0)
+        } catch (error: BindException) {
+            throw IllegalStateException(
+                "Google sign-in failed because redirect port $preferredRedirectPort is already in use."
+            )
+        }
+        val redirectUri = "http://$redirectHost:${loopbackServer.address.port}/"
 
-        loopbackServer.createContext("/oauth2/callback") { exchange ->
+        loopbackServer.createContext("/") { exchange ->
             handleCallback(exchange, callbackDeferred)
         }
         loopbackServer.start()
@@ -59,8 +69,19 @@ class DesktopGoogleSignInService(
             )
             openBrowser(authorizationUrl)
 
-            val callback = withTimeout(CALLBACK_TIMEOUT_MILLIS) {
-                callbackDeferred.await()
+            val callback = try {
+                withTimeout(CALLBACK_TIMEOUT_MILLIS) {
+                    callbackDeferred.await()
+                }
+            } catch (_: TimeoutCancellationException) {
+                throw IllegalStateException(
+                    "Google sign-in callback timed out. If the browser showed " +
+                        "'redirect_uri_mismatch', either use a Google OAuth Desktop client ID " +
+                        "for desktopGoogleClientId/GOOGLE_DESKTOP_CLIENT_ID or register this " +
+                        "redirect URI on the OAuth client: $redirectUri (client_id=$clientId). " +
+                        "For Web OAuth clients, set a fixed GOOGLE_DESKTOP_REDIRECT_PORT and " +
+                        "register that exact URI."
+                )
             }
             if (!callback.error.isNullOrBlank()) {
                 throw IllegalStateException("Google sign-in canceled: ${callback.error}")
@@ -205,6 +226,37 @@ class DesktopGoogleSignInService(
         throw IllegalStateException(
             "Google Desktop client ID is missing. Set -Dprintbusiness.google.clientId or GOOGLE_DESKTOP_CLIENT_ID."
         )
+    }
+
+    private fun resolveRedirectHost(): String {
+        val property = System.getProperty("printbusiness.google.redirectHost")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+        if (property != null) return property
+
+        val env = System.getenv("GOOGLE_DESKTOP_REDIRECT_HOST")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+        if (env != null) return env
+
+        return "localhost"
+    }
+
+    private fun resolveRedirectPort(): Int {
+        val property = System.getProperty("printbusiness.google.redirectPort")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+        val env = System.getenv("GOOGLE_DESKTOP_REDIRECT_PORT")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+        val raw = property ?: env ?: return 0
+
+        val port = raw.toIntOrNull()
+            ?: throw IllegalStateException("Google redirect port is invalid: '$raw'")
+        if (port !in 0..65535) {
+            throw IllegalStateException("Google redirect port is out of range: '$raw'")
+        }
+        return port
     }
 
     private fun generateCodeVerifier(): String {

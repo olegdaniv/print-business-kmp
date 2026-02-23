@@ -18,6 +18,7 @@ import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.models.PricingRequest
 import com.printbusinesskmp.models.PricingResult
 import com.printbusinesskmp.models.modelsJson
+import com.printbusinesskmp.shared.baseUrlFromBuildConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -127,7 +128,7 @@ object ApiClient {
             return env
         }
 
-        return com.printbusinesskmp.shared.BuildKonfig.BASE_URL
+        return baseUrlFromBuildConfig()
     }
 
     fun setAccessToken(token: String?) {

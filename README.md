@@ -83,6 +83,9 @@ If you use both web and desktop sign-in, keep separate OAuth client IDs:
 
 This allows backend token verification for both app types while keeping web and desktop credentials independent.
 
+If desktop sign-in shows `Error 400: redirect_uri_mismatch`, use a Google **Desktop app** OAuth client ID for `GOOGLE_DESKTOP_CLIENT_ID` (or `desktopGoogleClientId`).  
+If you must use a Web OAuth client, set a fixed `GOOGLE_DESKTOP_REDIRECT_PORT` (or `desktopGoogleRedirectPort`) and register the exact loopback redirect URI shown by the app error message. The host can be overridden with `GOOGLE_DESKTOP_REDIRECT_HOST` / `-Dprintbusiness.google.redirectHost` (default `localhost`).
+
 ### 3. Start the Desktop Application
 To run the Windows/Desktop Compose application locally:
 
