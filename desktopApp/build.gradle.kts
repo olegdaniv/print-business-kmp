@@ -16,12 +16,13 @@ val appVersion = providers.gradleProperty("desktopAppVersion").orElse("1.0.0").g
 val updateFeedUrl = providers.gradleProperty("desktopUpdateFeedUrl")
     .orElse("https://example.com/printbusiness/updates/latest.json")
     .get()
-val updateAllowedHosts = providers.gradleProperty("desktopUpdateAllowedHosts").orElse("").get()
+val updateAllowedHosts: String? =
+    providers.gradleProperty("desktopUpdateAllowedHosts").orElse("").get()
 val allowUpdatesWithoutChecksum = providers.gradleProperty("desktopAllowUpdatesWithoutChecksum")
     .orElse("true")
     .get()
     .toBoolean()
-val googleClientId = providers.gradleProperty("desktopGoogleClientId").orElse("").get()
+val googleClientId: String? = providers.gradleProperty("desktopGoogleClientId").orElse("").get()
 
 version = appVersion
 
