@@ -12,13 +12,16 @@ import java.time.Clock
 import java.util.concurrent.TimeUnit
 
 class GoogleIdTokenVerifier(
-    private val googleClientId: String,
+    private val webGoogleClientId: String,
+    private val acceptedGoogleClientIds: Set<String>,
     private val jwkProvider: JwkProvider = JwkProviderBuilder(URL(GOOGLE_JWKS_URL))
         .cached(10, 24, TimeUnit.HOURS)
         .rateLimited(10, 1, TimeUnit.MINUTES)
         .build(),
     private val clock: Clock = Clock.systemUTC()
 ) {
+    fun clientId(): String = webGoogleClientId
+
     fun verify(idToken: String): GoogleUserClaims {
         val token = idToken.trim()
         if (token.isEmpty()) {
@@ -52,7 +55,6 @@ class GoogleIdTokenVerifier(
         )
 
         val verifier = JWT.require(Algorithm.RSA256(publicKey, null))
-            .withAudience(googleClientId)
             .withIssuer(*GOOGLE_ISSUERS)
             .acceptLeeway(CLOCK_SKEW_SECONDS)
             .build()
@@ -75,6 +77,19 @@ class GoogleIdTokenVerifier(
                 status = HttpStatusCode.Unauthorized,
                 error = "invalid_google_token",
                 message = "Google ID token issued-at claim is in the future"
+            )
+        }
+
+        val audiences = verified.audience
+            .orEmpty()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toSet()
+        if (audiences.isEmpty() || audiences.none { it in acceptedGoogleClientIds }) {
+            throw AuthException(
+                status = HttpStatusCode.Unauthorized,
+                error = "invalid_google_token",
+                message = "Google ID token audience is not allowed"
             )
         }
 
@@ -119,8 +134,21 @@ class GoogleIdTokenVerifier(
         private val GOOGLE_ISSUERS = arrayOf("https://accounts.google.com", "accounts.google.com")
 
         fun fromEnvironment(env: Map<String, String> = System.getenv()): GoogleIdTokenVerifier {
+            val webGoogleClientId = EnvironmentConfig.required("GOOGLE_CLIENT_ID", env)
+            val desktopGoogleClientId = env["GOOGLE_DESKTOP_CLIENT_ID"]
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+
+            val acceptedGoogleClientIds = buildSet {
+                add(webGoogleClientId)
+                if (desktopGoogleClientId != null) {
+                    add(desktopGoogleClientId)
+                }
+            }
+
             return GoogleIdTokenVerifier(
-                googleClientId = EnvironmentConfig.required("GOOGLE_CLIENT_ID", env)
+                webGoogleClientId = webGoogleClientId,
+                acceptedGoogleClientIds = acceptedGoogleClientIds
             )
         }
     }

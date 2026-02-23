@@ -74,6 +74,15 @@ The web app resolves the Google client ID in this order:
 
 For local development, setting backend `GOOGLE_CLIENT_ID` in `.env` is usually enough.
 
+### Google Sign-In Configuration (Desktop + Backend)
+If you use both web and desktop sign-in, keep separate OAuth client IDs:
+
+- `GOOGLE_CLIENT_ID`: **Web application** OAuth client ID (used by web UI and backend default audience)
+- `GOOGLE_DESKTOP_CLIENT_ID`: **Desktop app** OAuth client ID (used by desktop PKCE flow; backend also accepts it)
+- `desktopGoogleClientId` in `gradle.properties`: desktop client ID passed to `:desktopApp:run`
+
+This allows backend token verification for both app types while keeping web and desktop credentials independent.
+
 ### 3. Start the Desktop Application
 To run the Windows/Desktop Compose application locally:
 

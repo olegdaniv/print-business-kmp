@@ -17,6 +17,11 @@ data class GoogleAuthResponse(
 )
 
 @Serializable
+data class GoogleClientIdResponse(
+    val clientId: String
+)
+
+@Serializable
 data class ApiErrorResponse(
     val error: String,
     val message: String
