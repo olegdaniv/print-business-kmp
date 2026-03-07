@@ -39,6 +39,7 @@ class DesktopGoogleSignInService(
 ) {
     suspend fun requestIdToken(): String = withContext(Dispatchers.IO) {
         val clientId = resolveGoogleClientId()
+        val clientSecret = resolveGoogleClientSecret()
         val codeVerifier = generateCodeVerifier()
         val codeChallenge = generateCodeChallenge(codeVerifier)
         val expectedState = UUID.randomUUID().toString()
@@ -94,6 +95,7 @@ class DesktopGoogleSignInService(
 
             exchangeCodeForIdToken(
                 clientId = clientId,
+                clientSecret = clientSecret,
                 redirectUri = redirectUri,
                 codeVerifier = codeVerifier,
                 code = code
@@ -105,6 +107,7 @@ class DesktopGoogleSignInService(
 
     private suspend fun exchangeCodeForIdToken(
         clientId: String,
+        clientSecret: String?,
         redirectUri: String,
         codeVerifier: String,
         code: String
@@ -113,6 +116,9 @@ class DesktopGoogleSignInService(
             url = GOOGLE_TOKEN_ENDPOINT,
             formParameters = Parameters.build {
                 append("client_id", clientId)
+                if (!clientSecret.isNullOrBlank()) {
+                    append("client_secret", clientSecret)
+                }
                 append("grant_type", "authorization_code")
                 append("redirect_uri", redirectUri)
                 append("code_verifier", codeVerifier)
@@ -133,8 +139,9 @@ class DesktopGoogleSignInService(
 
         val tokenResponse = runCatching {
             modelsJson.decodeFromString<GoogleTokenSuccessResponse>(payloadText)
-        }.getOrElse {
-            throw IllegalStateException("Google token response is invalid")
+        }.getOrElse { e ->
+            e.printStackTrace()
+            throw IllegalStateException("Google token response is invalid: ${e.message}\nPayload: $payloadText")
         }
 
         return tokenResponse.idToken?.takeIf { it.isNotBlank() }
@@ -228,6 +235,20 @@ class DesktopGoogleSignInService(
         )
     }
 
+    private fun resolveGoogleClientSecret(): String? {
+        val property = System.getProperty("printbusiness.google.clientSecret")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+        if (property != null) return property
+
+        val env = System.getenv("GOOGLE_DESKTOP_CLIENT_SECRET")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+        if (env != null) return env
+
+        return null
+    }
+
     private fun resolveRedirectHost(): String {
         val property = System.getProperty("printbusiness.google.redirectHost")
             ?.trim()
@@ -282,13 +303,13 @@ class DesktopGoogleSignInService(
     )
 
     @Serializable
-    private data class GoogleTokenSuccessResponse(
+    internal data class GoogleTokenSuccessResponse(
         @SerialName("id_token")
         val idToken: String? = null
     )
 
     @Serializable
-    private data class GoogleTokenErrorResponse(
+    internal data class GoogleTokenErrorResponse(
         val error: String? = null,
         @SerialName("error_description")
         val errorDescription: String? = null

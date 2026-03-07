@@ -1,0 +1,42 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    //
+    // Note: To run Gradle tasks like `:desktopApp:run` and the web server,
+    // they have been added as VS Code Tasks in `.vscode/tasks.json`.
+    // You can run them cleanly from "Terminal -> Run Task...".
+    // 
+    // Below are configurations that use the tasks but show up in the Run & Debug pane.
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "name": "Run desktopApp",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/gradlew",
+            "args": [
+                ":desktopApp:run"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Run Web Admin",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/gradlew",
+            "args": [
+                ":webApp:jsBrowserDevelopmentRun",
+                "--continuous",
+                "--stacktrace"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}

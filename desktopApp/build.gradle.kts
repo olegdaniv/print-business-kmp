@@ -57,6 +57,12 @@ val googleRedirectPort: String? = firstNonBlank(
     envFromFile["GOOGLE_DESKTOP_REDIRECT_PORT"]
 )
 
+val googleClientSecret: String? = firstNonBlank(
+    providers.gradleProperty("desktopGoogleClientSecret").orNull,
+    System.getenv("GOOGLE_DESKTOP_CLIENT_SECRET"),
+    envFromFile["GOOGLE_DESKTOP_CLIENT_SECRET"]
+)
+
 version = appVersion
 
 dependencies {
@@ -96,6 +102,9 @@ compose.desktop {
         }
         if (!googleRedirectPort.isNullOrBlank()) {
             jvmArgs += "-Dprintbusiness.google.redirectPort=$googleRedirectPort"
+        }
+        if (!googleClientSecret.isNullOrBlank()) {
+            jvmArgs += "-Dprintbusiness.google.clientSecret=$googleClientSecret"
         }
         nativeDistributions {
             targetFormats(TargetFormat.Msi)

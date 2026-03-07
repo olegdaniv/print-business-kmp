@@ -35,25 +35,30 @@ This project consists of four main modules:
 ## 🚀 Quick Start (Local Development)
 
 ### Prerequisites
+
 - **JDK 17** or higher
 - **Node.js** (required for web app development)
 - **Docker & Docker Compose** (optional, but recommended for running the database)
 
 ### 1. Start the Backend Server
+
 You can run the backend server either natively via Gradle or through Docker.
 
 **Option A: Run via Gradle (Port 8080)**
+
 ```bash
 ./gradlew :backend:run
 ```
 
 **Option B: Run via Docker Compose (Backend + PostgreSQL)**
 This will start both the PostgreSQL database and the Ktor application.
+
 ```bash
 docker-compose up -d
 ```
 
 ### 2. Start the Web Application
+
 The web app runs on port `8081`. You can run it using the modern Wasm target or the broader Javascript target.
 
 ```bash
@@ -63,10 +68,13 @@ The web app runs on port `8081`. You can run it using the modern Wasm target or 
 # For JS target (broader browser compatibility)
 ./gradlew :webApp:jsBrowserDevelopmentRun
 ```
+
 Access the web app at [http://localhost:8081/](http://localhost:8081/).
 
 ### Google Sign-In Configuration (Web)
+
 The web app resolves the Google client ID in this order:
+
 1. `window.__PRINTBUSINESS_GOOGLE_CLIENT_ID` in `index.html` (runtime override)
 2. Backend runtime config from `GET /auth/google/client-id` (uses backend `GOOGLE_CLIENT_ID`)
 3. Build-time fallback from `-Pprintbusiness.google.clientId=...`
@@ -75,11 +83,13 @@ The web app resolves the Google client ID in this order:
 For local development, setting backend `GOOGLE_CLIENT_ID` in `.env` is usually enough.
 
 ### Google Sign-In Configuration (Desktop + Backend)
+
 If you use both web and desktop sign-in, keep separate OAuth client IDs:
 
 - `GOOGLE_CLIENT_ID`: **Web application** OAuth client ID (used by web UI and backend default audience)
 - `GOOGLE_DESKTOP_CLIENT_ID`: **Desktop app** OAuth client ID (used by desktop PKCE flow; backend also accepts it)
-- `desktopGoogleClientId` in `gradle.properties`: desktop client ID passed to `:desktopApp:run`
+- `GOOGLE_DESKTOP_CLIENT_SECRET`: (Optional) **Desktop app** OAuth client secret (required only if you are incorrectly using a "Web application" client ID for the desktop app)
+- `GOOGLE_DESKTOP_REDIRECT_PORT`: Port for the local desktop OAuth redirect loopback server (e.g. 8082). If empty, picks a random port (which requires a "Desktop app" client ID). passed to `:desktopApp:run`
 
 This allows backend token verification for both app types while keeping web and desktop credentials independent.
 
@@ -87,6 +97,7 @@ If desktop sign-in shows `Error 400: redirect_uri_mismatch`, use a Google **Desk
 If you must use a Web OAuth client, set a fixed `GOOGLE_DESKTOP_REDIRECT_PORT` (or `desktopGoogleRedirectPort`) and register the exact loopback redirect URI shown by the app error message. The host can be overridden with `GOOGLE_DESKTOP_REDIRECT_HOST` / `-Dprintbusiness.google.redirectHost` (default `localhost`).
 
 ### 3. Start the Desktop Application
+
 To run the Windows/Desktop Compose application locally:
 
 ```bash
@@ -100,6 +111,7 @@ To run the Windows/Desktop Compose application locally:
 To allow the frontend (`webApp`, `desktopApp`) to dynamically connect to either your local backend or a deployed production endpoint, the project uses **BuildKonfig** to generate API endpoints at compile-time.
 
 By default, the endpoints bind to the properties inside your `gradle.properties`:
+
 ```properties
 printbusiness.api.host=localhost
 printbusiness.api.port=8080
@@ -123,6 +135,7 @@ When you build your application for production (e.g. via GitHub Actions or Rende
 ## 📦 Build & Test Commands
 
 ### Project-Wide
+
 ```bash
 ./gradlew build    # Build all modules
 ./gradlew test     # Run all tests across all modules
@@ -130,12 +143,14 @@ When you build your application for production (e.g. via GitHub Actions or Rende
 ```
 
 ### Backend (Ktor Server)
+
 ```bash
 ./gradlew :backend:build
 ./gradlew :backend:test
 ```
 
 ### Web Application
+
 ```bash
 ./gradlew :webApp:wasmJsBrowserDistribution  # Build for production (Wasm)
 ./gradlew :webApp:jsBrowserDistribution       # Build for production (JS)
@@ -143,11 +158,13 @@ When you build your application for production (e.g. via GitHub Actions or Rende
 ```
 
 ### Desktop Application
+
 ```bash
 ./gradlew :desktopApp:packageMsi  # Package as an MSI installer (Windows)
 ```
 
 ### Shared Module
+
 ```bash
 ./gradlew :shared:build
 ./gradlew :shared:allTests       # Run shared module tests (all platforms)
@@ -170,14 +187,14 @@ When you build your application for production (e.g. via GitHub Actions or Rende
 
 ## 🔄 Desktop Windows CI/CD and Updates
 
-The project is fully configured to automatically build and release updates for the Windows Desktop App. 
+The project is fully configured to automatically build and release updates for the Windows Desktop App.
 
 ### GitHub Actions Workflows
 
-1. **CI Workflow (`ci.yml`)**: 
+1. **CI Workflow (`ci.yml`)**:
    - Triggers on PRs and pushes to `main`.
    - Validates the Gradle wrapper, runs tests, and assembles the desktop app.
-2. **Release Workflow (`release-windows.yml`)**: 
+2. **Release Workflow (`release-windows.yml`)**:
    - Triggers on version tags (`vX.Y.Z`).
    - Builds the Windows MSI on `windows-latest`.
    - Packages the app with update feed configurations bound to GitHub Pages.
@@ -189,13 +206,16 @@ The project is fully configured to automatically build and release updates for t
 1. Bump the `desktopAppVersion` property in `gradle.properties`.
 2. Commit and push the version bump to `main`.
 3. Create and push a release tag matching the version:
+
    ```bash
    git tag -a vX.Y.Z -m "Release notes for X.Y.Z"
    git push origin vX.Y.Z
    ```
+
 4. GitHub Actions will automatically take care of building the `.msi`, creating the GitHub release, and updating the update feed on your GitHub Pages deployment.
 
 ### How The Updater Works
+
 The installed desktop app reads its target feed URL (e.g., `https://<owner>.github.io/<repo>/updates/latest.json`) on startup. If a newer version exists in the feed, it prompts the user, downloads the new MSI, and seamlessly executes the upgrade flow.
 
 ---
