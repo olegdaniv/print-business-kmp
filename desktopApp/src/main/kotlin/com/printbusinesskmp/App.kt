@@ -58,7 +58,7 @@ fun App() {
                             currentScreen = Screen.Orders
                             updateService.checkForUpdates()
                         } catch (error: NotAllowlistedException) {
-                            authMessage = "This Google account is not authorized for this workspace."
+                            authMessage = "not authorized $error"
                         } catch (error: AuthRequestException) {
                             authMessage = error.message ?: "Sign-in failed. Please try again."
                         } catch (error: Exception) {
