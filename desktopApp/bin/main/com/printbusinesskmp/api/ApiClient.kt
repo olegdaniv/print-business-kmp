@@ -24,6 +24,7 @@ import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.HttpResponseValidator
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -92,6 +93,11 @@ object ApiClient {
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(modelsJson)
+        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 60_000L
+            connectTimeoutMillis = 60_000L
+            socketTimeoutMillis = 60_000L
         }
         HttpResponseValidator {
             validateResponse { response ->
