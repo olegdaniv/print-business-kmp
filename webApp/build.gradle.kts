@@ -46,17 +46,12 @@ kotlin {
             implementation(projects.shared)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
-            implementation("io.ktor:ktor-client-core:${libs.versions.ktor.get()}")
-            implementation("io.ktor:ktor-client-content-negotiation:${libs.versions.ktor.get()}")
-            implementation("io.ktor:ktor-serialization-kotlinx-json:${libs.versions.ktor.get()}")
         }
         jsMain.dependencies {
-            implementation(kotlin("stdlib-js")) // Adds window, document, etc.
-            implementation("io.ktor:ktor-client-js:${libs.versions.ktor.get()}")
+            implementation(kotlin("stdlib-js"))
         }
         wasmJsMain.dependencies {
-            implementation(kotlin("stdlib-wasm-js")) // Adds wasm-specific browser refs
-            implementation("io.ktor:ktor-client-core:${libs.versions.ktor.get()}")
+            implementation(kotlin("stdlib-wasm-js"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

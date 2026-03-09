@@ -6,4 +6,5 @@ val modelsJson = Json {
     prettyPrint = true
     isLenient = true
     ignoreUnknownKeys = true
+    explicitNulls = false
 }

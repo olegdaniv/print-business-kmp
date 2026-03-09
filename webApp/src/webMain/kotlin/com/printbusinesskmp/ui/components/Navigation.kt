@@ -27,5 +27,6 @@ fun NavigationContent(
         is Screen.OrderDetail -> OrderDetailScreen(currentScreen.orderId, onNavigate)
         Screen.Layouts -> LayoutsScreen(onNavigate)
         Screen.Invoices -> InvoiceScreen(onNavigate)
+        Screen.Updates -> { /* Updates not available on web */ }
     }
 }

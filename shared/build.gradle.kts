@@ -25,8 +25,19 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
             implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.components.resources)
+            implementation("io.ktor:ktor-client-core:${libs.versions.ktor.get()}")
+            implementation("io.ktor:ktor-client-content-negotiation:${libs.versions.ktor.get()}")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:${libs.versions.ktor.get()}")
+        }
+        jvmMain.dependencies {
+            implementation("io.ktor:ktor-client-cio:${libs.versions.ktor.get()}")
+        }
+        jsMain.dependencies {
+            implementation("io.ktor:ktor-client-js:${libs.versions.ktor.get()}")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

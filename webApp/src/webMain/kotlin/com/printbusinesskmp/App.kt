@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun App() {
-    var currentScreen by remember { mutableStateOf<Screen>(Screen.Dashboard) }
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.Orders) }
     var persistedSession by remember { mutableStateOf(WebAuthStorage.load()) }
     var loginMessage by remember { mutableStateOf<String?>(null) }
     var isSigningIn by remember { mutableStateOf(false) }

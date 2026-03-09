@@ -48,7 +48,7 @@ class UpdateService(
         .contains("win")
 
     private val httpClient: HttpClient = HttpClient.newBuilder()
-        .followRedirects(HttpClient.Redirect.NORMAL)
+        .followRedirects(HttpClient.Redirect.NEVER)
         .connectTimeout(Duration.ofSeconds(10))
         .build()
 
@@ -66,6 +66,7 @@ class UpdateService(
     private val _uiState = MutableStateFlow(UpdateUiState())
     val uiState: StateFlow<UpdateUiState> = _uiState.asStateFlow()
 
+    @Volatile
     private var latestRelease: UpdateRelease? = null
     private var checkJob: Job? = null
     private var downloadJob: Job? = null
@@ -234,18 +235,45 @@ class UpdateService(
 
         try {
             ProcessBuilder("msiexec", "/i", normalizedInstaller.toString()).start()
+            Thread.sleep(1000)
             exitProcess(0)
         } catch (error: Exception) {
             _uiState.update { it.copy(errorMessage = "Не вдалося запустити інсталятор: ${error.message}") }
         }
     }
 
+    private fun <T> sendWithSecureRedirects(
+        uri: URI,
+        bodyHandler: HttpResponse.BodyHandler<T>,
+        timeout: Duration,
+        maxRedirects: Int = 5
+    ): HttpResponse<T> {
+        var currentUri = uri
+        repeat(maxRedirects) {
+            val request = HttpRequest.newBuilder(currentUri)
+                .GET()
+                .timeout(timeout)
+                .build()
+            val response = httpClient.send(request, bodyHandler)
+            if (response.statusCode() in 301..308) {
+                val location = response.headers().firstValue("location").orElse(null)
+                    ?: throw IOException("Redirect without Location header.")
+                val redirectUri = currentUri.resolve(location)
+                if (!redirectUri.scheme.equals("https", ignoreCase = true)) {
+                    throw IOException("Redirect to non-HTTPS URI is not allowed: $redirectUri")
+                }
+                currentUri = redirectUri
+            } else {
+                return response
+            }
+        }
+        throw IOException("Too many redirects (max $maxRedirects).")
+    }
+
     private fun fetchRelease(feedUri: URI, allowedHosts: Set<String>): UpdateRelease {
-        val request = HttpRequest.newBuilder(feedUri)
-            .GET()
-            .timeout(Duration.ofSeconds(20))
-            .build()
-        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+        val response = sendWithSecureRedirects(
+            feedUri, HttpResponse.BodyHandlers.ofString(), Duration.ofSeconds(20)
+        )
         if (response.statusCode() !in 200..299) {
             throw IOException("Сервер оновлень повернув HTTP ${response.statusCode()}.")
         }
@@ -286,11 +314,9 @@ class UpdateService(
 
     private suspend fun downloadInstaller(release: UpdateRelease, installerPath: Path) {
         val downloadUri = parseHttpsUri(release.windowsUrl, "URL завантаження MSI")
-        val request = HttpRequest.newBuilder(downloadUri)
-            .GET()
-            .timeout(Duration.ofMinutes(10))
-            .build()
-        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream())
+        val response = sendWithSecureRedirects(
+            downloadUri, HttpResponse.BodyHandlers.ofInputStream(), Duration.ofMinutes(10)
+        )
         if (response.statusCode() !in 200..299) {
             throw IOException("Не вдалося завантажити оновлення (HTTP ${response.statusCode()}).")
         }
@@ -312,18 +338,26 @@ class UpdateService(
             ).use { output ->
                 val buffer = ByteArray(64 * 1024)
                 var downloadedBytes = 0L
+                var lastProgressEmitMs = 0L
                 while (true) {
                     currentCoroutineContext().ensureActive()
                     val read = input.read(buffer)
                     if (read < 0) break
                     output.write(buffer, 0, read)
                     downloadedBytes += read
-                    _uiState.update {
-                        it.copy(
-                            downloadedBytes = downloadedBytes,
-                            totalBytes = totalBytes
-                        )
+                    val nowMs = System.currentTimeMillis()
+                    if (nowMs - lastProgressEmitMs >= 100) {
+                        _uiState.update {
+                            it.copy(
+                                downloadedBytes = downloadedBytes,
+                                totalBytes = totalBytes
+                            )
+                        }
+                        lastProgressEmitMs = nowMs
                     }
+                }
+                _uiState.update {
+                    it.copy(downloadedBytes = downloadedBytes, totalBytes = totalBytes)
                 }
             }
         }

@@ -79,9 +79,9 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
 
+    // CIO engine for desktop Google OAuth (DesktopGoogleSignInService uses its own HttpClient)
     implementation("io.ktor:ktor-client-cio:${libs.versions.ktor.get()}")
     implementation("io.ktor:ktor-client-content-negotiation:${libs.versions.ktor.get()}")
-    implementation("io.ktor:ktor-client-core:${libs.versions.ktor.get()}")
     implementation("io.ktor:ktor-serialization-kotlinx-json:${libs.versions.ktor.get()}")
 }
 
