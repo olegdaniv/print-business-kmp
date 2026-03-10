@@ -12,11 +12,11 @@ COPY webApp/ webApp/
 COPY shared/ shared/
 
 RUN chmod +x gradlew
-RUN ./gradlew :webApp:composeCompatibilityBrowserDistribution --no-daemon
+RUN ./gradlew :webApp:jsBrowserDistribution --no-daemon
 
 FROM nginx:1.27-alpine
 
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /workspace/webApp/build/dist/composeWebCompatibility/productionExecutable/ /usr/share/nginx/html/
+COPY --from=builder /workspace/webApp/build/dist/js/productionExecutable/ /usr/share/nginx/html/
 
 EXPOSE 80
