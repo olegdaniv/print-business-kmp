@@ -21,10 +21,10 @@ WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
 RUN apk add --no-cache curl
 
-COPY --from=builder /workspace/backend/build/libs/backend-all.jar /app/backend-all.jar
+COPY --from=builder /workspace/backend/build/libs/server-all.jar /app/server-all.jar
 
 EXPOSE 8080
 
 USER app
 
-ENTRYPOINT ["java", "-jar", "/app/backend-all.jar"]
+ENTRYPOINT ["java", "-jar", "/app/server-all.jar"]
