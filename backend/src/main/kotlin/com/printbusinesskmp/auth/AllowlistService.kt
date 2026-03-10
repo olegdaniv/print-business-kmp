@@ -65,13 +65,14 @@ class DbFirstAllowlistService(
 ) : AllowlistService {
 
     override suspend fun isAllowed(email: String): Boolean {
+        if (envAllowlistService.isAllowed(email)) return true
         return try {
             dbAllowlistService.isAllowed(email)
         } catch (error: Exception) {
             System.err.println(
-                "Warning: allowlist DB check failed (${error.message}). Falling back to ALLOWED_EMAILS env var."
+                "Warning: allowlist DB check failed (${error.message}). ALLOWED_EMAILS env var already checked."
             )
-            envAllowlistService.isAllowed(email)
+            false
         }
     }
 
