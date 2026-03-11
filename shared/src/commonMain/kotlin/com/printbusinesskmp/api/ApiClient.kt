@@ -82,9 +82,9 @@ object ApiClient {
             json(modelsJson)
         }
         install(HttpTimeout) {
-            requestTimeoutMillis = 60_000L
-            connectTimeoutMillis = 60_000L
-            socketTimeoutMillis = 60_000L
+            requestTimeoutMillis = 180_000L
+            connectTimeoutMillis = 180_000L
+            socketTimeoutMillis = 180_000L
         }
         HttpResponseValidator {
             validateResponse { response ->

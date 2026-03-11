@@ -11,9 +11,9 @@ plugins {
 
 group = "com.printbusinesskmp"
 
-val appName = "PrintBusiness"
-val appVendor = "PrintBusiness"
-val appDescription = "Print business management desktop application"
+val appName = "SouvenirPrint"
+val appVendor = "SouvenirPrint"
+val appDescription = "Souvenir printing management desktop application"
 val appVersion = providers.gradleProperty("desktopAppVersion").orElse("1.0.0").get()
 val updateFeedUrl = providers.gradleProperty("desktopUpdateFeedUrl")
     .orElse("https://example.com/printbusiness/updates/latest.json")
@@ -108,7 +108,7 @@ compose.desktop {
             jvmArgs += "-Dprintbusiness.google.clientSecret=$googleClientSecret"
         }
         nativeDistributions {
-            targetFormats(TargetFormat.Msi)
+            targetFormats(TargetFormat.Msi, TargetFormat.Dmg, TargetFormat.Pkg)
             packageName = appName
             packageVersion = appVersion
             vendor = appVendor
@@ -120,6 +120,15 @@ compose.desktop {
                 dirChooser = true
                 upgradeUuid = "f2c8732e-45b6-4f9b-b90e-7c94c0d7fa4b"
                 iconFile.set(project.file("src/main/resources/installer/windows/printbusiness.ico"))
+            }
+
+            macOS {
+                bundleID = "com.printbusinesskmp.desktop"
+                iconFile.set(project.file("src/main/resources/installer/mac/printbusiness.icns"))
+            }
+
+            linux {
+                iconFile.set(project.file("src/main/resources/icon.png"))
             }
         }
     }
