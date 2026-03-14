@@ -10,16 +10,12 @@ plugins {
 
 kotlin {
     jvm()
-    
-    js {
-        browser()
-    }
-    
+
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
     }
-    
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.serialization.json)
@@ -35,9 +31,6 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation("io.ktor:ktor-client-cio:${libs.versions.ktor.get()}")
-        }
-        jsMain.dependencies {
-            implementation("io.ktor:ktor-client-js:${libs.versions.ktor.get()}")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

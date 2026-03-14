@@ -34,10 +34,10 @@ private external fun gisPrompt(): Boolean
 @JsFun("() => window.__PRINTBUSINESS_GOOGLE_CLIENT_ID || null")
 private external fun readGoogleClientIdFromWindow(): String?
 
-internal actual object GoogleIdentityService {
+internal object GoogleIdentityService {
     private var initialized = false
 
-    actual fun initialize(clientId: String, onCredential: (String) -> Unit): Boolean {
+    fun initialize(clientId: String, onCredential: (String) -> Unit): Boolean {
         val normalizedClientId = clientId.trim()
         if (normalizedClientId.isEmpty()) return false
         val initializedNow = gisInitialize(normalizedClientId) { credential ->
@@ -49,12 +49,12 @@ internal actual object GoogleIdentityService {
         return initializedNow
     }
 
-    actual fun promptSignIn(): Boolean {
+    fun promptSignIn(): Boolean {
         if (!initialized) return false
         return gisPrompt()
     }
 
-    actual fun readClientId(): String? {
+    fun readClientId(): String? {
         return readGoogleClientIdFromWindow()?.trim()?.takeIf { it.isNotEmpty() }
             ?: webGoogleClientIdFromBuildConfig().trim().takeIf { it.isNotEmpty() }
     }

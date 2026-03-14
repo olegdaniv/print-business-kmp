@@ -9,17 +9,6 @@ plugins {
 }
 
 kotlin {
-    js {
-        browser {
-            commonWebpackConfig {
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    port = 8081
-                }
-            }
-        }
-        binaries.executable()
-    }
-
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser {
@@ -33,7 +22,7 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.dependencies {
+        wasmJsMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
@@ -46,11 +35,6 @@ kotlin {
             implementation(projects.shared)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
-        }
-        jsMain.dependencies {
-            implementation(kotlin("stdlib-js"))
-        }
-        wasmJsMain.dependencies {
             implementation(kotlin("stdlib-wasm-js"))
         }
         commonTest.dependencies {
