@@ -80,10 +80,10 @@ jobs:
         shell: pwsh
         run: |
           ./gradlew --no-daemon ${{ steps.detect_task.outputs.task }} `
-            -PdesktopAppVersion=${{ steps.meta.outputs.version }} `
-            -PdesktopUpdateFeedUrl=${{ steps.meta.outputs.feed_url }} `
-            -PdesktopUpdateAllowedHosts=${{ steps.meta.outputs.pages_host }} `
-            -PdesktopAllowUpdatesWithoutChecksum=false
+            "-PdesktopAppVersion=${{ steps.meta.outputs.version }}" `
+            "-PdesktopUpdateFeedUrl=${{ steps.meta.outputs.feed_url }}" `
+            "-PdesktopUpdateAllowedHosts=${{ steps.meta.outputs.pages_host }}" `
+            "-PdesktopAllowUpdatesWithoutChecksum=false"
 
       - name: Prepare release artifacts and update feed
         id: feed
