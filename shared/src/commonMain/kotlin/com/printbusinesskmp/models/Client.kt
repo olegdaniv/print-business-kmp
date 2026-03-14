@@ -23,6 +23,8 @@ data class Client(
     val bankName: String? = null,
     val notes: String? = null,
     val orderCount: Int = 0,
+    val source: ClientSource? = null,
+    val discountPercent: Double? = null,
     val createdAt: Instant,
     val updatedAt: Instant
 )

@@ -198,11 +198,30 @@ private fun buildDescription(serviceType: ServiceType, productType: ProductType,
     val serviceText = when (serviceType) {
         ServiceType.DTF -> "DTF друк"
         ServiceType.UV_DTF -> "UV DTF друк"
+        ServiceType.DTF_TRANSFER_ONLY -> "DTF трансфер"
+        ServiceType.DESIGN_ONLY -> "Підготовка дизайну"
     }
 
     val productText = when (productType) {
         ProductType.T_SHIRT -> "футболка"
         ProductType.HOODIE -> "худі"
+        ProductType.SWEATSHIRT -> "світшот"
+        ProductType.SHOPPER_BAG -> "шопер"
+        ProductType.CAP -> "кепка"
+        ProductType.APRON -> "фартух"
+        ProductType.BACKPACK -> "рюкзак"
+        ProductType.UNIFORM -> "уніформа"
+        ProductType.OTHER_TEXTILE -> "інший текстиль"
+        ProductType.MUG -> "чашка"
+        ProductType.THERMOS -> "термос"
+        ProductType.BOTTLE -> "пляшка"
+        ProductType.PHONE_CASE -> "чохол"
+        ProductType.KEYCHAIN -> "брелок"
+        ProductType.PEN -> "ручка"
+        ProductType.NOTEBOOK -> "блокнот"
+        ProductType.SIGN -> "вивіска"
+        ProductType.GIFT_BOX -> "подарункова коробка"
+        ProductType.OTHER_HARD -> "інший виріб (тверде)"
         ProductType.OTHER -> "інший виріб"
     }
 

@@ -14,6 +14,10 @@ data class Order(
     val totalPrice: Double,
     val profit: Double,
     val notes: String? = null,
+    val discountAmount: Double = 0.0,
+    val outsourceOrderIds: List<String> = emptyList(),
+    val deliveryMethod: DeliveryMethod? = null,
+    val deliveryId: String? = null,
     val createdAt: Instant,
     val updatedAt: Instant
 )
@@ -21,10 +25,12 @@ data class Order(
 @Serializable
 data class OrderCreateRequest(
     val clientId: String,
-    val status: OrderStatus = OrderStatus.NEW,
+    val status: OrderStatus = OrderStatus.DRAFT,
     val paymentStatus: PaymentStatus = PaymentStatus.UNPAID,
     val items: List<OrderItemDraft>,
-    val notes: String? = null
+    val notes: String? = null,
+    val discountAmount: Double = 0.0,
+    val deliveryMethod: DeliveryMethod? = null
 )
 
 @Serializable
@@ -33,5 +39,9 @@ data class OrderUpdateRequest(
     val status: OrderStatus,
     val paymentStatus: PaymentStatus,
     val items: List<OrderItemDraft>,
-    val notes: String? = null
+    val notes: String? = null,
+    val discountAmount: Double = 0.0,
+    val outsourceOrderIds: List<String> = emptyList(),
+    val deliveryMethod: DeliveryMethod? = null,
+    val deliveryId: String? = null
 )

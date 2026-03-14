@@ -13,5 +13,7 @@ data class ClientUpdateRequest(
     val address: String,
     val iban: String? = null,
     val bankName: String? = null,
-    val notes: String? = null
+    val notes: String? = null,
+    val source: ClientSource? = null,
+    val discountPercent: Double? = null
 )

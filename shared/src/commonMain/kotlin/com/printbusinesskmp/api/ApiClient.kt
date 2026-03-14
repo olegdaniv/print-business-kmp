@@ -21,7 +21,6 @@ import com.printbusinesskmp.models.modelsJson
 import com.printbusinesskmp.shared.baseUrlFromBuildConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -71,7 +70,7 @@ private data class ApiErrorResponse(
     val message: String? = null
 )
 
-object ApiClient {
+object  ApiClient {
     private val baseUrl: String = resolveBaseUrl()
 
     private var accessToken: String? = null
@@ -96,14 +95,13 @@ object ApiClient {
                 }
             }
         }
-        install(DefaultRequest) {
-            val requestPath = url.build().encodedPath
-            if (requiresAppJwt(requestPath)) {
+        install(io.ktor.client.plugins.api.createClientPlugin("BearerAuth") {
+            onRequest { request, _ ->
                 accessToken?.let { token ->
-                    header(HttpHeaders.Authorization, "Bearer $token")
+                    request.header(HttpHeaders.Authorization, "Bearer $token")
                 }
             }
-        }
+        })
     }
 
     private fun resolveBaseUrl(): String {

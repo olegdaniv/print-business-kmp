@@ -16,7 +16,9 @@ data class Invoice(
     val taxAmount: Double,
     val totalAmount: Double,
     val notes: String? = null,
-    val filePath: String? = null
+    val filePath: String? = null,
+    val discountAmount: Double = 0.0,
+    val finalAmount: Double = 0.0
 )
 
 @Serializable

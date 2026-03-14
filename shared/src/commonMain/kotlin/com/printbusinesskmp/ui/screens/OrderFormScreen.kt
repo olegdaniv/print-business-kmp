@@ -62,7 +62,7 @@ fun OrderFormScreen(
 
     var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
     var selectedClientId by remember { mutableStateOf<String?>(null) }
-    var status by remember { mutableStateOf(OrderStatus.NEW) }
+    var status by remember { mutableStateOf(OrderStatus.DRAFT) }
     var paymentStatus by remember { mutableStateOf(PaymentStatus.UNPAID) }
     var notes by remember { mutableStateOf("") }
     var items by remember { mutableStateOf<List<OrderItemDraft>>(emptyList()) }

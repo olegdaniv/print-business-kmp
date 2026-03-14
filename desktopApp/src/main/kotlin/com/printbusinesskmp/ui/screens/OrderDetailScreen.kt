@@ -58,7 +58,7 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var info by remember { mutableStateOf<String?>(null) }
 
-    var selectedStatus by remember { mutableStateOf(OrderStatus.NEW) }
+    var selectedStatus by remember { mutableStateOf(OrderStatus.DRAFT) }
     var selectedPayment by remember { mutableStateOf(PaymentStatus.UNPAID) }
 
     var confirmDelete by remember { mutableStateOf(false) }

@@ -13,7 +13,12 @@ data class PricingRequest(
     val minOrderPrice: Double,
     val marginPercent: Double,
     val taxPercent: Double? = null,
-    val manualPrice: Double? = null
+    val manualPrice: Double? = null,
+    val garmentSource: GarmentSource = GarmentSource.OUR_STOCK,
+    val partnerPrintCostFlat: Double = 0.0,
+    val laborCostPerUnit: Double = 0.0,
+    val serviceType: ServiceType = ServiceType.DTF,
+    val productType: ProductType = ProductType.T_SHIRT
 )
 
 @Serializable
@@ -26,5 +31,8 @@ data class PricingResult(
     val priceBeforeTax: Double,
     val taxAmount: Double,
     val finalPrice: Double,
-    val profit: Double
+    val profit: Double,
+    val partnerPrintCost: Double = 0.0,
+    val laborCost: Double = 0.0,
+    val actualMarginPercent: Double = 0.0
 )

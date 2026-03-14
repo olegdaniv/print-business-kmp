@@ -53,8 +53,8 @@ fun App() {
                         try {
                             val googleIdToken = googleSignInService.requestIdToken()
                             val signedInSession = ApiClient.exchangeGoogleIdToken(googleIdToken)
-                            authSession = signedInSession
                             ApiClient.setAccessToken(signedInSession.accessToken)
+                            authSession = signedInSession
                             currentScreen = Screen.Orders
                             updateService.checkForUpdates()
                         } catch (error: NotAllowlistedException) {
