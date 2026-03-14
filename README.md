@@ -320,6 +320,128 @@ The installed desktop app reads its target feed URL (e.g., `https://<owner>.gith
 
 ---
 
+## Installing the Desktop App on Windows
+
+This section explains how to install the **SouvenirPrint** desktop application on a Windows computer and set up a user account so you can start working.
+
+### Prerequisites
+
+- **Windows 10** or higher (64-bit)
+- The **backend server** must be running and accessible (either locally or deployed, e.g. on Render at `https://print-business-kmp.onrender.com`)
+- A **Google account** for the user you want to add
+
+### Step 1: Get the MSI Installer
+
+**Option A: Download from GitHub Releases (recommended)**
+
+Go to the [Releases](../../releases) page of this repository and download the latest `PrintBusiness-X.Y.Z.msi` file.
+
+**Option B: Build the MSI yourself**
+
+On a machine with JDK 17+ and the project cloned:
+
+```bash
+# Build MSI targeting your deployed backend
+.\gradlew :desktopApp:packageMsi ^
+  -Pprintbusiness.api.scheme=https ^
+  -Pprintbusiness.api.host=print-business-kmp.onrender.com ^
+  -Pprintbusiness.api.port=443
+
+# Or for a local backend
+.\gradlew :desktopApp:packageMsi ^
+  -Pprintbusiness.api.scheme=http ^
+  -Pprintbusiness.api.host=YOUR_BACKEND_IP ^
+  -Pprintbusiness.api.port=8080
+```
+
+The MSI file will be generated in `desktopApp/build/compose/binaries/main/msi/`.
+
+> **Important:** The backend API URL is baked into the MSI at build time via BuildKonfig. If the user needs to connect to a different backend, you can override it at runtime by setting the environment variable `PRINT_BUSINESS_API_BASE_URL` (see Step 4).
+
+### Step 2: Add the User's Email to the Allowlist
+
+Before the new user can sign in, their Google email must be added to the backend's allowlist. There are two ways to do this:
+
+**Option A: Via the `ALLOWED_EMAILS` environment variable (server restart required)**
+
+Add the email to the `ALLOWED_EMAILS` variable in the backend's `.env` file (comma-separated):
+
+```env
+ALLOWED_EMAILS=oleg.daniv25@gmail.com,newuser@gmail.com
+```
+
+Then restart the backend server. On startup, all emails from this variable are synced into the database.
+
+**Option B: Via the Admin API (no restart needed)**
+
+If you are already signed in as an authorized user, you can add new users at runtime using the admin endpoint:
+
+```bash
+# Replace <YOUR_JWT_TOKEN> with a valid JWT from an existing session
+# Replace <BACKEND_URL> with your backend address
+
+curl -X POST <BACKEND_URL>/admin/allowed-emails \
+  -H "Authorization: Bearer <YOUR_JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "newuser@gmail.com", "note": "New operator"}'
+```
+
+To verify the email was added:
+
+```bash
+curl <BACKEND_URL>/admin/allowed-emails \
+  -H "Authorization: Bearer <YOUR_JWT_TOKEN>"
+```
+
+### Step 3: Install the App on Windows
+
+1. Copy the `PrintBusiness-X.Y.Z.msi` file to the Windows computer
+2. Double-click the MSI file to launch the installer
+3. Follow the installation wizard:
+   - Choose an installation directory (or accept the default)
+   - A desktop shortcut and Start Menu entry will be created automatically
+4. Launch **SouvenirPrint** from the desktop shortcut or Start Menu
+
+### Step 4: Configure the Backend Connection (if needed)
+
+By default, the app connects to the backend URL that was set at build time (check `gradle.properties` for defaults).
+
+If you need to point the app to a different backend (e.g., a local server or a different deployment), set the following **Windows environment variable** before launching the app:
+
+1. Open **Settings** > **System** > **About** > **Advanced system settings**
+2. Click **Environment Variables**
+3. Under **User variables**, click **New**:
+   - Variable name: `PRINT_BUSINESS_API_BASE_URL`
+   - Variable value: `https://print-business-kmp.onrender.com` (or `http://192.168.x.x:8080` for a local server)
+4. Click **OK**, then restart the app
+
+### Step 5: Sign In
+
+1. Launch the app — the login screen will appear
+2. Click **"Sign in with Google"**
+3. Your default browser will open to the Google sign-in page
+4. Sign in with the Google account whose email was added to the allowlist (Step 2)
+5. After successful authentication, the browser will redirect to `localhost` and close automatically
+6. The desktop app will receive the token and log you in
+
+> **Troubleshooting sign-in:**
+> - **"Email not allowed" (403):** The user's email hasn't been added to the allowlist. Go back to Step 2.
+> - **"redirect_uri_mismatch" (400):** The Google OAuth client ID is configured as a Web application type. Either use a **Desktop app** type OAuth client ID, or register `http://localhost:49932/` as an authorized redirect URI in the Google Cloud Console.
+> - **Browser doesn't open:** Check that the computer has a default browser set and that no firewall is blocking `localhost:49932`.
+> - **Connection error:** Verify the backend is running and accessible from this computer. Check `PRINT_BUSINESS_API_BASE_URL` if set.
+
+### Step 6: Auto-Updates
+
+Once installed, the app automatically checks for updates on startup. If a newer version is available:
+
+1. A prompt will appear asking to update
+2. The new MSI will be downloaded automatically
+3. The installer will run and upgrade the app in place
+
+Updates are published via GitHub Releases and served from the `gh-pages` branch update feed.
+
+---
+
 ## Features
 
 - **Client Management**: Full CRUD operations for clients.
