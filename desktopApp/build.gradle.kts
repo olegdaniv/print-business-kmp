@@ -115,6 +115,12 @@ compose.desktop {
             vendor = appVendor
             description = appDescription
 
+            modules(
+                "java.net.http",
+                "java.net",
+                "jdk.crypto.ec"
+            )
+
             windows {
                 menu = true
                 shortcut = true
