@@ -117,7 +117,6 @@ compose.desktop {
 
             modules(
                 "java.net.http",
-                "java.net",
                 "jdk.crypto.ec"
             )
 
