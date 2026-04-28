@@ -17,11 +17,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Java 17
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
           cache: gradle
 
       - name: Validate Gradle wrapper
@@ -85,7 +85,7 @@ jobs:
             "-PdesktopUpdateAllowedHosts=${{ steps.meta.outputs.pages_host }}" `
             "-PdesktopAllowUpdatesWithoutChecksum=false"
 
-      - name: Prepare release artifacts and update feed
+      - name: Prepare update feed
         id: feed
         shell: pwsh
         env:
@@ -100,10 +100,8 @@ jobs:
 
           $updatesDir = Join-Path $PWD "dist/updates"
           New-Item -ItemType Directory -Force -Path $updatesDir | Out-Null
-          
-          $targetMsiPath = $msi.FullName 
 
-          $sha256 = (Get-FileHash -Algorithm SHA256 $targetMsiPath).Hash.ToLowerInvariant()
+          $sha256 = (Get-FileHash -Algorithm SHA256 $msi.FullName).Hash.ToLowerInvariant()
 
           $releaseNotes = ""
           $releaseApiUrl = "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ steps.meta.outputs.tag }}"
@@ -126,6 +124,7 @@ jobs:
             $releaseNotes = "New release ${{ steps.meta.outputs.version }}"
           }
 
+          # MSI URL points to GitHub Releases (no 100MB limit)
           $msiUrl = "https://github.com/${{ github.repository }}/releases/download/${{ steps.meta.outputs.tag }}/${{ steps.meta.outputs.msi_name }}"
           $latestJsonPath = Join-Path $updatesDir "latest.json"
           pwsh ./scripts/generate-latest-json.ps1 `
@@ -135,7 +134,7 @@ jobs:
             -Sha256 $sha256 `
             -OutputPath $latestJsonPath
 
-          "msi_path=$targetMsiPath" >> $env:GITHUB_OUTPUT
+          "msi_path=$($msi.FullName)" >> $env:GITHUB_OUTPUT
           "latest_json_path=$latestJsonPath" >> $env:GITHUB_OUTPUT
           "sha256=$sha256" >> $env:GITHUB_OUTPUT
           "release_notes<<EOF" >> $env:GITHUB_OUTPUT
@@ -165,6 +164,6 @@ jobs:
           @"
           Released version: ${{ steps.meta.outputs.version }}
           Feed URL: ${{ steps.meta.outputs.feed_url }}
-          MSI URL: ${{ steps.meta.outputs.pages_base }}/updates/${{ steps.meta.outputs.msi_name }}
+          MSI URL: https://github.com/${{ github.repository }}/releases/download/${{ steps.meta.outputs.tag }}/${{ steps.meta.outputs.msi_name }}
           SHA256: ${{ steps.feed.outputs.sha256 }}
           "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
