@@ -100,9 +100,8 @@ jobs:
 
           $updatesDir = Join-Path $PWD "dist/updates"
           New-Item -ItemType Directory -Force -Path $updatesDir | Out-Null
-
-          $targetMsiPath = Join-Path $updatesDir "${{ steps.meta.outputs.msi_name }}"
-          Copy-Item -Path $msi.FullName -Destination $targetMsiPath -Force
+          
+          $targetMsiPath = $msi.FullName 
 
           $sha256 = (Get-FileHash -Algorithm SHA256 $targetMsiPath).Hash.ToLowerInvariant()
 
@@ -127,7 +126,7 @@ jobs:
             $releaseNotes = "New release ${{ steps.meta.outputs.version }}"
           }
 
-          $msiUrl = "${{ steps.meta.outputs.pages_base }}/updates/${{ steps.meta.outputs.msi_name }}"
+          $msiUrl = "https://github.com/${{ github.repository }}/releases/download/${{ steps.meta.outputs.tag }}/${{ steps.meta.outputs.msi_name }}"
           $latestJsonPath = Join-Path $updatesDir "latest.json"
           pwsh ./scripts/generate-latest-json.ps1 `
             -Version "${{ steps.meta.outputs.version }}" `
