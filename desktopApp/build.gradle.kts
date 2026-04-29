@@ -117,7 +117,8 @@ compose.desktop {
 
             modules(
                 "java.net.http",
-                "jdk.crypto.ec"
+                "jdk.crypto.ec",
+                "jdk.httpserver"
             )
 
             windows {

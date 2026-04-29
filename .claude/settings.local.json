@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(./gradlew :shared:compileKotlinJvm :shared:compileKotlinJs :shared:compileKotlinWasmJs 2>&1 | tail -20)",
+      "Bash(./gradlew :backend:compileKotlin :webApp:compileKotlinWasmJs 2>&1 | tail -20)",
+      "Bash(./gradlew :backend:compileKotlin :webApp:compileKotlinWasmJs :webApp:compileKotlinJs 2>&1 | tail -30)",
+      "Bash(./gradlew :desktopApp:compileKotlin 2>&1 | tail -15)",
+      "Bash(find /Users/oleh/kmp/print-business-kmp -name \"*Constants*\" -type f 2>/dev/null | head -20)",
+      "Bash(find /Users/oleh/kmp/print-business-kmp -name \"buildkonfig*\" -o -name \"*BuildKonfig*\" 2>/dev/null | grep -v build | head -20)",
+      "Bash(find /Users/oleh/kmp/print-business-kmp -name \"README*\" -o -name \"INSTALLATION*\" -o -name \"SETUP*\" 2>/dev/null | head -10)",
+      "Bash(git push:*)",
+      "Bash(git tag:*)",
+      "Bash(git add:*)",
+      "Bash(cd:*)",
+      "Bash(git commit:*)",
+      "Bash(./gradlew :desktopApp:compileKotlin 2>&1 | tail -60)",
+      "Bash(./gradlew :desktopApp:compileKotlin 2>&1 | tail -40)",
+      "Bash(timeout:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "voicetree"
+  ]
+}
