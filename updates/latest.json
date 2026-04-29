@@ -1,8 +1,8 @@
 {
-  "notes": "New release 1.0.5",
-  "version": "1.0.5",
   "windows": {
-    "sha256": "9f3f9886a328d303a8b7b48249fd12b82cbefcb6932f779d140ff0646fd67e65",
-    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.5/PrintBusiness-1.0.5.msi"
-  }
+    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.6/PrintBusiness-1.0.6.msi",
+    "sha256": "9c581405eb4116550bec0ca4116a4bc0fe1aebe2eacb9c9e9e0308996a595960"
+  },
+  "notes": "New release 1.0.6",
+  "version": "1.0.6"
 }
