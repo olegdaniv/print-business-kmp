@@ -1,8 +1,5 @@
 package com.printbusinesskmp.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
@@ -15,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,12 +23,11 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,7 +54,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.ui.theme.DesktopColors
-import com.printbusinesskmp.ui.theme.LocalIsDarkTheme
 
 data class NavDestination(
     val label: String,
@@ -73,38 +67,27 @@ private val mainDestinations = listOf(
         label = "Огляд",
         icon = Icons.Default.Dashboard,
         screen = Screen.Dashboard,
-        matchScreens = { it is Screen.Dashboard }
-    ),
+        matchScreens = { it is Screen.Dashboard }),
     NavDestination(
         label = "Замовлення",
         icon = Icons.AutoMirrored.Filled.List,
         screen = Screen.Orders,
-        matchScreens = { it is Screen.Orders || it is Screen.OrderDetail || it is Screen.OrderForm }
-    ),
+        matchScreens = { it is Screen.Orders || it is Screen.OrderDetail || it is Screen.OrderForm }),
     NavDestination(
         label = "Клієнти",
         icon = Icons.Default.People,
         screen = Screen.Clients,
-        matchScreens = { it is Screen.Clients || it is Screen.ClientForm }
-    ),
-    NavDestination(
-        label = "Макети",
-        icon = Icons.Default.GridView,
-        screen = Screen.Layouts,
-        matchScreens = { it is Screen.Layouts }
-    ),
+        matchScreens = { it is Screen.Clients || it is Screen.ClientForm }),
     NavDestination(
         label = "Рахунки",
         icon = Icons.Default.Receipt,
         screen = Screen.Invoices,
-        matchScreens = { it is Screen.Invoices }
-    ),
+        matchScreens = { it is Screen.Invoices }),
     NavDestination(
         label = "Профіль",
         icon = Icons.Default.Business,
         screen = Screen.BusinessProfile,
-        matchScreens = { it is Screen.BusinessProfile }
-    ),
+        matchScreens = { it is Screen.BusinessProfile }),
 )
 
 @Composable
@@ -115,36 +98,56 @@ fun AppShell(
     onToggleTheme: () -> Unit,
     updateAvailable: Boolean = false,
     signedInLabel: String? = null,
+    onSignOut: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
             .onPreviewKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown && event.isCtrlPressed) {
                     when (event.key) {
-                        Key.One -> { onNavigate(Screen.Dashboard); true }
-                        Key.Two -> { onNavigate(Screen.Orders); true }
-                        Key.Three -> { onNavigate(Screen.Clients); true }
-                        Key.Four -> { onNavigate(Screen.Layouts); true }
-                        Key.Five -> { onNavigate(Screen.Invoices); true }
-                        Key.Six -> { onNavigate(Screen.BusinessProfile); true }
-                        Key.N -> { onNavigate(Screen.OrderForm(null)); true }
+                        Key.One -> {
+                            onNavigate(Screen.Dashboard); true
+                        }
+
+                        Key.Two -> {
+                            onNavigate(Screen.Orders); true
+                        }
+
+                        Key.Three -> {
+                            onNavigate(Screen.Clients); true
+                        }
+
+                        Key.Four -> {
+                            onNavigate(Screen.Layouts); true
+                        }
+
+                        Key.Five -> {
+                            onNavigate(Screen.Invoices); true
+                        }
+
+                        Key.Six -> {
+                            onNavigate(Screen.BusinessProfile); true
+                        }
+
+                        Key.N -> {
+                            onNavigate(Screen.OrderForm(null)); true
+                        }
+
                         else -> false
                     }
                 } else {
                     false
                 }
-            }
-    ) {
+            }) {
         NavigationRail(
             currentScreen = currentScreen,
             onNavigate = onNavigate,
             isDarkTheme = isDarkTheme,
             onToggleTheme = onToggleTheme,
             updateAvailable = updateAvailable,
-            signedInLabel = signedInLabel
+            signedInLabel = signedInLabel,
+            onSignOut = onSignOut
         )
 
         VerticalDivider(
@@ -154,9 +157,7 @@ fun AppShell(
         )
 
         Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxSize()
+            modifier = Modifier.weight(1f).fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
             content()
@@ -171,36 +172,25 @@ private fun NavigationRail(
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
     updateAvailable: Boolean,
-    signedInLabel: String?
+    signedInLabel: String?,
+    onSignOut: (() -> Unit)?
 ) {
     val railBg = if (isDarkTheme) DesktopColors.railBackgroundDark else DesktopColors.railBackground
 
     Surface(
-        modifier = Modifier
-            .width(72.dp)
-            .fillMaxHeight(),
-        color = railBg,
-        tonalElevation = 0.dp
+        modifier = Modifier.width(72.dp).fillMaxHeight(), color = railBg, tonalElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxHeight()
-                .padding(vertical = 12.dp),
+            modifier = Modifier.fillMaxHeight().padding(vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // App logo / brand mark
             Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(DesktopColors.railSelected),
-                contentAlignment = Alignment.Center
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp))
+                    .background(DesktopColors.railSelected), contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "SP",
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
+                    text = "SP", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold
                 )
             }
 
@@ -234,8 +224,7 @@ private fun NavigationRail(
 
             // Theme toggle
             IconButton(
-                onClick = onToggleTheme,
-                modifier = Modifier.size(40.dp)
+                onClick = onToggleTheme, modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
@@ -243,6 +232,19 @@ private fun NavigationRail(
                     tint = DesktopColors.railUnselected,
                     modifier = Modifier.size(20.dp)
                 )
+            }
+
+            if (onSignOut != null) {
+                IconButton(
+                    onClick = onSignOut, modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Logout,
+                        contentDescription = "Sign out",
+                        tint = DesktopColors.railUnselected,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
             Spacer(Modifier.height(8.dp))
@@ -281,18 +283,10 @@ private fun RailItem(
     }
 
     Box(
-        modifier = Modifier
-            .width(64.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .hoverable(interactionSource)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            )
-            .background(bgColor)
-            .padding(vertical = 6.dp),
-        contentAlignment = Alignment.Center
+        modifier = Modifier.width(64.dp).clip(RoundedCornerShape(12.dp))
+            .hoverable(interactionSource).clickable(
+                interactionSource = interactionSource, indication = null, onClick = onClick
+            ).background(bgColor).padding(vertical = 6.dp), contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -307,10 +301,7 @@ private fun RailItem(
                 )
                 if (badge) {
                     Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(8.dp)
-                            .clip(CircleShape)
+                        modifier = Modifier.align(Alignment.TopEnd).size(8.dp).clip(CircleShape)
                             .background(DesktopColors.success)
                     )
                 }

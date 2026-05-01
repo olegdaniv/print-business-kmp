@@ -129,7 +129,7 @@ fun SearchField(
             unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
             focusedBorderColor = MaterialTheme.colorScheme.primary,
         ),
-        modifier = modifier.height(40.dp)
+        modifier = modifier
     )
 }
 
