@@ -17,7 +17,12 @@
       "Bash(./gradlew :desktopApp:compileKotlin 2>&1 | tail -60)",
       "Bash(./gradlew :desktopApp:compileKotlin 2>&1 | tail -40)",
       "Bash(timeout:*)",
-      "Bash(find *)"
+      "Bash(find *)",
+      "Bash(./gradlew :backend:compileKotlin)",
+      "Bash(./gradlew :desktopApp:compileKotlinDesktop)",
+      "Bash(./gradlew :desktopApp:tasks)",
+      "Bash(./gradlew :desktopApp:compileKotlin)",
+      "Bash(./gradlew :shared:compileKotlinJvm)"
     ]
   },
   "enableAllProjectMcpServers": true,
