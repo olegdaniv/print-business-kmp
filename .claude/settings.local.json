@@ -16,7 +16,8 @@
       "Bash(git commit:*)",
       "Bash(./gradlew :desktopApp:compileKotlin 2>&1 | tail -60)",
       "Bash(./gradlew :desktopApp:compileKotlin 2>&1 | tail -40)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(find *)"
     ]
   },
   "enableAllProjectMcpServers": true,
