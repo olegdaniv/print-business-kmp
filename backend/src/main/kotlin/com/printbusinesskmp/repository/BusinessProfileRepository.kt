@@ -30,14 +30,17 @@ class BusinessProfileRepository {
             BusinessProfilesTable.insert {
                 it[BusinessProfilesTable.id] = id
                 it[ownerName] = request.ownerName.trim()
-                it[email] = request.email?.trim()?.takeIf { value -> value.isNotEmpty() }
-                it[phone] = request.phone?.trim()?.takeIf { value -> value.isNotEmpty() }
-                it[taxId] = request.taxId.trim()
+                it[email] = request.email?.trim()?.takeIf { v -> v.isNotEmpty() }
+                it[phone] = request.phone?.trim()?.takeIf { v -> v.isNotEmpty() }
+                it[edrpou] = request.edrpou.filter { c -> c.isDigit() }
+                it[ipn] = request.ipn?.filter { c -> c.isDigit() }?.takeIf { v -> v.isNotEmpty() }
                 it[address] = request.address.trim()
-                it[iban] = request.iban.trim()
-                it[bankName] = request.bankName.trim()
+                it[iban] = request.iban.replace(" ", "").uppercase()
+                it[bankName] = request.bankName?.trim().orEmpty()
+                it[mfo] = request.mfo?.filter { c -> c.isDigit() }?.takeIf { v -> v.isNotEmpty() }
+                it[taxNote] = request.taxNote?.trim()?.takeIf { v -> v.isNotEmpty() }
+                it[certificateNumber] = request.certificateNumber?.trim()?.takeIf { v -> v.isNotEmpty() }
                 it[taxPercent] = request.taxPercent
-                it[notes] = request.notes?.trim()?.takeIf { value -> value.isNotEmpty() }
                 it[updatedAt] = now
             }
 
@@ -49,14 +52,17 @@ class BusinessProfileRepository {
             val id = existing[BusinessProfilesTable.id]
             BusinessProfilesTable.update({ BusinessProfilesTable.id eq id }) {
                 it[ownerName] = request.ownerName.trim()
-                it[email] = request.email?.trim()?.takeIf { value -> value.isNotEmpty() }
-                it[phone] = request.phone?.trim()?.takeIf { value -> value.isNotEmpty() }
-                it[taxId] = request.taxId.trim()
+                it[email] = request.email?.trim()?.takeIf { v -> v.isNotEmpty() }
+                it[phone] = request.phone?.trim()?.takeIf { v -> v.isNotEmpty() }
+                it[edrpou] = request.edrpou.filter { c -> c.isDigit() }
+                it[ipn] = request.ipn?.filter { c -> c.isDigit() }?.takeIf { v -> v.isNotEmpty() }
                 it[address] = request.address.trim()
-                it[iban] = request.iban.trim()
-                it[bankName] = request.bankName.trim()
+                it[iban] = request.iban.replace(" ", "").uppercase()
+                it[bankName] = request.bankName?.trim().orEmpty()
+                it[mfo] = request.mfo?.filter { c -> c.isDigit() }?.takeIf { v -> v.isNotEmpty() }
+                it[taxNote] = request.taxNote?.trim()?.takeIf { v -> v.isNotEmpty() }
+                it[certificateNumber] = request.certificateNumber?.trim()?.takeIf { v -> v.isNotEmpty() }
                 it[taxPercent] = request.taxPercent
-                it[notes] = request.notes?.trim()?.takeIf { value -> value.isNotEmpty() }
                 it[updatedAt] = now
             }
 
@@ -73,12 +79,15 @@ class BusinessProfileRepository {
             ownerName = row[BusinessProfilesTable.ownerName],
             email = row[BusinessProfilesTable.email],
             phone = row[BusinessProfilesTable.phone],
-            taxId = row[BusinessProfilesTable.taxId],
+            edrpou = row[BusinessProfilesTable.edrpou],
+            ipn = row[BusinessProfilesTable.ipn],
             address = row[BusinessProfilesTable.address],
             iban = row[BusinessProfilesTable.iban],
-            bankName = row[BusinessProfilesTable.bankName],
+            bankName = row[BusinessProfilesTable.bankName].takeIf { it.isNotEmpty() },
+            mfo = row[BusinessProfilesTable.mfo],
+            taxNote = row[BusinessProfilesTable.taxNote],
+            certificateNumber = row[BusinessProfilesTable.certificateNumber],
             taxPercent = row[BusinessProfilesTable.taxPercent],
-            notes = row[BusinessProfilesTable.notes],
             updatedAt = kotlin.time.Instant.fromEpochMilliseconds(row[BusinessProfilesTable.updatedAt].toEpochMilli())
         )
     }

@@ -3,8 +3,8 @@ package com.printbusinesskmp.ui.components
 import androidx.compose.runtime.Composable
 import com.printbusinesskmp.desktop.update.UpdateUiState
 import com.printbusinesskmp.navigation.Screen
+import com.printbusinesskmp.ui.screens.BusinessProfileScreen
 import com.printbusinesskmp.ui.screens.ClientFormScreen
-import com.printbusinesskmp.ui.screens.DesktopBusinessProfilePlaceholder
 import com.printbusinesskmp.ui.screens.DesktopClientsScreen
 import com.printbusinesskmp.ui.screens.DesktopDashboardScreen
 import com.printbusinesskmp.ui.screens.DesktopInvoicesPlaceholder
@@ -26,7 +26,7 @@ fun NavigationContent(
 ) {
     when (currentScreen) {
         Screen.Dashboard -> DesktopDashboardScreen(onNavigate)
-        Screen.BusinessProfile -> DesktopBusinessProfilePlaceholder(onNavigate)
+        Screen.BusinessProfile -> BusinessProfileScreen(onNavigate)
         Screen.Clients -> DesktopClientsScreen(onNavigate)
         is Screen.ClientForm -> ClientFormScreen(currentScreen.clientId, onNavigate)
         Screen.Orders -> DesktopOrdersScreen(onNavigate)

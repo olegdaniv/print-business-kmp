@@ -75,6 +75,9 @@ class InvoiceRepository {
             it[sellerIban] = invoice.seller.iban
             it[sellerBankName] = invoice.seller.bankName
             it[sellerTaxPercent] = invoice.seller.taxPercent
+            it[sellerTaxNote] = invoice.seller.taxNote
+            it[sellerMfo] = invoice.seller.mfo
+            it[sellerIpn] = invoice.seller.ipn
 
             it[clientType] = invoice.client.type.name
             it[clientName] = invoice.client.name
@@ -143,7 +146,10 @@ class InvoiceRepository {
                 address = row[InvoicesTable.sellerAddress],
                 iban = row[InvoicesTable.sellerIban],
                 bankName = row[InvoicesTable.sellerBankName],
-                taxPercent = row[InvoicesTable.sellerTaxPercent]
+                taxPercent = row[InvoicesTable.sellerTaxPercent],
+                taxNote = row[InvoicesTable.sellerTaxNote],
+                mfo = row[InvoicesTable.sellerMfo],
+                ipn = row[InvoicesTable.sellerIpn],
             ),
             client = InvoiceClientSnapshot(
                 type = ClientType.valueOf(row[InvoicesTable.clientType]),

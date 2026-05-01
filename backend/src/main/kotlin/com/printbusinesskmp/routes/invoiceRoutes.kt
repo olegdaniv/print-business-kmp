@@ -93,11 +93,14 @@ fun Route.configureInvoiceRoutes() {
                         issuedAt = now,
                         seller = InvoiceSellerSnapshot(
                             ownerName = profile.ownerName,
-                            taxId = profile.taxId,
+                            taxId = profile.edrpou,
                             address = profile.address,
                             iban = profile.iban,
-                            bankName = profile.bankName,
-                            taxPercent = profile.taxPercent
+                            bankName = profile.bankName.orEmpty(),
+                            taxPercent = profile.taxPercent,
+                            taxNote = profile.taxNote,
+                            mfo = profile.mfo,
+                            ipn = profile.ipn,
                         ),
                         client = InvoiceClientSnapshot(
                             type = client.type,

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.Icon
@@ -37,15 +36,6 @@ fun DesktopInvoicesPlaceholder(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen
         icon = Icons.Default.Receipt,
         title = "Рахунки",
         subtitle = "Розділ рахунків буде доступний незабаром"
-    )
-}
-
-@Composable
-fun DesktopBusinessProfilePlaceholder(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> Unit) {
-    PlaceholderContent(
-        icon = Icons.Default.Business,
-        title = "Профіль ФОП",
-        subtitle = "Розділ профілю буде доступний незабаром"
     )
 }
 

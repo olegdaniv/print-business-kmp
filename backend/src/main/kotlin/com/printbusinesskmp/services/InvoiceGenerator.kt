@@ -115,11 +115,12 @@ class InvoiceGenerator {
         document.add(Paragraph("\n"))
         document.add(Paragraph("Замовник претензій по об'єму, якості та строкам надання послуг не має.").setFontSize(10f))
 
-        val taxNote = if (invoice.seller.taxPercent > 0.0) {
-            "Податок ${formatNumber(invoice.seller.taxPercent)}% застосовано до рахунку."
-        } else {
-            "Податок не застосовано."
-        }
+        val taxNote = invoice.seller.taxNote?.takeIf { it.isNotBlank() }
+            ?: if (invoice.seller.taxPercent > 0.0) {
+                "Податок ${formatNumber(invoice.seller.taxPercent)}% застосовано до рахунку."
+            } else {
+                "Не є платником податку на прибуток на загальних підставах."
+            }
         document.add(Paragraph(taxNote).setFontSize(10f))
 
         invoice.notes?.takeIf { it.isNotBlank() }?.let { notes ->

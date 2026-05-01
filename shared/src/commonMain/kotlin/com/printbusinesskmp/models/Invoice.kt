@@ -39,7 +39,10 @@ data class InvoiceSellerSnapshot(
     val address: String,
     val iban: String,
     val bankName: String,
-    val taxPercent: Double
+    val taxPercent: Double,
+    val taxNote: String? = null,
+    val mfo: String? = null,
+    val ipn: String? = null,
 )
 
 @Serializable
