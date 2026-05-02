@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.ClientType
+import com.printbusinesskmp.models.DeliveryType
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.ui.components.HoverableRow
 import com.printbusinesskmp.ui.components.SearchField
@@ -59,6 +60,12 @@ import com.printbusinesskmp.ui.components.StatusFilterChips
 import com.printbusinesskmp.ui.theme.DesktopColors
 import com.printbusinesskmp.utils.FormatUtils
 import kotlinx.coroutines.launch
+
+private fun DeliveryType.displayName(): String = when (this) {
+    DeliveryType.NOVA_POSHTA_BRANCH -> "Відділення Нової Пошти"
+    DeliveryType.NOVA_POSHTA_ADDRESS -> "Адресна доставка НП"
+    DeliveryType.DIRECT_ADDRESS -> "Пряма адреса"
+}
 
 @Composable
 fun DesktopClientsScreen(onNavigate: (Screen) -> Unit) {
@@ -318,6 +325,15 @@ private fun ClientListItem(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            client.delivery?.let { d ->
+                Text(
+                    text = "🚚 ${d.type.displayName()}: ${d.label()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             if (client.orderCount > 0) {
                 Text(
                     text = "${client.orderCount} замовлень",
@@ -387,6 +403,39 @@ private fun ClientDetailPanel(
                 client.email?.let { DetailField("Email", it) }
                 DetailField("Адреса", client.address)
                 client.contactName?.let { DetailField("Контактна особа", it) }
+            }
+        }
+
+        // Delivery info
+        client.delivery?.let { d ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text("Доставка", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    DetailField("Тип", d.type.displayName())
+                    when (d.type) {
+                        DeliveryType.NOVA_POSHTA_BRANCH -> {
+                            d.city?.let { DetailField("Місто", it) }
+                            d.branch?.let { DetailField("Відділення", it) }
+                        }
+                        DeliveryType.NOVA_POSHTA_ADDRESS -> {
+                            d.city?.let { DetailField("Місто", it) }
+                            d.street?.let { street ->
+                                val full = if (d.building != null) "$street, ${d.building}" else street
+                                DetailField("Вулиця / будинок", full)
+                            }
+                        }
+                        DeliveryType.DIRECT_ADDRESS -> {
+                            d.freeAddress?.let { DetailField("Адреса", it) }
+                        }
+                    }
+                }
             }
         }
 
