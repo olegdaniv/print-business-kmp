@@ -24,6 +24,11 @@ jobs:
           java-version: "21"
           cache: gradle
 
+      - name: Clear Gradle cache
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force -Path "$env:USERPROFILE\.gradle\caches" -ErrorAction SilentlyContinue
+
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
 
@@ -80,7 +85,9 @@ jobs:
         shell: pwsh
         env:
           GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.GOOGLE_DESKTOP_CLIENT_SECRET }}
+          GRADLE_OPTS: "-Xmx1024m -Xms512m"
         run: |
+          ./gradlew --no-daemon --stop
           ./gradlew --no-daemon ${{ steps.detect_task.outputs.task }} `
             "-PdesktopAppVersion=${{ steps.meta.outputs.version }}" `
             "-PdesktopUpdateFeedUrl=${{ steps.meta.outputs.feed_url }}" `
