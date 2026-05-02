@@ -36,6 +36,8 @@ import com.printbusinesskmp.models.ClientType
 import com.printbusinesskmp.models.ClientUpdateRequest
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
+import com.printbusinesskmp.ui.components.IbanField
+import com.printbusinesskmp.ui.components.PhoneField
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,6 +63,8 @@ fun ClientFormScreen(
     var loading by remember { mutableStateOf(editMode) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var phoneError by remember { mutableStateOf<String?>(null) }
+    var ibanError by remember { mutableStateOf<String?>(null) }
     var typeExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(clientId) {
@@ -71,10 +75,10 @@ fun ClientFormScreen(
                 displayName = client.displayName
                 contactName = client.contactName.orEmpty()
                 email = client.email.orEmpty()
-                phone = client.phone
+                phone = client.phone.filter { it.isDigit() }.take(10)
                 taxId = client.taxId.orEmpty()
                 address = client.address
-                iban = client.iban.orEmpty()
+                iban = client.iban.orEmpty().replace(" ", "").uppercase().take(29)
                 bankName = client.bankName.orEmpty()
                 notes = client.notes.orEmpty()
             } catch (e: Exception) {
@@ -151,10 +155,12 @@ fun ClientFormScreen(
                     label = { Text("Email") },
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
+                PhoneField(
                     value = phone,
-                    onValueChange = { phone = it },
-                    label = { Text("Телефон") },
+                    onValueChange = { phone = it; phoneError = null },
+                    label = "Телефон",
+                    isError = phoneError != null,
+                    errorMessage = phoneError,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -169,10 +175,12 @@ fun ClientFormScreen(
                     label = { Text("Адреса") },
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
+                IbanField(
                     value = iban,
-                    onValueChange = { iban = it },
-                    label = { Text("IBAN") },
+                    onValueChange = { iban = it; ibanError = null },
+                    label = "IBAN",
+                    isError = ibanError != null,
+                    errorMessage = ibanError,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -201,10 +209,20 @@ fun ClientFormScreen(
                     }
                     Button(
                         onClick = {
-                            if (displayName.isBlank() || phone.isBlank() || address.isBlank()) {
-                                error = "Заповніть обов'язкові поля: назва, телефон, адреса"
-                                return@Button
+                            var valid = true
+                            if (displayName.isBlank() || address.isBlank()) {
+                                error = "Заповніть обов'язкові поля: назва, адреса"
+                                valid = false
                             }
+                            if (phone.isBlank() || phone.length != 10 || !phone.startsWith("0")) {
+                                phoneError = "Рівно 10 цифр, починається з 0"
+                                valid = false
+                            }
+                            if (iban.isNotBlank() && (!iban.startsWith("UA") || iban.length != 29)) {
+                                ibanError = "Формат: UA + 27 цифр (29 символів)"
+                                valid = false
+                            }
+                            if (!valid) return@Button
 
                             saving = true
                             error = null

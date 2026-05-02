@@ -34,6 +34,11 @@ import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.BusinessProfileUpsertRequest
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
+import com.printbusinesskmp.ui.components.EdrpouField
+import com.printbusinesskmp.ui.components.IbanField
+import com.printbusinesskmp.ui.components.IpnField
+import com.printbusinesskmp.ui.components.MfoField
+import com.printbusinesskmp.ui.components.PhoneField
 import kotlinx.coroutines.launch
 
 private const val DEFAULT_TAX_NOTE = "Не є платником податку на прибуток на загальних підставах"
@@ -71,13 +76,13 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
             val profile = ApiClient.getBusinessProfile()
             if (profile != null) {
                 ownerName = profile.ownerName
-                edrpou = profile.edrpou
-                ipn = profile.ipn.orEmpty()
-                phone = profile.phone.orEmpty()
+                edrpou = profile.edrpou.filter { it.isDigit() }.take(8)
+                ipn = profile.ipn.orEmpty().filter { it.isDigit() }.take(10)
+                phone = profile.phone.orEmpty().filter { it.isDigit() }.take(10)
                 address = profile.address
-                iban = profile.iban
+                iban = profile.iban.replace(" ", "").uppercase().take(29)
                 bankName = profile.bankName.orEmpty()
-                mfo = profile.mfo.orEmpty()
+                mfo = profile.mfo.orEmpty().filter { it.isDigit() }.take(6)
                 taxNote = profile.taxNote.takeIf { !it.isNullOrBlank() } ?: DEFAULT_TAX_NOTE
                 certificateNumber = profile.certificateNumber.orEmpty()
             }
@@ -129,20 +134,20 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    OutlinedTextField(
+                    EdrpouField(
                         value = edrpou,
-                        onValueChange = { if (it.length <= 8 || it.any { c -> !c.isDigit() }) { edrpou = it.filter { c -> c.isDigit() }.take(8); edrpouError = null; message = null } },
-                        label = { Text("ЄДРПОУ * (8 цифр)") },
+                        onValueChange = { edrpou = it; edrpouError = null; message = null },
+                        label = "ЄДРПОУ *",
                         isError = edrpouError != null,
-                        supportingText = edrpouError?.let { { Text(it, color = Color.Red) } },
+                        errorMessage = edrpouError,
                         modifier = Modifier.weight(1f)
                     )
-                    OutlinedTextField(
+                    IpnField(
                         value = ipn,
-                        onValueChange = { ipn = it.filter { c -> c.isDigit() }.take(10); ipnError = null; message = null },
-                        label = { Text("ІПН (10 цифр)") },
+                        onValueChange = { ipn = it; ipnError = null; message = null },
+                        label = "ІПН",
                         isError = ipnError != null,
-                        supportingText = ipnError?.let { { Text(it, color = Color.Red) } },
+                        errorMessage = ipnError,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -151,12 +156,12 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    OutlinedTextField(
+                    PhoneField(
                         value = phone,
-                        onValueChange = { phone = it.filter { c -> c.isDigit() }.take(10); phoneError = null; message = null },
-                        label = { Text("Телефон * (0XXXXXXXXX)") },
+                        onValueChange = { phone = it; phoneError = null; message = null },
+                        label = "Телефон *",
                         isError = phoneError != null,
-                        supportingText = phoneError?.let { { Text(it, color = Color.Red) } },
+                        errorMessage = phoneError,
                         modifier = Modifier.weight(1f)
                     )
                     OutlinedTextField(
@@ -182,13 +187,12 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                 Spacer(Modifier.height(4.dp))
                 SectionTitle("Банківські реквізити")
 
-                OutlinedTextField(
+                IbanField(
                     value = iban,
-                    onValueChange = { iban = it.replace(" ", "").uppercase().take(29); ibanError = null; message = null },
-                    label = { Text("IBAN * (UA + 27 символів)") },
+                    onValueChange = { iban = it; ibanError = null; message = null },
+                    label = "IBAN *",
                     isError = ibanError != null,
-                    supportingText = ibanError?.let { { Text(it, color = Color.Red) } },
-                    placeholder = { Text("UA853996220000000026001233566 1") },
+                    errorMessage = ibanError,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -202,12 +206,12 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                         label = { Text("Назва банку") },
                         modifier = Modifier.weight(1f)
                     )
-                    OutlinedTextField(
+                    MfoField(
                         value = mfo,
-                        onValueChange = { mfo = it.filter { c -> c.isDigit() }.take(6); mfoError = null; message = null },
-                        label = { Text("МФО (6 цифр)") },
+                        onValueChange = { mfo = it; mfoError = null; message = null },
+                        label = "МФО",
                         isError = mfoError != null,
-                        supportingText = mfoError?.let { { Text(it, color = Color.Red) } },
+                        errorMessage = mfoError,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -243,30 +247,27 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                                 ownerNameError = "Обов'язкове поле"
                                 valid = false
                             }
-                            val edrpouDigits = edrpou.filter { it.isDigit() }
-                            if (edrpouDigits.length != 8) {
+                            if (edrpou.length != 8) {
                                 edrpouError = "Має бути рівно 8 цифр"
                                 valid = false
                             }
-                            if (ipn.isNotBlank() && ipn.filter { it.isDigit() }.length != 10) {
+                            if (ipn.isNotBlank() && ipn.length != 10) {
                                 ipnError = "Має бути рівно 10 цифр"
                                 valid = false
                             }
-                            val phoneDigits = phone.filter { it.isDigit() }
-                            if (phoneDigits.length != 10) {
-                                phoneError = "Має бути рівно 10 цифр (0XXXXXXXXX)"
+                            if (phone.length != 10 || !phone.startsWith("0")) {
+                                phoneError = "Рівно 10 цифр, починається з 0"
                                 valid = false
                             }
                             if (address.isBlank()) {
                                 addressError = "Обов'язкове поле"
                                 valid = false
                             }
-                            val ibanNorm = iban.replace(" ", "").uppercase()
-                            if (!ibanNorm.startsWith("UA") || ibanNorm.length != 29) {
-                                ibanError = "Формат: UA + 27 символів (29 разом)"
+                            if (!iban.startsWith("UA") || iban.length != 29) {
+                                ibanError = "Формат: UA + 27 цифр (29 символів)"
                                 valid = false
                             }
-                            if (mfo.isNotBlank() && mfo.filter { it.isDigit() }.length != 6) {
+                            if (mfo.isNotBlank() && mfo.length != 6) {
                                 mfoError = "Має бути рівно 6 цифр"
                                 valid = false
                             }
@@ -283,10 +284,10 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                                         BusinessProfileUpsertRequest(
                                             ownerName = ownerName.trim(),
                                             phone = phone.ifBlank { null },
-                                            edrpou = edrpouDigits,
+                                            edrpou = edrpou,
                                             ipn = ipn.ifBlank { null },
                                             address = address.trim(),
-                                            iban = ibanNorm,
+                                            iban = iban,
                                             bankName = bankName.ifBlank { null },
                                             mfo = mfo.ifBlank { null },
                                             taxNote = taxNote.ifBlank { null },
