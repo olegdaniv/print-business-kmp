@@ -15,5 +15,6 @@ data class ClientCreateRequest(
     val bankName: String? = null,
     val notes: String? = null,
     val source: ClientSource? = null,
-    val discountPercent: Double? = null
+    val discountPercent: Double? = null,
+    val delivery: ClientDelivery? = null
 )

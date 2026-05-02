@@ -3,9 +3,13 @@ package com.printbusinesskmp.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -14,6 +18,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -32,13 +37,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.ClientCreateRequest
+import com.printbusinesskmp.models.ClientDelivery
 import com.printbusinesskmp.models.ClientType
 import com.printbusinesskmp.models.ClientUpdateRequest
+import com.printbusinesskmp.models.DeliveryType
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.ui.components.IbanField
 import com.printbusinesskmp.ui.components.PhoneField
 import kotlinx.coroutines.launch
+
+private fun DeliveryType.displayName(): String = when (this) {
+    DeliveryType.NOVA_POSHTA_BRANCH -> "Відділення Нової Пошти"
+    DeliveryType.NOVA_POSHTA_ADDRESS -> "Адресна доставка НП"
+    DeliveryType.DIRECT_ADDRESS -> "Пряма адреса"
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,12 +73,21 @@ fun ClientFormScreen(
     var bankName by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
 
+    // Delivery state
+    var deliveryType by remember { mutableStateOf<DeliveryType?>(null) }
+    var deliveryCity by remember { mutableStateOf("") }
+    var deliveryBranch by remember { mutableStateOf("") }
+    var deliveryStreet by remember { mutableStateOf("") }
+    var deliveryBuilding by remember { mutableStateOf("") }
+    var deliveryFreeAddress by remember { mutableStateOf("") }
+
     var loading by remember { mutableStateOf(editMode) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var phoneError by remember { mutableStateOf<String?>(null) }
     var ibanError by remember { mutableStateOf<String?>(null) }
     var typeExpanded by remember { mutableStateOf(false) }
+    var deliveryTypeExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(clientId) {
         if (clientId != null) {
@@ -81,6 +103,14 @@ fun ClientFormScreen(
                 iban = client.iban.orEmpty().replace(" ", "").uppercase().take(29)
                 bankName = client.bankName.orEmpty()
                 notes = client.notes.orEmpty()
+                client.delivery?.let { d ->
+                    deliveryType = d.type
+                    deliveryCity = d.city.orEmpty()
+                    deliveryBranch = d.branch.orEmpty()
+                    deliveryStreet = d.street.orEmpty()
+                    deliveryBuilding = d.building.orEmpty()
+                    deliveryFreeAddress = d.freeAddress.orEmpty()
+                }
             } catch (e: Exception) {
                 error = e.message
             } finally {
@@ -89,7 +119,18 @@ fun ClientFormScreen(
         }
     }
 
-    Column {
+    fun buildDelivery(): ClientDelivery? = deliveryType?.let { dt ->
+        ClientDelivery(
+            type = dt,
+            city = deliveryCity.ifBlank { null },
+            branch = deliveryBranch.ifBlank { null },
+            street = deliveryStreet.ifBlank { null },
+            building = deliveryBuilding.ifBlank { null },
+            freeAddress = deliveryFreeAddress.ifBlank { null }
+        )
+    }
+
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         Text(
             text = if (editMode) "Редагування клієнта" else "Новий клієнт",
             fontSize = 32.sp,
@@ -111,6 +152,7 @@ fun ClientFormScreen(
                 modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // ── Client type ───────────────────────────────────────────
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Тип: ${if (type == ClientType.PERSON) "Фізособа" else "Компанія"}")
                     TextButton(onClick = { typeExpanded = true }) {
@@ -122,17 +164,11 @@ fun ClientFormScreen(
                     ) {
                         DropdownMenuItem(
                             text = { Text("Фізособа") },
-                            onClick = {
-                                type = ClientType.PERSON
-                                typeExpanded = false
-                            }
+                            onClick = { type = ClientType.PERSON; typeExpanded = false }
                         )
                         DropdownMenuItem(
                             text = { Text("Компанія") },
-                            onClick = {
-                                type = ClientType.COMPANY
-                                typeExpanded = false
-                            }
+                            onClick = { type = ClientType.COMPANY; typeExpanded = false }
                         )
                     }
                 }
@@ -196,6 +232,103 @@ fun ClientFormScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // ── Delivery section ──────────────────────────────────────
+                Spacer(Modifier.height(4.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(4.dp))
+
+                Text(
+                    text = "Доставка",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AppColors.DarkSlate.copy(alpha = 0.6f)
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Тип: ${deliveryType?.displayName() ?: "Не вказано"}",
+                        color = AppColors.DarkSlate
+                    )
+                    TextButton(onClick = { deliveryTypeExpanded = true }) {
+                        Text("Змінити")
+                    }
+                    DropdownMenu(
+                        expanded = deliveryTypeExpanded,
+                        onDismissRequest = { deliveryTypeExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Не вказано") },
+                            onClick = {
+                                deliveryType = null
+                                deliveryCity = ""; deliveryBranch = ""
+                                deliveryStreet = ""; deliveryBuilding = ""
+                                deliveryFreeAddress = ""
+                                deliveryTypeExpanded = false
+                            }
+                        )
+                        DeliveryType.entries.forEach { dt ->
+                            DropdownMenuItem(
+                                text = { Text(dt.displayName()) },
+                                onClick = { deliveryType = dt; deliveryTypeExpanded = false }
+                            )
+                        }
+                    }
+                }
+
+                when (deliveryType) {
+                    DeliveryType.NOVA_POSHTA_BRANCH -> {
+                        OutlinedTextField(
+                            value = deliveryCity,
+                            onValueChange = { deliveryCity = it },
+                            label = { Text("Місто") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = deliveryBranch,
+                            onValueChange = { deliveryBranch = it },
+                            label = { Text("Відділення (напр. Відділення №5)") },
+                            placeholder = { Text("Відділення №5") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    DeliveryType.NOVA_POSHTA_ADDRESS -> {
+                        OutlinedTextField(
+                            value = deliveryCity,
+                            onValueChange = { deliveryCity = it },
+                            label = { Text("Місто") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = deliveryStreet,
+                                onValueChange = { deliveryStreet = it },
+                                label = { Text("Вулиця") },
+                                modifier = Modifier.weight(2f)
+                            )
+                            OutlinedTextField(
+                                value = deliveryBuilding,
+                                onValueChange = { deliveryBuilding = it },
+                                label = { Text("Будинок") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                    DeliveryType.DIRECT_ADDRESS -> {
+                        OutlinedTextField(
+                            value = deliveryFreeAddress,
+                            onValueChange = { deliveryFreeAddress = it },
+                            label = { Text("Адреса доставки") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 2
+                        )
+                    }
+                    null -> Unit
+                }
+
+                // ── Error + actions ───────────────────────────────────────
                 if (error != null) {
                     Text(error ?: "", color = Color.Red)
                 }
@@ -229,6 +362,7 @@ fun ClientFormScreen(
 
                             scope.launch {
                                 try {
+                                    val delivery = buildDelivery()
                                     if (editMode) {
                                         ApiClient.updateClient(
                                             clientId,
@@ -242,7 +376,8 @@ fun ClientFormScreen(
                                                 address = address,
                                                 iban = iban.ifBlank { null },
                                                 bankName = bankName.ifBlank { null },
-                                                notes = notes.ifBlank { null }
+                                                notes = notes.ifBlank { null },
+                                                delivery = delivery
                                             )
                                         )
                                     } else {
@@ -257,7 +392,8 @@ fun ClientFormScreen(
                                                 address = address,
                                                 iban = iban.ifBlank { null },
                                                 bankName = bankName.ifBlank { null },
-                                                notes = notes.ifBlank { null }
+                                                notes = notes.ifBlank { null },
+                                                delivery = delivery
                                             )
                                         )
                                     }

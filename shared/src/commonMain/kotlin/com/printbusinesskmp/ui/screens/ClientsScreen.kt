@@ -37,6 +37,12 @@ import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
 import kotlinx.coroutines.launch
 
+private fun deliveryTypeLabel(type: com.printbusinesskmp.models.DeliveryType): String = when (type) {
+    com.printbusinesskmp.models.DeliveryType.NOVA_POSHTA_BRANCH -> "НП Відд."
+    com.printbusinesskmp.models.DeliveryType.NOVA_POSHTA_ADDRESS -> "НП Адр."
+    com.printbusinesskmp.models.DeliveryType.DIRECT_ADDRESS -> "Адреса"
+}
+
 @Composable
 fun ClientsScreen(onNavigate: (Screen) -> Unit) {
     val scope = rememberCoroutineScope()
@@ -182,7 +188,16 @@ private fun ClientRow(
         Text(client.email.orEmpty(), Modifier.weight(1.6f), color = AppColors.MediumGray, fontSize = 13.sp)
         Text(client.phone, Modifier.weight(1.2f), color = AppColors.MediumGray, fontSize = 13.sp)
         Text(client.taxId.orEmpty(), Modifier.weight(1.1f), color = AppColors.MediumGray, fontSize = 13.sp)
-        Text(client.address, Modifier.weight(1.8f), color = AppColors.MediumGray, fontSize = 13.sp)
+        Column(Modifier.weight(1.8f)) {
+            Text(client.address, color = AppColors.MediumGray, fontSize = 13.sp)
+            client.delivery?.let { d ->
+                Text(
+                    text = "${deliveryTypeLabel(d.type)}: ${d.label()}",
+                    color = AppColors.PrimaryBlue.copy(alpha = 0.75f),
+                    fontSize = 11.sp
+                )
+            }
+        }
         Text(client.orderCount.toString(), Modifier.weight(0.7f), color = AppColors.DarkSlate)
 
         Row(modifier = Modifier.weight(1.2f)) {
