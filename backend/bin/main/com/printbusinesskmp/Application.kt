@@ -19,6 +19,7 @@ import com.printbusinesskmp.routes.configureOrderRoutes
 import com.printbusinesskmp.routes.configureOutsourceRoutes
 import com.printbusinesskmp.routes.configurePartnerRoutes
 import com.printbusinesskmp.routes.configurePricingRoutes
+import com.printbusinesskmp.routes.configureSavedItemRoutes
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -108,6 +109,7 @@ fun Application.module() {
         configureOutsourceRoutes()
         configureOrderRoutes()
         configureInvoiceRoutes()
+        configureSavedItemRoutes()
         configureLayoutRoutes()
         configurePricingRoutes()
     }

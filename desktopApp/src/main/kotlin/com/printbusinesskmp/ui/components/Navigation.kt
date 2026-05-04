@@ -7,7 +7,7 @@ import com.printbusinesskmp.ui.screens.BusinessProfileScreen
 import com.printbusinesskmp.ui.screens.ClientFormScreen
 import com.printbusinesskmp.ui.screens.DesktopClientsScreen
 import com.printbusinesskmp.ui.screens.DesktopDashboardScreen
-import com.printbusinesskmp.ui.screens.DesktopInvoicesPlaceholder
+import com.printbusinesskmp.ui.screens.InvoiceScreen
 import com.printbusinesskmp.ui.screens.DesktopLayoutsPlaceholder
 import com.printbusinesskmp.ui.screens.DesktopOrdersScreen
 import com.printbusinesskmp.ui.screens.OrderFormScreen
@@ -36,7 +36,7 @@ fun NavigationContent(
             DesktopOrdersScreen(onNavigate)
         }
         Screen.Layouts -> DesktopLayoutsPlaceholder(onNavigate)
-        Screen.Invoices -> DesktopInvoicesPlaceholder(onNavigate)
+        Screen.Invoices -> InvoiceScreen(onNavigate)
         Screen.Updates -> UpdatesScreen(
             state = updateState,
             onCheckForUpdates = onCheckForUpdates,

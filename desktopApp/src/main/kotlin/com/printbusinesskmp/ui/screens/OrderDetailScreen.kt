@@ -248,7 +248,7 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
                                     TextButton(onClick = {
                                         scope.launch {
                                             try {
-                                                val savedPath = saveInvoicePdf(invoice.id, invoice.number)
+                                                val savedPath = saveInvoicePdf(invoice)
                                                 if (savedPath != null) {
                                                     info = "PDF збережено: $savedPath"
                                                 }

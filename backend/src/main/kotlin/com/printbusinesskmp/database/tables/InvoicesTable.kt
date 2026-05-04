@@ -13,7 +13,11 @@ object InvoicesTable : Table("invoices") {
         refColumn = OrdersTable.id,
         onDelete = ReferenceOption.SET_NULL
     )
+    val clientId = varchar("client_id", 36).nullable()
     val issuedAt = timestamp("issued_at").clientDefault { Instant.now() }
+    val validUntil = timestamp("valid_until").nullable()
+    val payer = varchar("payer", 255).default("той самий")
+    val orderRef = varchar("order_ref", 255).default("Без замовлення")
 
     val sellerOwnerName = varchar("seller_owner_name", 255)
     val sellerTaxId = varchar("seller_tax_id", 50)
@@ -32,6 +36,7 @@ object InvoicesTable : Table("invoices") {
     val clientEmail = varchar("client_email", 255).nullable()
 
     val subtotal = double("subtotal")
+    val discountAmount = double("discount_amount").default(0.0)
     val taxAmount = double("tax_amount")
     val totalAmount = double("total_amount")
     val notes = text("notes").nullable()

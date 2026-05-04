@@ -7,18 +7,22 @@ import kotlinx.serialization.Serializable
 data class Invoice(
     val id: String,
     val number: String,
-    val orderId: String,
+    val orderId: String? = null,
+    val clientId: String? = null,
     val issuedAt: Instant,
+    val validUntil: Instant? = null,
+    val payer: String = "той самий",
+    val orderRef: String = "Без замовлення",
     val seller: InvoiceSellerSnapshot,
     val client: InvoiceClientSnapshot,
     val lines: List<InvoiceLine>,
     val subtotal: Double,
+    val discountAmount: Double = 0.0,
     val taxAmount: Double,
     val totalAmount: Double,
+    val finalAmount: Double = 0.0,
     val notes: String? = null,
     val filePath: String? = null,
-    val discountAmount: Double = 0.0,
-    val finalAmount: Double = 0.0
 )
 
 @Serializable

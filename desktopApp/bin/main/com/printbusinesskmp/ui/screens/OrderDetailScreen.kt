@@ -58,7 +58,7 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var info by remember { mutableStateOf<String?>(null) }
 
-    var selectedStatus by remember { mutableStateOf(OrderStatus.NEW) }
+    var selectedStatus by remember { mutableStateOf(OrderStatus.DRAFT) }
     var selectedPayment by remember { mutableStateOf(PaymentStatus.UNPAID) }
 
     var confirmDelete by remember { mutableStateOf(false) }
@@ -248,7 +248,7 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
                                     TextButton(onClick = {
                                         scope.launch {
                                             try {
-                                                val savedPath = saveInvoicePdf(invoice.id, invoice.number)
+                                                val savedPath = saveInvoicePdf(invoice)
                                                 if (savedPath != null) {
                                                     info = "PDF збережено: $savedPath"
                                                 }

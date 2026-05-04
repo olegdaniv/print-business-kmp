@@ -2,6 +2,7 @@ package com.printbusinesskmp.routes
 
 import com.printbusinesskmp.models.Invoice
 import com.printbusinesskmp.models.InvoiceClientSnapshot
+import com.printbusinesskmp.models.InvoiceCreateRequest
 import com.printbusinesskmp.models.InvoiceLine
 import com.printbusinesskmp.models.InvoiceSellerSnapshot
 import com.printbusinesskmp.models.ProductType
@@ -16,6 +17,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
+import io.ktor.server.request.receive
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondFile
@@ -23,10 +25,12 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import java.io.File
 import java.util.UUID
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 
 private val invoiceRepository = InvoiceRepository()
 private val orderRepository = OrderRepository()
@@ -37,6 +41,170 @@ private val invoiceGenerator = InvoiceGenerator()
 fun Route.configureInvoiceRoutes() {
     authenticate("app-jwt") {
         route("/api/invoices") {
+
+            post {
+                try {
+                    val request = call.receive<InvoiceCreateRequest>()
+
+                    val client = clientRepository.clientById(request.clientId)
+                        ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Client not found"))
+
+                    val profile = businessProfileRepository.getProfile()
+                        ?: return@post call.respond(
+                            HttpStatusCode.PreconditionFailed,
+                            mapOf("error" to "Business profile must be configured before invoice generation")
+                        )
+
+                    if (request.lines.isEmpty()) {
+                        return@post call.respond(
+                            HttpStatusCode.BadRequest,
+                            mapOf("error" to "Invoice must contain at least one line item")
+                        )
+                    }
+
+                    val number = invoiceRepository.nextInvoiceNumber()
+                    val now = Clock.System.now()
+                    val validUntil = now + request.validDays.days
+
+                    val lines = request.lines.mapIndexed { index, lineReq ->
+                        val lineTotal = lineReq.quantity * lineReq.unitPrice
+                        InvoiceLine(
+                            lineNumber = index + 1,
+                            description = lineReq.description,
+                            quantity = lineReq.quantity,
+                            unit = lineReq.unit,
+                            usedMeters = 0.0,
+                            unitPrice = lineReq.unitPrice,
+                            lineTotal = lineTotal
+                        )
+                    }
+
+                    val subtotal = lines.sumOf { it.lineTotal }
+                    val finalAmount = subtotal - request.discountAmount
+
+                    val invoice = Invoice(
+                        id = UUID.randomUUID().toString(),
+                        number = number,
+                        clientId = client.id,
+                        issuedAt = now,
+                        validUntil = validUntil,
+                        payer = request.payer,
+                        orderRef = request.orderRef,
+                        seller = InvoiceSellerSnapshot(
+                            ownerName = profile.ownerName,
+                            taxId = profile.edrpou,
+                            address = profile.address,
+                            iban = profile.iban,
+                            bankName = profile.bankName.orEmpty(),
+                            taxPercent = profile.taxPercent,
+                            taxNote = profile.taxNote,
+                            mfo = profile.mfo,
+                            ipn = profile.ipn,
+                        ),
+                        client = InvoiceClientSnapshot(
+                            type = client.type,
+                            name = client.displayName,
+                            address = client.address,
+                            phone = client.phone,
+                            email = client.email
+                        ),
+                        lines = lines,
+                        subtotal = subtotal,
+                        discountAmount = request.discountAmount,
+                        taxAmount = 0.0,
+                        totalAmount = finalAmount,
+                        finalAmount = finalAmount,
+                        notes = request.notes
+                    )
+
+                    val saved = invoiceRepository.addInvoice(invoice)
+                    val filePath = invoiceGenerator.generateInvoicePdf(saved)
+                    val withFile = invoiceRepository.updateInvoiceFilePath(saved.id, filePath) ?: saved
+
+                    call.respond(HttpStatusCode.Created, withFile)
+                } catch (e: Exception) {
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        mapOf("error" to "Invoice creation failed", "details" to (e.message ?: "unknown error"))
+                    )
+                }
+            }
+
+            put("{id}") {
+                try {
+                    val id = call.parameters["id"]
+                        ?: return@put call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing invoice ID"))
+
+                    val existing = invoiceRepository.invoiceById(id)
+                        ?: return@put call.respond(HttpStatusCode.NotFound, mapOf("error" to "Invoice not found"))
+
+                    val request = call.receive<InvoiceCreateRequest>()
+
+                    val client = clientRepository.clientById(request.clientId)
+                        ?: return@put call.respond(HttpStatusCode.NotFound, mapOf("error" to "Client not found"))
+
+                    if (request.lines.isEmpty()) {
+                        return@put call.respond(
+                            HttpStatusCode.BadRequest,
+                            mapOf("error" to "Invoice must contain at least one line item")
+                        )
+                    }
+
+                    val validUntil = existing.issuedAt + request.validDays.days
+
+                    val lines = request.lines.mapIndexed { index, lineReq ->
+                        val lineTotal = lineReq.quantity * lineReq.unitPrice
+                        InvoiceLine(
+                            lineNumber = index + 1,
+                            description = lineReq.description,
+                            quantity = lineReq.quantity,
+                            unit = lineReq.unit,
+                            usedMeters = 0.0,
+                            unitPrice = lineReq.unitPrice,
+                            lineTotal = lineTotal
+                        )
+                    }
+
+                    val subtotal = lines.sumOf { it.lineTotal }
+                    val finalAmount = subtotal - request.discountAmount
+
+                    val updated = existing.copy(
+                        clientId = client.id,
+                        validUntil = validUntil,
+                        payer = request.payer,
+                        orderRef = request.orderRef,
+                        client = InvoiceClientSnapshot(
+                            type = client.type,
+                            name = client.displayName,
+                            address = client.address,
+                            phone = client.phone,
+                            email = client.email
+                        ),
+                        lines = lines,
+                        subtotal = subtotal,
+                        discountAmount = request.discountAmount,
+                        taxAmount = 0.0,
+                        totalAmount = finalAmount,
+                        finalAmount = finalAmount,
+                        notes = request.notes
+                    )
+
+                    val saved = invoiceRepository.updateInvoice(id, updated)
+                        ?: return@put call.respond(HttpStatusCode.NotFound, mapOf("error" to "Invoice not found"))
+
+                    existing.filePath?.let { File(it).takeIf { f -> f.exists() }?.delete() }
+                    val filePath = invoiceGenerator.generateInvoicePdf(saved)
+                    val withFile = invoiceRepository.updateInvoiceFilePath(saved.id, filePath) ?: saved
+
+                    call.respond(HttpStatusCode.OK, withFile)
+                } catch (e: Exception) {
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        mapOf("error" to "Invoice update failed", "details" to (e.message ?: "unknown error"))
+                    )
+                }
+            }
+
             post("/generate/{orderId}") {
                 try {
                     val orderId = call.parameters["orderId"]
@@ -66,12 +234,7 @@ fun Route.configureInvoiceRoutes() {
 
                     val lines = order.items.mapIndexed { index, item ->
                         val lineTotal = item.price
-                        val unitPrice = if (item.quantity > 0) {
-                            lineTotal / item.quantity
-                        } else {
-                            lineTotal
-                        }
-
+                        val unitPrice = if (item.quantity > 0) lineTotal / item.quantity else lineTotal
                         InvoiceLine(
                             lineNumber = index + 1,
                             description = buildDescription(item.serviceType, item.productType, item.usedMeters),
@@ -82,22 +245,29 @@ fun Route.configureInvoiceRoutes() {
                         )
                     }
 
-                    val subtotal = order.items.sumOf { item -> item.price - item.taxAmount }
-                    val taxAmount = order.items.sumOf { item -> item.taxAmount }
-                    val totalAmount = order.items.sumOf { item -> item.price }
+                    val subtotal = order.items.sumOf { it.price - it.taxAmount }
+                    val taxAmount = order.items.sumOf { it.taxAmount }
+                    val totalAmount = order.items.sumOf { it.price }
 
                     val invoice = Invoice(
                         id = UUID.randomUUID().toString(),
                         number = number,
                         orderId = order.id,
+                        clientId = client.id,
                         issuedAt = now,
+                        validUntil = now + 7.days,
+                        payer = "той самий",
+                        orderRef = "Замовлення ${order.id.take(8)}",
                         seller = InvoiceSellerSnapshot(
                             ownerName = profile.ownerName,
-                            taxId = profile.taxId,
+                            taxId = profile.edrpou,
                             address = profile.address,
                             iban = profile.iban,
-                            bankName = profile.bankName,
-                            taxPercent = profile.taxPercent
+                            bankName = profile.bankName.orEmpty(),
+                            taxPercent = profile.taxPercent,
+                            taxNote = profile.taxNote,
+                            mfo = profile.mfo,
+                            ipn = profile.ipn,
                         ),
                         client = InvoiceClientSnapshot(
                             type = client.type,

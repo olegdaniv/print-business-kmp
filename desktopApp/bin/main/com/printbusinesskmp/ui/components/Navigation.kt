@@ -5,13 +5,12 @@ import com.printbusinesskmp.desktop.update.UpdateUiState
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.ui.screens.BusinessProfileScreen
 import com.printbusinesskmp.ui.screens.ClientFormScreen
-import com.printbusinesskmp.ui.screens.ClientsScreen
-import com.printbusinesskmp.ui.screens.DashboardScreen
+import com.printbusinesskmp.ui.screens.DesktopClientsScreen
+import com.printbusinesskmp.ui.screens.DesktopDashboardScreen
 import com.printbusinesskmp.ui.screens.InvoiceScreen
-import com.printbusinesskmp.ui.screens.LayoutsScreen
-import com.printbusinesskmp.ui.screens.OrderDetailScreen
+import com.printbusinesskmp.ui.screens.DesktopLayoutsPlaceholder
+import com.printbusinesskmp.ui.screens.DesktopOrdersScreen
 import com.printbusinesskmp.ui.screens.OrderFormScreen
-import com.printbusinesskmp.ui.screens.OrdersScreen
 import com.printbusinesskmp.ui.screens.UpdatesScreen
 
 @Composable
@@ -26,14 +25,17 @@ fun NavigationContent(
     onDismissUpdateError: () -> Unit
 ) {
     when (currentScreen) {
-        Screen.Dashboard -> DashboardScreen(onNavigate)
+        Screen.Dashboard -> DesktopDashboardScreen(onNavigate)
         Screen.BusinessProfile -> BusinessProfileScreen(onNavigate)
-        Screen.Clients -> ClientsScreen(onNavigate)
+        Screen.Clients -> DesktopClientsScreen(onNavigate)
         is Screen.ClientForm -> ClientFormScreen(currentScreen.clientId, onNavigate)
-        Screen.Orders -> OrdersScreen(onNavigate)
+        Screen.Orders -> DesktopOrdersScreen(onNavigate)
         is Screen.OrderForm -> OrderFormScreen(currentScreen.orderId, onNavigate)
-        is Screen.OrderDetail -> OrderDetailScreen(currentScreen.orderId, onNavigate)
-        Screen.Layouts -> LayoutsScreen(onNavigate)
+        is Screen.OrderDetail -> {
+            // Redirect to Orders screen — detail is now inline in the split pane
+            DesktopOrdersScreen(onNavigate)
+        }
+        Screen.Layouts -> DesktopLayoutsPlaceholder(onNavigate)
         Screen.Invoices -> InvoiceScreen(onNavigate)
         Screen.Updates -> UpdatesScreen(
             state = updateState,

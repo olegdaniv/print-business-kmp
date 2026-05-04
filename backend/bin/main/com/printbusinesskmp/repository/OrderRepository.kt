@@ -166,7 +166,9 @@ class OrderRepository {
             price = pricing.finalPrice,
             taxAmount = pricing.taxAmount,
             profit = pricing.profit,
-            notes = draft.notes?.trim()?.takeIf { value -> value.isNotEmpty() }
+            notes = draft.notes?.trim()?.takeIf { value -> value.isNotEmpty() },
+            name = draft.name?.trim()?.takeIf { it.isNotEmpty() },
+            unit = draft.unit.ifBlank { "шт." }
         )
     }
 
@@ -193,6 +195,8 @@ class OrderRepository {
                 it[taxAmount] = item.taxAmount
                 it[profit] = item.profit
                 it[notes] = item.notes
+                it[name] = item.name
+                it[unit] = item.unit
             }
         }
     }
@@ -241,7 +245,9 @@ class OrderRepository {
             price = row[OrderItemsTable.price],
             taxAmount = row[OrderItemsTable.taxAmount],
             profit = row[OrderItemsTable.profit],
-            notes = row[OrderItemsTable.notes]
+            notes = row[OrderItemsTable.notes],
+            name = row[OrderItemsTable.name],
+            unit = row[OrderItemsTable.unit]
         )
     }
 }

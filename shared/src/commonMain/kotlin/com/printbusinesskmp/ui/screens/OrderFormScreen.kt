@@ -3,12 +3,15 @@
 package com.printbusinesskmp.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -36,21 +39,36 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.Client
+import com.printbusinesskmp.models.GarmentSource
 import com.printbusinesskmp.models.OrderCreateRequest
 import com.printbusinesskmp.models.OrderItemDraft
 import com.printbusinesskmp.models.OrderStatus
 import com.printbusinesskmp.models.OrderUpdateRequest
 import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.models.PricingConfig
-import com.printbusinesskmp.models.PricingRequest
 import com.printbusinesskmp.models.ProductType
+import com.printbusinesskmp.models.SavedItem
+import com.printbusinesskmp.models.SavedItemBulkUpsertRequest
+import com.printbusinesskmp.models.SavedItemCreateRequest
 import com.printbusinesskmp.models.ServiceType
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.utils.FormatUtils
-import com.printbusinesskmp.utils.PricingCalculator
 import com.printbusinesskmp.utils.labelUa
 import kotlinx.coroutines.launch
+
+private data class LineRow(
+    val name: String = "",
+    val unit: String = "шт.",
+    val quantity: String = "1",
+    val unitPrice: String = ""
+)
+
+private fun lineTotal(row: LineRow): Double {
+    val qty = row.quantity.toIntOrNull() ?: 0
+    val price = row.unitPrice.toDoubleOrNull() ?: 0.0
+    return qty * price
+}
 
 @Composable
 fun OrderFormScreen(
@@ -61,42 +79,39 @@ fun OrderFormScreen(
     val editMode = orderId != null
 
     var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
+    var savedItems by remember { mutableStateOf<List<SavedItem>>(emptyList()) }
     var selectedClientId by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf(OrderStatus.DRAFT) }
     var paymentStatus by remember { mutableStateOf(PaymentStatus.UNPAID) }
     var notes by remember { mutableStateOf("") }
-    var items by remember { mutableStateOf<List<OrderItemDraft>>(emptyList()) }
+    var rows by remember { mutableStateOf(listOf(LineRow())) }
 
     var loading by remember { mutableStateOf(true) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    var showItemDialog by remember { mutableStateOf(false) }
-    var editingIndex by remember { mutableStateOf<Int?>(null) }
-    var removeItemIndex by remember { mutableStateOf<Int?>(null) }
-
     LaunchedEffect(orderId) {
         scope.launch {
             try {
                 clients = ApiClient.getClients()
+                savedItems = runCatching { ApiClient.getSavedItems() }.getOrDefault(emptyList())
+
                 if (orderId != null) {
                     val order = ApiClient.getOrder(orderId)
                     selectedClientId = order.clientId
                     status = order.status
                     paymentStatus = order.paymentStatus
                     notes = order.notes.orEmpty()
-                    items = order.items.map { item ->
-                        OrderItemDraft(
-                            serviceType = item.serviceType,
-                            productType = item.productType,
-                            quantity = item.quantity,
-                            usedMeters = item.usedMeters,
-                            garmentCost = item.garmentCost,
-                            pricing = item.pricing,
-                            manualPrice = item.manualPrice,
-                            notes = item.notes
+                    rows = order.items.map { item ->
+                        val total = item.manualPrice ?: item.price
+                        val unitPrice = if (item.quantity > 0) total / item.quantity else total
+                        LineRow(
+                            name = item.name ?: "${item.serviceType.labelUa()} / ${item.productType.labelUa()}",
+                            unit = item.unit,
+                            quantity = item.quantity.toString(),
+                            unitPrice = FormatUtils.formatDecimal(unitPrice)
                         )
-                    }
+                    }.takeIf { it.isNotEmpty() } ?: listOf(LineRow())
                 }
             } catch (e: Exception) {
                 error = e.message ?: "Помилка завантаження"
@@ -106,12 +121,9 @@ fun OrderFormScreen(
         }
     }
 
-    val totals = items.map { draft -> PricingCalculator.calculate(draft) }
-    val totalCost = totals.sumOf { it.totalCost }
-    val totalPrice = totals.sumOf { it.finalPrice }
-    val totalProfit = totals.sumOf { it.profit }
+    val totalPrice = rows.sumOf { lineTotal(it) }
 
-    Column {
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -123,7 +135,6 @@ fun OrderFormScreen(
                 fontWeight = FontWeight.Bold,
                 color = AppColors.DarkSlate
             )
-
             TextButton(onClick = { onNavigate(Screen.Orders) }) {
                 Text("Скасувати")
             }
@@ -149,7 +160,6 @@ fun OrderFormScreen(
                     EnumSelector(
                         label = "Статус",
                         values = OrderStatus.entries,
-
                         selected = status,
                         onSelect = { status = it },
                         textMapper = { it.labelUa() },
@@ -178,79 +188,59 @@ fun OrderFormScreen(
             colors = CardDefaults.cardColors(containerColor = AppColors.White),
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Позиції (${items.size})", fontWeight = FontWeight.SemiBold)
+                    Text("Позиції (${rows.size})", fontWeight = FontWeight.SemiBold)
                     Button(
-                        onClick = {
-                            editingIndex = null
-                            showItemDialog = true
-                        },
+                        onClick = { rows = rows + LineRow() },
                         colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
                     ) {
-                        Text("+ Додати", color = AppColors.White)
+                        Text("+ Додати рядок", color = AppColors.White)
                     }
                 }
 
-                if (items.isEmpty()) {
-                    Text("Додайте хоча б одну позицію", color = AppColors.MediumGray)
-                } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        itemsIndexed(items) { index, item ->
-                            val calc = totals[index]
-                            Card(colors = CardDefaults.cardColors(containerColor = AppColors.CardItemBg)) {
-                                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(
-                                        text = "${item.serviceType.labelUa()} / ${item.productType.labelUa()}",
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = AppColors.DarkSlate
-                                    )
-                                    Text(
-                                        text = "К-сть: ${item.quantity}, метраж: ${FormatUtils.formatDecimal(item.usedMeters)} м",
-                                        color = AppColors.MediumGray,
-                                        fontSize = 13.sp
-                                    )
-                                    Text(
-                                        text = "Собівартість: ${FormatUtils.formatCurrency(calc.totalCost)} | Ціна: ${FormatUtils.formatCurrency(calc.finalPrice)} | Прибуток: ${FormatUtils.formatCurrency(calc.profit)}",
-                                        color = AppColors.DarkSlate,
-                                        fontSize = 13.sp
-                                    )
-
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        TextButton(
-                                            onClick = {
-                                                editingIndex = index
-                                                showItemDialog = true
-                                            }
-                                        ) {
-                                            Text("Редагувати", color = AppColors.PrimaryBlue)
-                                        }
-                                        TextButton(
-                                            onClick = {
-                                                removeItemIndex = index
-                                            }
-                                        ) {
-                                            Text("Видалити", color = AppColors.Error)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                // Column headers
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Назва", modifier = Modifier.weight(3f), fontSize = 12.sp, color = AppColors.MediumGray)
+                    Text("Од.", modifier = Modifier.weight(0.7f), fontSize = 12.sp, color = AppColors.MediumGray)
+                    Text("К-сть", modifier = Modifier.weight(0.8f), fontSize = 12.sp, color = AppColors.MediumGray)
+                    Text("Ціна", modifier = Modifier.weight(1f), fontSize = 12.sp, color = AppColors.MediumGray)
+                    Text("Сума", modifier = Modifier.weight(1f), fontSize = 12.sp, color = AppColors.MediumGray)
+                    Spacer(Modifier.width(36.dp))
                 }
 
                 HorizontalDivider()
-                Text("Собівартість: ${FormatUtils.formatCurrency(totalCost)}", color = AppColors.DarkSlate)
-                Text("Ціна: ${FormatUtils.formatCurrency(totalPrice)}", color = AppColors.DarkSlate)
-                Text(
-                    "Прибуток: ${FormatUtils.formatCurrency(totalProfit)}",
-                    color = if (totalProfit >= 0) AppColors.Success else AppColors.Error,
-                    fontWeight = FontWeight.SemiBold
-                )
+
+                rows.forEachIndexed { index, row ->
+                    OrderLineRow(
+                        row = row,
+                        savedItems = savedItems,
+                        onRowChange = { updated ->
+                            rows = rows.mapIndexed { i, r -> if (i == index) updated else r }
+                        },
+                        onRemove = {
+                            if (rows.size > 1) {
+                                rows = rows.filterIndexed { i, _ -> i != index }
+                            }
+                        }
+                    )
+                }
+
+                HorizontalDivider()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Text(
+                        "Разом: ${FormatUtils.formatCurrency(totalPrice)}",
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.DarkSlate
+                    )
+                }
             }
         }
 
@@ -265,20 +255,19 @@ fun OrderFormScreen(
                     error = "Оберіть клієнта"
                     return@Button
                 }
-                if (items.isEmpty()) {
-                    error = "Замовлення не може бути без позицій"
+                val validRows = rows.filter { it.name.isNotBlank() }
+                if (validRows.isEmpty()) {
+                    error = "Додайте хоча б одну позицію з назвою"
                     return@Button
                 }
-
-                val hasInvalidMeters = items.any { it.usedMeters <= 0.0 }
-                if (hasInvalidMeters) {
-                    error = "У всіх позиціях метраж повинен бути більше нуля"
+                val invalidPrice = validRows.any { (it.unitPrice.toDoubleOrNull() ?: 0.0) <= 0.0 }
+                if (invalidPrice) {
+                    error = "Ціна кожної позиції повинна бути більше нуля"
                     return@Button
                 }
-
-                val hasInvalidPrice = items.any { PricingCalculator.calculate(it).finalPrice <= 0.0 }
-                if (hasInvalidPrice) {
-                    error = "Ціна позиції не може бути нульовою"
+                val invalidQty = validRows.any { (it.quantity.toIntOrNull() ?: 0) <= 0 }
+                if (invalidQty) {
+                    error = "Кількість кожної позиції повинна бути більше нуля"
                     return@Button
                 }
 
@@ -287,6 +276,32 @@ fun OrderFormScreen(
 
                 scope.launch {
                     try {
+                        val drafts = validRows.map { row ->
+                            val qty = row.quantity.toInt()
+                            val unitPrice = row.unitPrice.toDouble()
+                            val total = qty * unitPrice
+                            OrderItemDraft(
+                                serviceType = ServiceType.DTF,
+                                productType = ProductType.OTHER,
+                                quantity = qty,
+                                usedMeters = qty.toDouble(),
+                                garmentCost = 0.0,
+                                garmentSource = GarmentSource.OUR_STOCK,
+                                pricing = PricingConfig(
+                                    costPerMeter = 0.0,
+                                    overheadPerOrder = 0.0,
+                                    wastePercent = 0.0,
+                                    setupFee = 0.0,
+                                    minOrderPrice = total,
+                                    marginPercent = 0.0,
+                                    taxPercent = null
+                                ),
+                                manualPrice = total,
+                                name = row.name.trim(),
+                                unit = row.unit.trim().ifBlank { "шт." }
+                            )
+                        }
+
                         if (editMode) {
                             ApiClient.updateOrder(
                                 orderId,
@@ -294,7 +309,7 @@ fun OrderFormScreen(
                                     clientId = clientId,
                                     status = status,
                                     paymentStatus = paymentStatus,
-                                    items = items,
+                                    items = drafts,
                                     notes = notes.ifBlank { null }
                                 )
                             )
@@ -304,11 +319,30 @@ fun OrderFormScreen(
                                     clientId = clientId,
                                     status = status,
                                     paymentStatus = paymentStatus,
-                                    items = items,
+                                    items = drafts,
                                     notes = notes.ifBlank { null }
                                 )
                             )
                         }
+
+                        // Auto-save new item names to SavedItems catalog
+                        val existingNames = savedItems.map { it.name.lowercase() }.toSet()
+                        val newNames = validRows
+                            .filter { it.name.trim().lowercase() !in existingNames }
+                            .map { row ->
+                                SavedItemCreateRequest(
+                                    name = row.name.trim(),
+                                    unit = row.unit.trim().ifBlank { "шт." },
+                                    defaultPrice = row.unitPrice.toDoubleOrNull() ?: 0.0
+                                )
+                            }
+                            .distinctBy { it.name.lowercase() }
+                        if (newNames.isNotEmpty()) {
+                            runCatching {
+                                ApiClient.bulkUpsertSavedItems(SavedItemBulkUpsertRequest(newNames))
+                            }
+                        }
+
                         onNavigate(Screen.Orders)
                     } catch (e: Exception) {
                         error = e.message ?: "Помилка збереження"
@@ -328,53 +362,111 @@ fun OrderFormScreen(
             }
         }
     }
+}
 
-    if (showItemDialog) {
-        OrderItemDialog(
-            initial = editingIndex?.let { items[it] },
-            onDismiss = {
-                showItemDialog = false
-                editingIndex = null
-            },
-            onSave = { draft ->
-                if (editingIndex == null) {
-                    items = items + draft
-                } else {
-                    items = items.mapIndexed { index, old ->
-                        if (index == editingIndex) draft else old
-                    }
-                }
-                showItemDialog = false
-                editingIndex = null
-            }
-        )
-    }
+@Composable
+private fun OrderLineRow(
+    row: LineRow,
+    savedItems: List<SavedItem>,
+    onRowChange: (LineRow) -> Unit,
+    onRemove: () -> Unit
+) {
+    var showSuggestions by remember { mutableStateOf(false) }
 
-    if (removeItemIndex != null) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { removeItemIndex = null },
-            title = { Text("Видалити позицію") },
-            text = { Text("Підтвердьте видалення позиції із замовлення") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val index = removeItemIndex
-                        if (index != null) {
-                            items = items.filterIndexed { i, _ -> i != index }
+    val suggestions = if (row.name.length >= 1 && showSuggestions) {
+        savedItems
+            .filter { it.name.lowercase().contains(row.name.lowercase()) }
+            .take(8)
+    } else emptyList()
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        // Назва with autocomplete
+        Box(modifier = Modifier.weight(3f)) {
+            OutlinedTextField(
+                value = row.name,
+                onValueChange = { newName ->
+                    onRowChange(row.copy(name = newName))
+                    showSuggestions = true
+                },
+                label = { Text("Назва") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            DropdownMenu(
+                expanded = suggestions.isNotEmpty(),
+                onDismissRequest = { showSuggestions = false }
+            ) {
+                suggestions.forEach { item ->
+                    DropdownMenuItem(
+                        text = {
+                            Column {
+                                Text(item.name, fontSize = 13.sp)
+                                Text(
+                                    "${item.unit} · ${FormatUtils.formatCurrency(item.defaultPrice)}",
+                                    fontSize = 11.sp,
+                                    color = AppColors.MediumGray
+                                )
+                            }
+                        },
+                        onClick = {
+                            onRowChange(
+                                row.copy(
+                                    name = item.name,
+                                    unit = item.unit,
+                                    unitPrice = FormatUtils.formatDecimal(item.defaultPrice)
+                                )
+                            )
+                            showSuggestions = false
                         }
-                        removeItemIndex = null
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Error)
-                ) {
-                    Text("Видалити", color = AppColors.White)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { removeItemIndex = null }) {
-                    Text("Скасувати")
+                    )
                 }
             }
+        }
+
+        OutlinedTextField(
+            value = row.unit,
+            onValueChange = { onRowChange(row.copy(unit = it)) },
+            label = { Text("Од.") },
+            modifier = Modifier.weight(0.7f),
+            singleLine = true
         )
+
+        OutlinedTextField(
+            value = row.quantity,
+            onValueChange = { onRowChange(row.copy(quantity = it)) },
+            label = { Text("К-сть") },
+            modifier = Modifier.weight(0.8f),
+            singleLine = true
+        )
+
+        OutlinedTextField(
+            value = row.unitPrice,
+            onValueChange = { onRowChange(row.copy(unitPrice = it)) },
+            label = { Text("Ціна") },
+            modifier = Modifier.weight(1f),
+            singleLine = true
+        )
+
+        val total = lineTotal(row)
+        OutlinedTextField(
+            value = if (total > 0) FormatUtils.formatDecimal(total) else "",
+            onValueChange = {},
+            label = { Text("Сума") },
+            modifier = Modifier.weight(1f),
+            readOnly = true,
+            singleLine = true
+        )
+
+        TextButton(
+            onClick = onRemove,
+            modifier = Modifier.align(Alignment.CenterVertically)
+        ) {
+            Text("✕", color = AppColors.Error)
+        }
     }
 }
 
@@ -439,193 +531,4 @@ private fun <T> EnumSelector(
             }
         }
     }
-}
-
-@Composable
-private fun OrderItemDialog(
-    initial: OrderItemDraft?,
-    onDismiss: () -> Unit,
-    onSave: (OrderItemDraft) -> Unit
-) {
-    var serviceType by remember { mutableStateOf(initial?.serviceType ?: ServiceType.DTF) }
-    var productType by remember { mutableStateOf(initial?.productType ?: ProductType.T_SHIRT) }
-    var quantity by remember { mutableStateOf((initial?.quantity ?: 1).toString()) }
-    var usedMeters by remember { mutableStateOf(initial?.usedMeters?.toString() ?: "") }
-    var garmentCost by remember { mutableStateOf(initial?.garmentCost?.toString() ?: "") }
-    var costPerMeter by remember { mutableStateOf(initial?.pricing?.costPerMeter?.toString() ?: "") }
-    var overhead by remember { mutableStateOf(initial?.pricing?.overheadPerOrder?.toString() ?: "") }
-    var wastePercent by remember { mutableStateOf(initial?.pricing?.wastePercent?.toString() ?: "") }
-    var setupFee by remember { mutableStateOf(initial?.pricing?.setupFee?.toString() ?: "") }
-    var minPrice by remember { mutableStateOf(initial?.pricing?.minOrderPrice?.toString() ?: "") }
-    var margin by remember { mutableStateOf(initial?.pricing?.marginPercent?.toString() ?: "") }
-    var taxPercent by remember { mutableStateOf(initial?.pricing?.taxPercent?.toString() ?: "") }
-    var manualPrice by remember { mutableStateOf(initial?.manualPrice?.toString() ?: "") }
-    var notes by remember { mutableStateOf(initial?.notes.orEmpty()) }
-
-    var formError by remember { mutableStateOf<String?>(null) }
-
-    fun buildDraft(): OrderItemDraft? {
-        val parsedQuantity = quantity.toIntOrNull()
-        val parsedMeters = usedMeters.toDoubleOrNull()
-        val parsedGarmentCost = garmentCost.toDoubleOrNull() ?: 0.0
-        val parsedCostPerMeter = costPerMeter.toDoubleOrNull()
-        val parsedOverhead = overhead.toDoubleOrNull() ?: 0.0
-        val parsedWaste = wastePercent.toDoubleOrNull() ?: 0.0
-        val parsedSetup = setupFee.toDoubleOrNull() ?: 0.0
-        val parsedMin = minPrice.toDoubleOrNull()
-        val parsedMargin = margin.toDoubleOrNull() ?: 0.0
-        val parsedTax = taxPercent.toDoubleOrNull()
-        val parsedManual = manualPrice.toDoubleOrNull()
-
-        if (parsedQuantity == null || parsedQuantity <= 0) {
-            formError = "Кількість повинна бути більше нуля"
-            return null
-        }
-        if (parsedMeters == null || parsedMeters <= 0.0) {
-            formError = "Метраж повинен бути більше нуля"
-            return null
-        }
-        if (parsedCostPerMeter == null || parsedCostPerMeter < 0.0) {
-            formError = "Вкажіть коректну собівартість за метр"
-            return null
-        }
-        if (parsedMin == null || parsedMin <= 0.0) {
-            formError = "Мінімальна ціна повинна бути більше нуля"
-            return null
-        }
-        if (parsedManual != null && parsedManual <= 0.0) {
-            formError = "Ручна ціна повинна бути більше нуля"
-            return null
-        }
-
-        val draft = OrderItemDraft(
-            serviceType = serviceType,
-            productType = productType,
-            quantity = parsedQuantity,
-            usedMeters = parsedMeters,
-            garmentCost = parsedGarmentCost,
-            pricing = PricingConfig(
-                costPerMeter = parsedCostPerMeter,
-                overheadPerOrder = parsedOverhead,
-                wastePercent = parsedWaste,
-                setupFee = parsedSetup,
-                minOrderPrice = parsedMin,
-                marginPercent = parsedMargin,
-                taxPercent = parsedTax
-            ),
-            manualPrice = parsedManual,
-            notes = notes.ifBlank { null }
-        )
-
-        val result = PricingCalculator.calculate(draft)
-        if (result.finalPrice <= 0.0) {
-            formError = "Ціна позиції не може бути нульовою"
-            return null
-        }
-
-        return draft
-    }
-
-    val preview = runCatching {
-        val parsedMeters = usedMeters.toDoubleOrNull()
-        val parsedCostPerMeter = costPerMeter.toDoubleOrNull()
-        val parsedMin = minPrice.toDoubleOrNull()
-        if (parsedMeters != null && parsedCostPerMeter != null && parsedMin != null) {
-            PricingCalculator.calculate(
-                PricingRequest(
-                    usedMeters = parsedMeters,
-                    costPerMeter = parsedCostPerMeter,
-                    garmentCost = garmentCost.toDoubleOrNull() ?: 0.0,
-                    overheadPerOrder = overhead.toDoubleOrNull() ?: 0.0,
-                    wastePercent = wastePercent.toDoubleOrNull() ?: 0.0,
-                    setupFee = setupFee.toDoubleOrNull() ?: 0.0,
-                    minOrderPrice = parsedMin,
-                    marginPercent = margin.toDoubleOrNull() ?: 0.0,
-                    taxPercent = taxPercent.toDoubleOrNull(),
-                    manualPrice = manualPrice.toDoubleOrNull()
-                )
-            )
-        } else {
-            null
-        }
-    }.getOrNull()
-
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (initial == null) "Нова позиція" else "Редагування позиції") },
-        text = {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                item {
-                    EnumSelector(
-                        label = "Сервіс",
-                        values = ServiceType.entries,
-                        selected = serviceType,
-                        onSelect = { serviceType = it },
-                        textMapper = { it.labelUa() }
-                    )
-                }
-                item {
-                    EnumSelector(
-                        label = "Виріб",
-                        values = ProductType.entries,
-                        selected = productType,
-                        onSelect = { productType = it },
-                        textMapper = { it.labelUa() }
-                    )
-                }
-                item { OutlinedTextField(quantity, { quantity = it }, label = { Text("Кількість") }, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(usedMeters, { usedMeters = it }, label = { Text("Використано метрів") }, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(garmentCost, { garmentCost = it }, label = { Text("Вартість виробу") }, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(costPerMeter, { costPerMeter = it }, label = { Text("Собівартість за метр") }, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(overhead, { overhead = it }, label = { Text("Накладні витрати") }, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(wastePercent, { wastePercent = it }, label = { Text("Брак %") }, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(setupFee, { setupFee = it }, label = { Text("Підготовка") }, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(minPrice, { minPrice = it }, label = { Text("Мінімальна ціна") }, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(margin, { margin = it }, label = { Text("Маржа %") }, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(taxPercent, { taxPercent = it }, label = { Text("Податок % (опціонально)") }, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(manualPrice, { manualPrice = it }, label = { Text("Ручна ціна (опціонально)") }, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(notes, { notes = it }, label = { Text("Примітки") }, modifier = Modifier.fillMaxWidth()) }
-
-                preview?.let { result ->
-                    item {
-                        Card(colors = CardDefaults.cardColors(containerColor = AppColors.CardItemBg)) {
-                            Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("Собівартість: ${FormatUtils.formatCurrency(result.totalCost)}")
-                                Text("Рекомендована ціна: ${FormatUtils.formatCurrency(result.suggestedPrice)}")
-                                Text("Фінальна ціна: ${FormatUtils.formatCurrency(result.finalPrice)}")
-                                Text(
-                                    "Прибуток: ${FormatUtils.formatCurrency(result.profit)}",
-                                    color = if (result.profit >= 0) AppColors.Success else AppColors.Error
-                                )
-                            }
-                        }
-                    }
-                }
-
-                if (formError != null) {
-                    item {
-                        Text(formError ?: "", color = Color.Red)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val draft = buildDraft()
-                    if (draft != null) {
-                        onSave(draft)
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
-            ) {
-                Text("Зберегти", color = AppColors.White)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Скасувати")
-            }
-        }
-    )
 }

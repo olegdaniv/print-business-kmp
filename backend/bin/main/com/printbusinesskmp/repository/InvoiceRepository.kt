@@ -15,7 +15,7 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
-import java.time.LocalDate
+import java.time.Instant
 import java.util.UUID
 
 class InvoiceRepository {
@@ -44,10 +44,8 @@ class InvoiceRepository {
     }
 
     suspend fun nextInvoiceNumber(): String = dbQuery {
-        val year = LocalDate.now().year
-        val prefix = "INV-$year-"
-
-        val maxForYear = InvoicesTable.selectAll()
+        val prefix = "СФ-"
+        val maxSeq = InvoicesTable.selectAll()
             .where { InvoicesTable.number like "$prefix%" }
             .mapNotNull { row ->
                 row[InvoicesTable.number]
@@ -55,9 +53,7 @@ class InvoiceRepository {
                     .toIntOrNull()
             }
             .maxOrNull() ?: 0
-
-        val next = maxForYear + 1
-        "$prefix${next.toString().padStart(4, '0')}"
+        "$prefix${(maxSeq + 1).toString().padStart(7, '0')}"
     }
 
     suspend fun addInvoice(invoice: Invoice): Invoice = dbQuery {
@@ -67,7 +63,11 @@ class InvoiceRepository {
             it[InvoicesTable.id] = id
             it[number] = invoice.number
             it[orderId] = invoice.orderId
-            it[issuedAt] = java.time.Instant.ofEpochMilli(invoice.issuedAt.toEpochMilliseconds())
+            it[clientId] = invoice.clientId
+            it[issuedAt] = Instant.ofEpochMilli(invoice.issuedAt.toEpochMilliseconds())
+            it[validUntil] = invoice.validUntil?.let { v -> Instant.ofEpochMilli(v.toEpochMilliseconds()) }
+            it[payer] = invoice.payer
+            it[orderRef] = invoice.orderRef
 
             it[sellerOwnerName] = invoice.seller.ownerName
             it[sellerTaxId] = invoice.seller.taxId
@@ -75,6 +75,9 @@ class InvoiceRepository {
             it[sellerIban] = invoice.seller.iban
             it[sellerBankName] = invoice.seller.bankName
             it[sellerTaxPercent] = invoice.seller.taxPercent
+            it[sellerTaxNote] = invoice.seller.taxNote
+            it[sellerMfo] = invoice.seller.mfo
+            it[sellerIpn] = invoice.seller.ipn
 
             it[clientType] = invoice.client.type.name
             it[clientName] = invoice.client.name
@@ -83,12 +86,55 @@ class InvoiceRepository {
             it[clientEmail] = invoice.client.email
 
             it[subtotal] = invoice.subtotal
+            it[discountAmount] = invoice.discountAmount
             it[taxAmount] = invoice.taxAmount
             it[totalAmount] = invoice.totalAmount
             it[notes] = invoice.notes
             it[filePath] = invoice.filePath
         }
 
+        invoice.lines.forEach { line ->
+            InvoiceLinesTable.insert {
+                it[InvoiceLinesTable.id] = UUID.randomUUID().toString()
+                it[InvoiceLinesTable.invoiceId] = id
+                it[InvoiceLinesTable.lineNumber] = line.lineNumber
+                it[InvoiceLinesTable.description] = line.description
+                it[InvoiceLinesTable.quantity] = line.quantity
+                it[InvoiceLinesTable.unit] = line.unit
+                it[InvoiceLinesTable.usedMeters] = line.usedMeters
+                it[InvoiceLinesTable.unitPrice] = line.unitPrice
+                it[InvoiceLinesTable.lineTotal] = line.lineTotal
+            }
+        }
+
+        val row = InvoicesTable.selectAll().where { InvoicesTable.id eq id }.single()
+        toInvoice(row, getLines(id))
+    }
+
+    suspend fun updateInvoice(id: String, invoice: Invoice): Invoice? = dbQuery {
+        val changed = InvoicesTable.update({ InvoicesTable.id eq id }) {
+            it[clientId] = invoice.clientId
+            it[validUntil] = invoice.validUntil?.let { v -> Instant.ofEpochMilli(v.toEpochMilliseconds()) }
+            it[payer] = invoice.payer
+            it[orderRef] = invoice.orderRef
+
+            it[clientType] = invoice.client.type.name
+            it[clientName] = invoice.client.name
+            it[clientAddress] = invoice.client.address
+            it[clientPhone] = invoice.client.phone
+            it[clientEmail] = invoice.client.email
+
+            it[subtotal] = invoice.subtotal
+            it[discountAmount] = invoice.discountAmount
+            it[taxAmount] = invoice.taxAmount
+            it[totalAmount] = invoice.totalAmount
+            it[notes] = invoice.notes
+            it[filePath] = invoice.filePath
+        }
+
+        if (changed == 0) return@dbQuery null
+
+        InvoiceLinesTable.deleteWhere { invoiceId eq id }
         invoice.lines.forEach { line ->
             InvoiceLinesTable.insert {
                 it[InvoiceLinesTable.id] = UUID.randomUUID().toString()
@@ -135,15 +181,22 @@ class InvoiceRepository {
         return Invoice(
             id = row[InvoicesTable.id],
             number = row[InvoicesTable.number],
-            orderId = row[InvoicesTable.orderId] ?: "",
+            orderId = row[InvoicesTable.orderId],
+            clientId = row[InvoicesTable.clientId],
             issuedAt = kotlin.time.Instant.fromEpochMilliseconds(row[InvoicesTable.issuedAt].toEpochMilli()),
+            validUntil = row[InvoicesTable.validUntil]?.let { kotlin.time.Instant.fromEpochMilliseconds(it.toEpochMilli()) },
+            payer = row[InvoicesTable.payer],
+            orderRef = row[InvoicesTable.orderRef],
             seller = InvoiceSellerSnapshot(
                 ownerName = row[InvoicesTable.sellerOwnerName],
                 taxId = row[InvoicesTable.sellerTaxId],
                 address = row[InvoicesTable.sellerAddress],
                 iban = row[InvoicesTable.sellerIban],
                 bankName = row[InvoicesTable.sellerBankName],
-                taxPercent = row[InvoicesTable.sellerTaxPercent]
+                taxPercent = row[InvoicesTable.sellerTaxPercent],
+                taxNote = row[InvoicesTable.sellerTaxNote],
+                mfo = row[InvoicesTable.sellerMfo],
+                ipn = row[InvoicesTable.sellerIpn],
             ),
             client = InvoiceClientSnapshot(
                 type = ClientType.valueOf(row[InvoicesTable.clientType]),
@@ -154,6 +207,7 @@ class InvoiceRepository {
             ),
             lines = lines,
             subtotal = row[InvoicesTable.subtotal],
+            discountAmount = row[InvoicesTable.discountAmount],
             taxAmount = row[InvoicesTable.taxAmount],
             totalAmount = row[InvoicesTable.totalAmount],
             notes = row[InvoicesTable.notes],

@@ -40,11 +40,30 @@ fun Route.configureBusinessProfileRoutes() {
 }
 
 private fun validateBusinessProfile(request: BusinessProfileUpsertRequest) {
-    if (request.ownerName.isBlank()) throw IllegalArgumentException("Owner name is required")
-    if (request.phone.isNullOrBlank()) throw IllegalArgumentException("Phone is required")
-    if (request.taxId.isBlank()) throw IllegalArgumentException("Tax ID is required")
-    if (request.address.isBlank()) throw IllegalArgumentException("Address is required")
-    if (request.iban.isBlank()) throw IllegalArgumentException("IBAN is required")
-    if (request.bankName.isBlank()) throw IllegalArgumentException("Bank name is required")
-    if (request.taxPercent < 0.0) throw IllegalArgumentException("Tax percent cannot be negative")
+    if (request.ownerName.isBlank()) throw IllegalArgumentException("Вкажіть ПІБ")
+
+    val edrpou = request.edrpou.filter { it.isDigit() }
+    if (edrpou.length != 8) throw IllegalArgumentException("ЄДРПОУ має містити рівно 8 цифр")
+
+    val rawIpn = request.ipn
+    if (!rawIpn.isNullOrBlank()) {
+        val ipnDigits = rawIpn.filter { it.isDigit() }
+        if (ipnDigits.length != 10) throw IllegalArgumentException("ІПН має містити рівно 10 цифр")
+    }
+
+    val iban = request.iban.replace(" ", "").uppercase()
+    if (!iban.startsWith("UA") || iban.length != 29)
+        throw IllegalArgumentException("IBAN має бути у форматі UA + 27 символів (29 символів разом)")
+
+    val rawMfo = request.mfo
+    if (!rawMfo.isNullOrBlank()) {
+        val mfoDigits = rawMfo.filter { it.isDigit() }
+        if (mfoDigits.length != 6) throw IllegalArgumentException("МФО має містити рівно 6 цифр")
+    }
+
+    val phone = request.phone?.filter { it.isDigit() }
+    if (phone.isNullOrEmpty() || phone.length != 10)
+        throw IllegalArgumentException("Телефон має містити рівно 10 цифр (формат 0XXXXXXXXX)")
+
+    if (request.address.isBlank()) throw IllegalArgumentException("Вкажіть адресу")
 }

@@ -27,6 +27,8 @@ object OrderItemsTable : Table("order_items") {
     val taxAmount = double("tax_amount")
     val profit = double("profit")
     val notes = text("notes").nullable()
+    val name = varchar("name", 255).nullable()
+    val unit = varchar("unit", 20).default("шт.")
 
     override val primaryKey = PrimaryKey(id)
 }

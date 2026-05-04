@@ -6,6 +6,7 @@ import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.ClientCreateRequest
 import com.printbusinesskmp.models.ClientUpdateRequest
 import com.printbusinesskmp.models.Invoice
+import com.printbusinesskmp.models.InvoiceCreateRequest
 import com.printbusinesskmp.models.Layout
 import com.printbusinesskmp.models.LayoutCreateRequest
 import com.printbusinesskmp.models.LayoutStatus
@@ -17,6 +18,9 @@ import com.printbusinesskmp.models.OrderUpdateRequest
 import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.models.PricingRequest
 import com.printbusinesskmp.models.PricingResult
+import com.printbusinesskmp.models.SavedItem
+import com.printbusinesskmp.models.SavedItemBulkUpsertRequest
+import com.printbusinesskmp.models.SavedItemCreateRequest
 import com.printbusinesskmp.models.modelsJson
 import com.printbusinesskmp.shared.baseUrlFromBuildConfig
 import io.ktor.client.HttpClient
@@ -249,6 +253,20 @@ object  ApiClient {
         return client.post("$baseUrl/api/invoices/generate/$orderId").body()
     }
 
+    suspend fun createInvoice(request: InvoiceCreateRequest): Invoice {
+        return client.post("$baseUrl/api/invoices") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun updateInvoice(id: String, request: InvoiceCreateRequest): Invoice {
+        return client.put("$baseUrl/api/invoices/$id") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(request)
+        }.body()
+    }
+
     suspend fun getAllInvoices(): List<Invoice> {
         return client.get("$baseUrl/api/invoices").body()
     }
@@ -313,6 +331,28 @@ object  ApiClient {
 
     suspend fun deleteLayout(id: String) {
         client.delete("$baseUrl/api/layouts/$id")
+    }
+
+    suspend fun getSavedItems(): List<SavedItem> {
+        return client.get("$baseUrl/api/saved-items").body()
+    }
+
+    suspend fun createSavedItem(request: SavedItemCreateRequest): SavedItem {
+        return client.post("$baseUrl/api/saved-items") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun bulkUpsertSavedItems(request: SavedItemBulkUpsertRequest): List<SavedItem> {
+        return client.post("$baseUrl/api/saved-items/bulk-upsert") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun deleteSavedItem(id: String) {
+        client.delete("$baseUrl/api/saved-items/$id")
     }
 
     private fun requiresAppJwt(path: String): Boolean {

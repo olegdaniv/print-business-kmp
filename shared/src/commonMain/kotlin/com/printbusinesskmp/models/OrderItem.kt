@@ -31,7 +31,9 @@ data class OrderItemDraft(
     val printCost: Double = 0.0,
     val laborCost: Double = 0.0,
     val designId: String? = null,
-    val outsourceOrderId: String? = null
+    val outsourceOrderId: String? = null,
+    val name: String? = null,
+    val unit: String = "шт."
 )
 
 @Serializable
@@ -55,5 +57,7 @@ data class OrderItem(
     val printCost: Double = 0.0,
     val laborCost: Double = 0.0,
     val designId: String? = null,
-    val outsourceOrderId: String? = null
+    val outsourceOrderId: String? = null,
+    val name: String? = null,
+    val unit: String = "шт."
 )

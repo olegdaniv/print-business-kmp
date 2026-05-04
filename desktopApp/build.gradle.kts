@@ -84,6 +84,15 @@ dependencies {
     implementation("io.ktor:ktor-client-cio:${libs.versions.ktor.get()}")
     implementation("io.ktor:ktor-client-content-negotiation:${libs.versions.ktor.get()}")
     implementation("io.ktor:ktor-serialization-kotlinx-json:${libs.versions.ktor.get()}")
+
+    // PDF generation (same version as backend)
+    implementation("com.itextpdf:itext7-core:7.2.5")
+}
+
+tasks.named<ProcessResources>("processResources") {
+    from("$rootDir/backend/src/main/resources/fonts") {
+        into("fonts")
+    }
 }
 
 compose.desktop {

@@ -10,6 +10,7 @@ import com.printbusinesskmp.database.tables.OrderItemsTable
 import com.printbusinesskmp.database.tables.OrdersTable
 import com.printbusinesskmp.database.tables.OutsourceJobsTable
 import com.printbusinesskmp.database.tables.PartnersTable
+import com.printbusinesskmp.database.tables.SavedItemsTable
 import com.printbusinesskmp.platform.AppDataPaths
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -65,7 +66,8 @@ object DatabaseFactory {
                 InvoicesTable,
                 InvoiceLinesTable,
                 LayoutsTable,
-                AllowedEmailsTable
+                AllowedEmailsTable,
+                SavedItemsTable
             )
         }
     }

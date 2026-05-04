@@ -16,6 +16,12 @@ object ClientsTable : Table("clients") {
     val iban = varchar("iban", 64).nullable()
     val bankName = varchar("bank_name", 255).nullable()
     val notes = text("notes").nullable()
+    val deliveryType = varchar("delivery_type", 30).nullable()
+    val deliveryCity = varchar("delivery_city", 255).nullable()
+    val deliveryBranch = varchar("delivery_branch", 100).nullable()
+    val deliveryStreet = varchar("delivery_street", 255).nullable()
+    val deliveryBuilding = varchar("delivery_building", 50).nullable()
+    val deliveryFreeAddress = varchar("delivery_free_address", 500).nullable()
     val createdAt = timestamp("created_at").clientDefault { Instant.now() }
     val updatedAt = timestamp("updated_at").clientDefault { Instant.now() }
 
