@@ -25,17 +25,32 @@
 - `/printbusiness/updates/latest.json`
 - `/printbusiness/updates/PrintBusiness-1.2.3.msi`
 
-## Release checklist
-1. Bump `desktopAppVersion` in `gradle.properties`.
-2. Build MSI on Windows: `./gradlew :desktopApp:packageMsi`.
-3. Rename/upload MSI to `PrintBusiness-<version>.msi`.
-4. Generate SHA-256 via `./gradlew :desktopApp:printMsiSha256`.
-5. Update/upload `latest.json` with version, notes, URL, and SHA-256.
-6. Verify on clean Windows machine:
-   - install older MSI
-   - open app and check Updates screen
-   - download and install update
-   - confirm new version is shown after relaunch
+## Automated releases (GitHub Actions)
+Releases are produced automatically by `.github/workflows/release-windows.yml`.
+
+- **Trigger:** any push to `main` that touches `desktopApp/**`, `shared/**`, or the
+  Gradle build files. (Can also be run manually via *Actions → Release Windows MSI →
+  Run workflow*.)
+- **Versioning:** `MAJOR.MINOR` come from `desktopAppVersion` in `gradle.properties`;
+  the **patch is auto-incremented** from the highest existing `vMAJOR.MINOR.*` tag.
+  Example: last tag `v1.0.9` → next release `v1.0.10`.
+- **What the workflow does:** builds the MSI on Windows, computes SHA-256, creates the
+  Git tag + GitHub Release (MSI attached), and publishes `latest.json` to the
+  `gh-pages` branch — the feed the app polls.
+- **Release notes:** taken from the triggering commit message.
+
+### To cut a normal release
+Just push your desktop changes to `main`. A new patch version ships automatically.
+
+### To bump minor/major
+Edit `desktopAppVersion` in `gradle.properties` (e.g. `1.0.0` → `1.1.0`) and push.
+The next release becomes `v1.1.0` (patch resets to the lowest unused value).
+
+### Verify (on a clean Windows machine)
+- install an older MSI
+- open app → Updates screen
+- download and install the update
+- confirm the new version is shown after relaunch
 
 ## Runtime settings (optional)
 The launcher passes these JVM properties from Gradle:

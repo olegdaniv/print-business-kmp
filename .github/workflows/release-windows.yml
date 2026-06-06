@@ -2,11 +2,24 @@ name: Release Windows MSI
 
 on:
   push:
-    tags:
-      - "v*.*.*"
+    branches:
+      - main
+    paths:
+      - "desktopApp/**"
+      - "shared/**"
+      - "gradle/libs.versions.toml"
+      - "gradle.properties"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+  workflow_dispatch:
 
 permissions:
   contents: write
+
+# Serialize releases so two quick pushes don't race for the same version number.
+concurrency:
+  group: release-windows
+  cancel-in-progress: false
 
 jobs:
   release-windows:
@@ -36,12 +49,33 @@ jobs:
         id: meta
         shell: pwsh
         run: |
-          $tag = "${{ github.ref_name }}"
-          if ($tag -notmatch '^v(\d+\.\d+\.\d+)$') {
-            throw "Release tag must match vX.Y.Z. Got: $tag"
+          # major.minor is controlled by gradle.properties; patch auto-increments per release.
+          $propLine = Select-String -Path "gradle.properties" -Pattern '^\s*desktopAppVersion\s*=\s*(.+)$' |
+            Select-Object -First 1
+          if (-not $propLine) {
+            throw "desktopAppVersion not found in gradle.properties."
           }
+          $base = $propLine.Matches[0].Groups[1].Value.Trim()
+          if ($base -notmatch '^(\d+)\.(\d+)\.(\d+)$') {
+            throw "desktopAppVersion must be MAJOR.MINOR.PATCH. Got: $base"
+          }
+          $major = $Matches[1]
+          $minor = $Matches[2]
 
-          $version = $Matches[1]
+          git fetch --tags --force | Out-Null
+          $maxPatch = -1
+          foreach ($t in (git tag --list "v$major.$minor.*")) {
+            if ($t -match "^v$major\.$minor\.(\d+)$") {
+              $p = [int]$Matches[1]
+              if ($p -gt $maxPatch) { $maxPatch = $p }
+            }
+          }
+          $patch = $maxPatch + 1
+
+          $version = "$major.$minor.$patch"
+          $tag = "v$version"
+          Write-Host "Next version: $tag (base $base, previous max patch $maxPatch)"
+
           $repo = "${{ github.repository }}"
           $owner, $repoName = $repo.Split("/")
           $pagesHost = "$owner.github.io"
@@ -131,7 +165,12 @@ jobs:
           }
 
           if ([string]::IsNullOrWhiteSpace($releaseNotes)) {
-            $releaseNotes = "New release ${{ steps.meta.outputs.version }}"
+            $commitMessage = (git log -1 --pretty=%B | Out-String).Trim()
+            if ([string]::IsNullOrWhiteSpace($commitMessage)) {
+              $releaseNotes = "New release ${{ steps.meta.outputs.version }}"
+            } else {
+              $releaseNotes = $commitMessage
+            }
           }
 
           # MSI URL points to GitHub Releases (no 100MB limit)
