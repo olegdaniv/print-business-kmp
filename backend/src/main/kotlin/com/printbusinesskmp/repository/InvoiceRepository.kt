@@ -10,7 +10,6 @@ import com.printbusinesskmp.models.InvoiceLine
 import com.printbusinesskmp.models.InvoiceSellerSnapshot
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll

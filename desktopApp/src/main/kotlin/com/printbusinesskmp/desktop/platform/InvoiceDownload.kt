@@ -5,6 +5,7 @@ import com.printbusinesskmp.models.Invoice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import java.nio.file.Path
 
@@ -25,6 +26,8 @@ private fun buildFileName(invoice: Invoice): String {
         .trimEnd('_')
         .take(40)
     val dt = invoice.issuedAt.toLocalDateTime(TimeZone.currentSystemDefault())
-    val date = "${dt.year}-${dt.monthNumber.toString().padStart(2, '0')}-${dt.dayOfMonth.toString().padStart(2, '0')}"
+    val date = "${dt.year}-${dt.month.number.toString().padStart(2, '0')}-${
+        dt.day.toString().padStart(2, '0')
+    }"
     return "${invoice.number}_${safeClient}_$date.pdf"
 }

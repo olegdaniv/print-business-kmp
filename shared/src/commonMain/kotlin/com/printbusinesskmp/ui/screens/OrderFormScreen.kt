@@ -106,7 +106,8 @@ fun OrderFormScreen(
                         val total = item.manualPrice ?: item.price
                         val unitPrice = if (item.quantity > 0) total / item.quantity else total
                         LineRow(
-                            name = item.name ?: "${item.serviceType.labelUa()} / ${item.productType.labelUa()}",
+                            name = item.name
+                                ?: "${item.serviceType.labelUa()} / ${item.productType.labelUa()}",
                             unit = item.unit,
                             quantity = item.quantity.toString(),
                             unitPrice = FormatUtils.formatDecimal(unitPrice)
@@ -149,14 +150,20 @@ fun OrderFormScreen(
             colors = CardDefaults.cardColors(containerColor = AppColors.White),
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 ClientSelector(
                     clients = clients,
                     selectedId = selectedClientId,
                     onSelect = { selectedClientId = it }
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     EnumSelector(
                         label = "Статус",
                         values = OrderStatus.entries,
@@ -188,7 +195,10 @@ fun OrderFormScreen(
             colors = CardDefaults.cardColors(containerColor = AppColors.White),
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -204,12 +214,40 @@ fun OrderFormScreen(
                 }
 
                 // Column headers
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Назва", modifier = Modifier.weight(3f), fontSize = 12.sp, color = AppColors.MediumGray)
-                    Text("Од.", modifier = Modifier.weight(0.7f), fontSize = 12.sp, color = AppColors.MediumGray)
-                    Text("К-сть", modifier = Modifier.weight(0.8f), fontSize = 12.sp, color = AppColors.MediumGray)
-                    Text("Ціна", modifier = Modifier.weight(1f), fontSize = 12.sp, color = AppColors.MediumGray)
-                    Text("Сума", modifier = Modifier.weight(1f), fontSize = 12.sp, color = AppColors.MediumGray)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        "Назва",
+                        modifier = Modifier.weight(3f),
+                        fontSize = 12.sp,
+                        color = AppColors.MediumGray
+                    )
+                    Text(
+                        "Од.",
+                        modifier = Modifier.weight(0.7f),
+                        fontSize = 12.sp,
+                        color = AppColors.MediumGray
+                    )
+                    Text(
+                        "К-сть",
+                        modifier = Modifier.weight(0.8f),
+                        fontSize = 12.sp,
+                        color = AppColors.MediumGray
+                    )
+                    Text(
+                        "Ціна",
+                        modifier = Modifier.weight(1f),
+                        fontSize = 12.sp,
+                        color = AppColors.MediumGray
+                    )
+                    Text(
+                        "Сума",
+                        modifier = Modifier.weight(1f),
+                        fontSize = 12.sp,
+                        color = AppColors.MediumGray
+                    )
                     Spacer(Modifier.width(36.dp))
                 }
 
@@ -373,7 +411,7 @@ private fun OrderLineRow(
 ) {
     var showSuggestions by remember { mutableStateOf(false) }
 
-    val suggestions = if (row.name.length >= 1 && showSuggestions) {
+    val suggestions = if (row.name.isNotEmpty() && showSuggestions) {
         savedItems
             .filter { it.name.lowercase().contains(row.name.lowercase()) }
             .take(8)
@@ -390,7 +428,6 @@ private fun OrderLineRow(
                 value = row.name,
                 onValueChange = { newName ->
                     onRowChange(row.copy(name = newName))
-                    showSuggestions = true
                 },
                 label = { Text("Назва") },
                 modifier = Modifier.fillMaxWidth(),
@@ -398,7 +435,7 @@ private fun OrderLineRow(
             )
             DropdownMenu(
                 expanded = suggestions.isNotEmpty(),
-                onDismissRequest = { showSuggestions = false }
+                onDismissRequest = { }
             ) {
                 suggestions.forEach { item ->
                     DropdownMenuItem(
@@ -420,7 +457,6 @@ private fun OrderLineRow(
                                     unitPrice = FormatUtils.formatDecimal(item.defaultPrice)
                                 )
                             )
-                            showSuggestions = false
                         }
                     )
                 }

@@ -20,6 +20,7 @@ import com.itextpdf.layout.properties.UnitValue
 import com.printbusinesskmp.models.Invoice
 import com.printbusinesskmp.utils.FormatUtils
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import java.io.File
 import java.nio.file.Path
@@ -251,7 +252,7 @@ object DesktopInvoicePdfGenerator {
             if (!f.exists()) continue
             runCatching {
                 return PdfFontFactory.createFont(f.absolutePath, PdfEncodings.IDENTITY_H, EmbeddingStrategy.PREFER_EMBEDDED)
-            }.getOrNull()?.let { return it }
+            }.getOrNull()
         }
 
         // 4) built-in fallback (no Cyrillic but PDF will not crash)
@@ -267,12 +268,12 @@ object DesktopInvoicePdfGenerator {
             5 to "травня", 6 to "червня", 7 to "липня", 8 to "серпня",
             9 to "вересня", 10 to "жовтня", 11 to "листопада", 12 to "грудня"
         )
-        return "${dt.dayOfMonth} ${months[dt.monthNumber] ?: dt.monthNumber} ${dt.year}"
+        return "${dt.day} ${months[dt.month.number] ?: dt.month.number} ${dt.year}"
     }
 
     private fun formatShortDate(instant: kotlin.time.Instant): String {
         val dt = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-        return "${dt.dayOfMonth.toString().padStart(2, '0')}.${dt.monthNumber.toString().padStart(2, '0')}.${dt.year.toString().takeLast(2)}"
+        return "${dt.day.toString().padStart(2, '0')}.${dt.month.number.toString().padStart(2, '0')}.${dt.year.toString().takeLast(2)}"
     }
 
     private fun fmt(value: Double): String = String.format("%.2f", value)

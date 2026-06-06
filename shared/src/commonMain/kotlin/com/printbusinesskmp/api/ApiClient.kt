@@ -42,7 +42,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 
 @Serializable
 private data class OrderStateRequest(

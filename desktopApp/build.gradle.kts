@@ -18,7 +18,7 @@ val appVersion = providers.gradleProperty("desktopAppVersion").orElse("1.0.0").g
 val updateFeedUrl = providers.gradleProperty("desktopUpdateFeedUrl")
     .orElse("https://example.com/printbusiness/updates/latest.json")
     .get()
-val updateAllowedHosts: String? =
+val updateAllowedHosts: String =
     providers.gradleProperty("desktopUpdateAllowedHosts").orElse("").get()
 val allowUpdatesWithoutChecksum = providers.gradleProperty("desktopAllowUpdatesWithoutChecksum")
     .orElse("true")
