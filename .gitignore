@@ -23,6 +23,10 @@ node_modules/
 .env
 deploy/.env
 
+# Google OAuth client secret files (downloaded from Google Cloud Console)
+client_secret_*.json
+*.apps.googleusercontent.com.json
+
 # Local runtime artifacts
 /backend/data/
 /backend/invoices/
