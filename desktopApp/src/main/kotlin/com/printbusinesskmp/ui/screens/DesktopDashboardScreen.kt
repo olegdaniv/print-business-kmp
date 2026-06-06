@@ -11,20 +11,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.printbusinesskmp.api.ApiClient
+import com.printbusinesskmp.desktop.update.UpdateUiState
 import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.models.OrderStatus
@@ -50,11 +51,18 @@ import com.printbusinesskmp.ui.theme.DesktopColors
 import com.printbusinesskmp.utils.FormatUtils
 
 @Composable
-fun DesktopDashboardScreen(onNavigate: (Screen) -> Unit) {
+fun DesktopDashboardScreen(
+    onNavigate: (Screen) -> Unit,
+    updateState: UpdateUiState = UpdateUiState(),
+    onDownloadUpdate: () -> Unit = {},
+    onCancelUpdateDownload: () -> Unit = {},
+    onInstallUpdate: () -> Unit = {}
+) {
     var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
     var orders by remember { mutableStateOf<List<Order>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showInstallDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         try {
@@ -115,6 +123,103 @@ fun DesktopDashboardScreen(onNavigate: (Screen) -> Unit) {
                 ) {
                     Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                     Text(" Нове замовлення")
+                }
+            }
+        }
+
+        // Update banner — handles the whole update flow inline (download → install)
+        val isDownloaded = updateState.downloadedInstaller != null
+        if (updateState.updateAvailable || updateState.isDownloading || isDownloaded) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                Icons.Default.SystemUpdate,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Column {
+                                Text(
+                                    text = updateState.latestVersion
+                                        ?.let { "Доступна нова версія: $it" }
+                                        ?: "Доступна нова версія",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    text = when {
+                                        isDownloaded -> "Завантажено та готово до встановлення"
+                                        updateState.isDownloading -> buildUpdateProgressText(updateState)
+                                        else -> "Бажаєте оновити застосунок?"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+
+                        when {
+                            isDownloaded -> Button(
+                                onClick = { showInstallDialog = true },
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(Icons.Default.SystemUpdate, null, modifier = Modifier.size(18.dp))
+                                Text(" Встановити")
+                            }
+
+                            updateState.isDownloading -> TextButton(onClick = onCancelUpdateDownload) {
+                                Text("Скасувати")
+                            }
+
+                            else -> Button(
+                                onClick = onDownloadUpdate,
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(Icons.Default.SystemUpdate, null, modifier = Modifier.size(18.dp))
+                                Text(" Оновити")
+                            }
+                        }
+                    }
+
+                    if (updateState.isDownloading) {
+                        val progress = updateState.progressFraction
+                        if (progress != null) {
+                            LinearProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        }
+                    }
+
+                    if (updateState.errorMessage != null) {
+                        Text(
+                            text = updateState.errorMessage,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
         }
@@ -278,5 +383,40 @@ fun DesktopDashboardScreen(onNavigate: (Screen) -> Unit) {
                 }
             }
         }
+    }
+
+    if (showInstallDialog) {
+        AlertDialog(
+            onDismissRequest = { showInstallDialog = false },
+            title = { Text("Встановити оновлення") },
+            text = { Text("Програму буде закрито та запущено інсталятор. Продовжити?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showInstallDialog = false
+                        onInstallUpdate()
+                    }
+                ) {
+                    Text("Встановити")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showInstallDialog = false }) {
+                    Text("Скасувати")
+                }
+            }
+        )
+    }
+}
+
+private fun buildUpdateProgressText(state: UpdateUiState): String {
+    val total = state.totalBytes
+    val downloadedMb = state.downloadedBytes / (1024.0 * 1024.0)
+    return if (total != null && total > 0L) {
+        val percent = ((state.downloadedBytes * 100.0) / total).coerceIn(0.0, 100.0)
+        val totalMb = total / (1024.0 * 1024.0)
+        "Завантаження… %.0f%% (%.1f / %.1f МБ)".format(percent, downloadedMb, totalMb)
+    } else {
+        "Завантаження… %.1f МБ".format(downloadedMb)
     }
 }

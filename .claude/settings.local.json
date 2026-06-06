@@ -27,7 +27,8 @@
       "Bash(xargs -I{} cat /Users/olegdaniv/AndroidStudioProjects/print-business-kmp/backend/src/main/resources/db/migration/{})",
       "Bash(./gradlew :desktopApp:processResources)",
       "Bash(./gradlew :desktopApp:compileKotlin :backend:compileKotlin)",
-      "Bash(./gradlew :shared:compileKotlinWasmJs)"
+      "Bash(./gradlew :shared:compileKotlinWasmJs)",
+      "Bash(./gradlew :desktopApp:compileKotlin -q)"
     ]
   },
   "enableAllProjectMcpServers": true,

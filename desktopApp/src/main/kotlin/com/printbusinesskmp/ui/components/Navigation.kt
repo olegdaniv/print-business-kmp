@@ -25,7 +25,13 @@ fun NavigationContent(
     onDismissUpdateError: () -> Unit
 ) {
     when (currentScreen) {
-        Screen.Dashboard -> DesktopDashboardScreen(onNavigate)
+        Screen.Dashboard -> DesktopDashboardScreen(
+            onNavigate = onNavigate,
+            updateState = updateState,
+            onDownloadUpdate = onDownloadUpdate,
+            onCancelUpdateDownload = onCancelUpdateDownload,
+            onInstallUpdate = onInstallUpdate
+        )
         Screen.BusinessProfile -> BusinessProfileScreen(onNavigate)
         Screen.Clients -> DesktopClientsScreen(onNavigate)
         is Screen.ClientForm -> ClientFormScreen(currentScreen.clientId, onNavigate)
