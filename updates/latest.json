@@ -1,8 +1,8 @@
 {
-  "version": "1.0.9",
   "windows": {
-    "sha256": "dd54cd4f61c1397ef2eb3c3a18df014e1789d30cdf3ef98da8101292eacb6955",
-    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.9/PrintBusiness-1.0.9.msi"
+    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.10/PrintBusiness-1.0.10.msi",
+    "sha256": "2087ed379fd1d2f27437407d789df85a1acc3c30f4a6a02d9069c82f34591c77"
   },
-  "notes": "New release 1.0.9"
+  "version": "1.0.10",
+  "notes": "ci: auto-release desktop MSI on push to main\r\n\r\nTrigger release-windows workflow on pushes to main that touch desktop\r\nbuild inputs instead of requiring a manual vX.Y.Z tag. Major.minor come\r\nfrom desktopAppVersion; patch auto-increments from the latest tag. The\r\nworkflow creates the tag + GitHub Release itself and uses the commit\r\nmessage as release notes.\r\n\r\nCo-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 }
