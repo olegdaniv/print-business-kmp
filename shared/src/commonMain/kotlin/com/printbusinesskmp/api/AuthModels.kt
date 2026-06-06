@@ -17,3 +17,9 @@ class AuthRequestException(
     val status: HttpStatusCode,
     message: String
 ) : RuntimeException(message)
+
+/** Thrown when an authenticated API call returns a non-2xx response. Carries the server's error text. */
+class ApiException(
+    val status: HttpStatusCode,
+    message: String
+) : RuntimeException(message)

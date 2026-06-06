@@ -40,6 +40,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 
@@ -91,11 +92,19 @@ object  ApiClient {
         HttpResponseValidator {
             validateResponse { response ->
                 val requestPath = response.call.request.url.encodedPath
-                if (response.status == HttpStatusCode.Unauthorized && requiresAppJwt(requestPath)) {
+                if (!requiresAppJwt(requestPath) || response.status.isSuccess()) {
+                    return@validateResponse
+                }
+                if (response.status == HttpStatusCode.Unauthorized) {
                     accessToken = null
                     onUnauthorized?.invoke()
                     throw SessionExpiredException()
                 }
+                val message = parseErrorMessage(
+                    response = response,
+                    fallback = "Запит не вдався (${response.status.value})."
+                )
+                throw ApiException(response.status, message)
             }
         }
         install(io.ktor.client.plugins.api.createClientPlugin("BearerAuth") {
@@ -163,11 +172,10 @@ object  ApiClient {
     }
 
     suspend fun getBusinessProfile(): BusinessProfile? {
-        val response = client.get("$baseUrl/api/business-profile")
-        return if (response.status == HttpStatusCode.NotFound) {
-            null
-        } else {
-            response.body()
+        return try {
+            client.get("$baseUrl/api/business-profile").body()
+        } catch (e: ApiException) {
+            if (e.status == HttpStatusCode.NotFound) null else throw e
         }
     }
 
@@ -362,7 +370,8 @@ object  ApiClient {
         val bodyText = response.bodyAsText()
         if (bodyText.isBlank()) return fallback
         return runCatching {
-            modelsJson.decodeFromString<ApiErrorResponse>(bodyText).message?.ifBlank { null }
+            val parsed = modelsJson.decodeFromString<ApiErrorResponse>(bodyText)
+            parsed.error?.ifBlank { null } ?: parsed.message?.ifBlank { null }
         }.getOrNull() ?: fallback
     }
 }
