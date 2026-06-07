@@ -1,6 +1,6 @@
 [versions]
 androidx-lifecycle = "2.9.6"
-composeMultiplatform = "1.9.3"
+composeMultiplatform = "1.11.1"
 exposed = "0.58.0"
 h2 = "2.3.232"
 hikari = "5.1.0"

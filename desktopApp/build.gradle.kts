@@ -71,12 +71,12 @@ dependencies {
     // Embedded local backend (runs in-process so desktop uses a local H2 database)
     implementation(projects.backend)
 
-    implementation(compose.runtime)
-    implementation(compose.foundation)
-    implementation(compose.material3)
-    implementation(compose.materialIconsExtended)
-    implementation(compose.ui)
-    implementation(compose.components.resources)
+    implementation("org.jetbrains.compose.runtime:runtime:1.11.1")
+    implementation("org.jetbrains.compose.foundation:foundation:1.11.1")
+    implementation("org.jetbrains.compose.material3:material3:1.9.0")
+    implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+    implementation("org.jetbrains.compose.ui:ui:1.11.1")
+    implementation("org.jetbrains.compose.components:components-resources:1.11.1")
     implementation(compose.desktop.currentOs)
 
     implementation(libs.kotlinx.datetime)
