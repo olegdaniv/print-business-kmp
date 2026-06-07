@@ -243,12 +243,12 @@ private fun OrderListPanel(
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            StatusFilterChips(
-                values = filterStatuses,
-                selected = statusFilter,
-                onSelect = onStatusFilterChange,
-                labelMapper = { it.labelUa() }
-            )
+//            StatusFilterChips(
+//                values = filterStatuses,
+//                selected = statusFilter,
+//                onSelect = onStatusFilterChange,
+//                labelMapper = { it.labelUa() }
+//            )
         }
 
         Spacer(Modifier.height(8.dp))
@@ -587,9 +587,10 @@ private fun OrderDetailPanel(
                             processing = true
                             scope.launch {
                                 try {
-                                    ApiClient.generateInvoice(order.id)
+                                    val inv = ApiClient.generateInvoice(order.id)
+                                    val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(inv)
                                     invoices = ApiClient.getInvoicesByOrderId(order.id)
-                                    info = "Рахунок згенеровано"
+                                    info = "Рахунок згенеровано: $saved"
                                     onOrderUpdated()
                                 } catch (e: Exception) {
                                     error = e.message ?: "Помилка"
@@ -635,19 +636,33 @@ private fun OrderDetailPanel(
                                 "${invoice.number} · ${FormatUtils.formatDate(invoice.issuedAt)}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
-                            TextButton(onClick = {
-                                scope.launch {
-                                    try {
-                                        val savedPath = com.printbusinesskmp.desktop.platform.saveInvoicePdf(invoice)
-                                        if (savedPath != null) {
-                                            info = "PDF збережено: $savedPath"
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                TextButton(onClick = {
+                                    scope.launch {
+                                        try {
+                                            val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(invoice)
+                                            info = "PDF збережено: $saved"
+                                        } catch (e: Exception) {
+                                            error = e.message ?: "Помилка"
                                         }
-                                    } catch (e: Exception) {
-                                        error = e.message ?: "Помилка"
                                     }
+                                }) {
+                                    Text("Перегенерувати", fontSize = 12.sp)
                                 }
-                            }) {
-                                Text("PDF", fontSize = 12.sp)
+                                TextButton(onClick = {
+                                    scope.launch {
+                                        try {
+                                            val opened = com.printbusinesskmp.desktop.platform.openInvoiceFromFolder(invoice)
+                                            if (!opened) {
+                                                error = "Файл не знайдено. Натисніть «Перегенерувати»."
+                                            }
+                                        } catch (e: Exception) {
+                                            error = e.message ?: "Помилка"
+                                        }
+                                    }
+                                }) {
+                                    Text("Відкрити", fontSize = 12.sp)
+                                }
                             }
                         }
                     }

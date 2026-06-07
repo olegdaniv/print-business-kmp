@@ -35,7 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
-import com.printbusinesskmp.desktop.platform.saveInvoicePdf
 import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.Invoice
 import com.printbusinesskmp.models.Order
@@ -212,29 +211,28 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Рахунки", fontWeight = FontWeight.SemiBold)
 
-                Button(
-                    onClick = {
-                        processing = true
-                        scope.launch {
-                            try {
-                                ApiClient.generateInvoice(orderId)
-                                info = "Рахунок згенеровано"
-                                reload()
-                            } catch (e: Exception) {
-                                error = e.message ?: "Не вдалося згенерувати рахунок"
-                            } finally {
-                                processing = false
-                            }
-                        }
-                    },
-                    enabled = !processing,
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Success)
-                ) {
-                    Text("Згенерувати рахунок", color = AppColors.White)
-                }
-
                 if (invoices.isEmpty()) {
-                    Text("Рахунків поки немає", color = AppColors.MediumGray)
+                    Button(
+                        onClick = {
+                            processing = true
+                            scope.launch {
+                                try {
+                                    val inv = ApiClient.generateInvoice(orderId)
+                                    val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(inv)
+                                    info = "Рахунок згенеровано: $saved"
+                                    reload()
+                                } catch (e: Exception) {
+                                    error = e.message ?: "Не вдалося згенерувати рахунок"
+                                } finally {
+                                    processing = false
+                                }
+                            }
+                        },
+                        enabled = !processing,
+                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.Success)
+                    ) {
+                        Text("Згенерувати рахунок", color = AppColors.White)
+                    }
                 } else {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         items(invoices) { invoice ->
@@ -244,20 +242,32 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text("${invoice.number} • ${FormatUtils.formatDate(invoice.issuedAt)}")
-                                Row {
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     TextButton(onClick = {
                                         scope.launch {
                                             try {
-                                                val savedPath = saveInvoicePdf(invoice)
-                                                if (savedPath != null) {
-                                                    info = "PDF збережено: $savedPath"
-                                                }
+                                                val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(invoice)
+                                                info = "PDF збережено: $saved"
                                             } catch (e: Exception) {
                                                 error = e.message ?: "Не вдалося зберегти PDF"
                                             }
                                         }
                                     }) {
-                                        Text("PDF", color = AppColors.PrimaryBlue)
+                                        Text("Перегенерувати", color = AppColors.PrimaryBlue)
+                                    }
+                                    TextButton(onClick = {
+                                        scope.launch {
+                                            try {
+                                                val opened = com.printbusinesskmp.desktop.platform.openInvoiceFromFolder(invoice)
+                                                if (!opened) {
+                                                    error = "Файл не знайдено. Натисніть «Перегенерувати»."
+                                                }
+                                            } catch (e: Exception) {
+                                                error = e.message ?: "Не вдалося відкрити PDF"
+                                            }
+                                        }
+                                    }) {
+                                        Text("Відкрити", color = AppColors.PrimaryBlue)
                                     }
                                 }
                             }

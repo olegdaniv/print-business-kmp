@@ -47,6 +47,18 @@ fun choosePdfSavePath(defaultFileName: String): Path? {
     )
 }
 
+fun chooseDirectory(
+    dialogTitle: String,
+    start: Path = AppSettingsStore.invoicesDir
+): Path? {
+    val chooser = JFileChooser(start.toFile()).apply {
+        this.dialogTitle = dialogTitle
+        fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+    }
+    val result = chooser.showOpenDialog(null)
+    return if (result == JFileChooser.APPROVE_OPTION) chooser.selectedFile.toPath() else null
+}
+
 fun chooseImageFilePath(): Path? {
     val chooser = JFileChooser(DesktopPaths.invoiceDownloadsDir.toFile()).apply {
         dialogTitle = "Choose preview image"

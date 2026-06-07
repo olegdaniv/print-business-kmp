@@ -59,7 +59,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.printbusinesskmp.api.ApiClient
-import com.printbusinesskmp.desktop.platform.saveInvoicePdf
+import com.printbusinesskmp.desktop.platform.generateInvoiceToFolder
 import com.printbusinesskmp.models.BusinessProfile
 import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.Invoice
@@ -192,8 +192,8 @@ fun InvoiceScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> Unit) {
                             onDownload = {
                                 scope.launch {
                                     try {
-                                        val savedPath = saveInvoicePdf(invoice)
-                                        if (savedPath != null) message = "PDF збережено: $savedPath"
+                                        val saved = generateInvoiceToFolder(invoice)
+                                        message = "PDF збережено: $saved"
                                     } catch (e: Exception) {
                                         error = e.message ?: "Помилка збереження PDF"
                                     }
