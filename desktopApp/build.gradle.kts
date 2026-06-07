@@ -68,6 +68,8 @@ version = appVersion
 
 dependencies {
     implementation(projects.shared)
+    // Embedded local backend (runs in-process so desktop uses a local H2 database)
+    implementation(projects.backend)
 
     implementation(compose.runtime)
     implementation(compose.foundation)
@@ -79,6 +81,10 @@ dependencies {
 
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
+
+    // Embedded Ktor server (runs the backend in-process for the local DB)
+    implementation(libs.ktor.serverCore)
+    implementation(libs.ktor.serverNetty)
 
     // CIO engine for desktop Google OAuth (DesktopGoogleSignInService uses its own HttpClient)
     implementation("io.ktor:ktor-client-cio:${libs.versions.ktor.get()}")

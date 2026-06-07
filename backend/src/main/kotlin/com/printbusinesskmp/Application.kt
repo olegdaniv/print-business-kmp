@@ -7,6 +7,7 @@ import com.printbusinesskmp.auth.EnvAllowlistService
 import com.printbusinesskmp.auth.EnvironmentConfig
 import com.printbusinesskmp.auth.GoogleIdTokenVerifier
 import com.printbusinesskmp.auth.configureJwtAuthentication
+import com.printbusinesskmp.auth.configureLocalAuthentication
 import com.printbusinesskmp.database.DatabaseFactory
 import com.printbusinesskmp.repository.AllowedEmailRepository
 import com.printbusinesskmp.routes.configureAllowlistAdminRoutes
@@ -101,6 +102,45 @@ fun Application.module() {
         configureAllowlistAdminRoutes(
             allowlistService = allowlistService
         )
+
+        configureClientRoutes()
+        configureBusinessProfileRoutes()
+        configurePartnerRoutes()
+        configureOutsourceRoutes()
+        configureOrderRoutes()
+        configureInvoiceRoutes()
+        configureSavedItemRoutes()
+        configureLayoutRoutes()
+        configurePricingRoutes()
+    }
+}
+
+/**
+ * Embedded local module for the desktop app: local H2 storage, no CORS,
+ * no Google/JWT — a permissive local "app-jwt" provider authenticates every
+ * request. Used by the desktop app's in-process server (see desktop LocalServer).
+ */
+fun Application.localModule() {
+    DatabaseFactory.init()
+
+    install(ContentNegotiation) {
+        json(
+            Json {
+                prettyPrint = true
+                isLenient = true
+                ignoreUnknownKeys = true
+                explicitNulls = false
+            }
+        )
+    }
+
+    install(CallLogging)
+    configureLocalAuthentication()
+
+    routing {
+        get("/health") {
+            call.respondText("OK")
+        }
 
         configureClientRoutes()
         configureBusinessProfileRoutes()
