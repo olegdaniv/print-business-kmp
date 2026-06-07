@@ -10,6 +10,7 @@ import com.printbusinesskmp.ui.screens.DesktopDashboardScreen
 import com.printbusinesskmp.ui.screens.InvoiceScreen
 import com.printbusinesskmp.ui.screens.DesktopLayoutsPlaceholder
 import com.printbusinesskmp.ui.screens.DesktopOrdersScreen
+import com.printbusinesskmp.ui.screens.DesktopSettingsScreen
 import com.printbusinesskmp.ui.screens.OrderFormScreen
 import com.printbusinesskmp.ui.screens.UpdatesScreen
 
@@ -51,5 +52,6 @@ fun NavigationContent(
             onInstallUpdate = onInstallUpdate,
             onDismissError = onDismissUpdateError
         )
+        Screen.Settings -> DesktopSettingsScreen(onNavigate)
     }
 }

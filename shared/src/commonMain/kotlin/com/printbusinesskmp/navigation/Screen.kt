@@ -11,4 +11,5 @@ sealed class Screen {
     data object Layouts : Screen()
     data object Invoices : Screen()
     data object Updates : Screen()
+    data object Settings : Screen()
 }

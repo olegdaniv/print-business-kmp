@@ -88,6 +88,11 @@ private val mainDestinations = listOf(
         icon = Icons.Default.Business,
         screen = Screen.BusinessProfile,
         matchScreens = { it is Screen.BusinessProfile }),
+    NavDestination(
+        label = "Налаштування",
+        icon = Icons.Default.Settings,
+        screen = Screen.Settings,
+        matchScreens = { it is Screen.Settings }),
 )
 
 @Composable
