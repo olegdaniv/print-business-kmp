@@ -1,8 +1,8 @@
 {
-  "version": "1.0.11",
-  "notes": "docs: add DATABASE.md with data-location findings and DB access guide\r\n\r\nDocument that app data lives in the Render-hosted PostgreSQL (not locally),\r\nthe likely causes behind the \"saved client disappeared\" issue, and a\r\npractical guide for inspecting/editing the database (GUI clients, Android\r\nStudio plugin, psql, Render dashboard) plus backup/restore and safe-delete\r\nnotes.\r\n\r\nCo-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>",
+  "version": "1.0.12",
+  "notes": "feat: redesign PDF invoices and add order deletion\r\n\r\n- Overhaul `DesktopInvoicePdfGenerator` with a modern slate-themed layout, improved typography, and zebra-striped tables\r\n- Implement order deletion with a confirmation dialog in `DesktopOrdersScreen`\r\n- Update backend invoice generation to include item names in descriptions and map unit types from order items\r\n- Hide the global \"Invoices\" navigation destination, moving invoice management into the order details panel\r\n- Only show the \"Generate Invoice\" button in the order details if no invoices currently exist\r\n- Expand allowed shell commands in `.claude/settings.local.json` for enhanced CI/CD and debugging tasks",
   "windows": {
-    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.11/PrintBusiness-1.0.11.msi",
-    "sha256": "38be71160165ad17c91821db6187db97ef385a927bff492fad5f2a9b7c7d50f7"
+    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.12/PrintBusiness-1.0.12.msi",
+    "sha256": "526e63e02a43f96bc2f28579bb720e554f28c233873503653d20f4d27d9d682b"
   }
 }
