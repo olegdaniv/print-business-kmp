@@ -7,6 +7,9 @@ import com.printbusinesskmp.models.ClientCreateRequest
 import com.printbusinesskmp.models.ClientUpdateRequest
 import com.printbusinesskmp.models.Invoice
 import com.printbusinesskmp.models.InvoiceCreateRequest
+import com.printbusinesskmp.models.InvoiceNumberFormatInfo
+import com.printbusinesskmp.models.InvoiceNumberFormatUpdateRequest
+import com.printbusinesskmp.models.InvoiceNumberOverrideRequest
 import com.printbusinesskmp.models.Layout
 import com.printbusinesskmp.models.LayoutCreateRequest
 import com.printbusinesskmp.models.LayoutStatus
@@ -258,6 +261,28 @@ object  ApiClient {
 
     suspend fun generateInvoice(orderId: String): Invoice {
         return client.post("$baseUrl/api/invoices/generate/$orderId").body()
+    }
+
+    suspend fun regenerateInvoice(id: String): Invoice {
+        return client.post("$baseUrl/api/invoices/$id/regenerate").body()
+    }
+
+    suspend fun getInvoiceNumberFormat(): InvoiceNumberFormatInfo {
+        return client.get("$baseUrl/api/invoices/number-format").body()
+    }
+
+    suspend fun setInvoiceNumberFormat(template: String): InvoiceNumberFormatInfo {
+        return client.put("$baseUrl/api/invoices/number-format") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(InvoiceNumberFormatUpdateRequest(template))
+        }.body()
+    }
+
+    suspend fun updateInvoiceNumber(id: String, number: String): Invoice {
+        return client.put("$baseUrl/api/invoices/$id/number") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(InvoiceNumberOverrideRequest(number))
+        }.body()
     }
 
     suspend fun createInvoice(request: InvoiceCreateRequest): Invoice {

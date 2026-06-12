@@ -42,8 +42,7 @@ class InvoiceRepository {
             }
     }
 
-    suspend fun nextInvoiceNumber(): String = dbQuery {
-        val prefix = "СФ-"
+    suspend fun nextInvoiceNumber(prefix: String, padding: Int): String = dbQuery {
         val maxSeq = InvoicesTable.selectAll()
             .where { InvoicesTable.number like "$prefix%" }
             .mapNotNull { row ->
@@ -52,7 +51,25 @@ class InvoiceRepository {
                     .toIntOrNull()
             }
             .maxOrNull() ?: 0
-        "$prefix${(maxSeq + 1).toString().padStart(7, '0')}"
+        "$prefix${(maxSeq + 1).toString().padStart(padding, '0')}"
+    }
+
+    suspend fun numberExists(number: String, excludeId: String? = null): Boolean = dbQuery {
+        InvoicesTable.selectAll()
+            .where { InvoicesTable.number eq number }
+            .any { excludeId == null || it[InvoicesTable.id] != excludeId }
+    }
+
+    suspend fun updateInvoiceNumber(id: String, number: String): Invoice? = dbQuery {
+        val changed = InvoicesTable.update({ InvoicesTable.id eq id }) {
+            it[InvoicesTable.number] = number
+        }
+        if (changed == 0) {
+            null
+        } else {
+            val row = InvoicesTable.selectAll().where { InvoicesTable.id eq id }.single()
+            toInvoice(row, getLines(id))
+        }
     }
 
     suspend fun addInvoice(invoice: Invoice): Invoice = dbQuery {

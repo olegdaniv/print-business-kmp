@@ -4,10 +4,14 @@ import com.printbusinesskmp.models.Invoice
 import com.printbusinesskmp.models.InvoiceClientSnapshot
 import com.printbusinesskmp.models.InvoiceCreateRequest
 import com.printbusinesskmp.models.InvoiceLine
+import com.printbusinesskmp.models.InvoiceNumberFormatInfo
+import com.printbusinesskmp.models.InvoiceNumberFormatUpdateRequest
+import com.printbusinesskmp.models.InvoiceNumberOverrideRequest
 import com.printbusinesskmp.models.InvoiceSellerSnapshot
 import com.printbusinesskmp.models.OrderItem
 import com.printbusinesskmp.models.ProductType
 import com.printbusinesskmp.models.ServiceType
+import com.printbusinesskmp.repository.AppSettingsRepository
 import com.printbusinesskmp.repository.BusinessProfileRepository
 import com.printbusinesskmp.repository.ClientRepository
 import com.printbusinesskmp.repository.InvoiceRepository
@@ -37,6 +41,25 @@ private val orderRepository = OrderRepository()
 private val clientRepository = ClientRepository()
 private val businessProfileRepository = BusinessProfileRepository()
 private val invoiceGenerator = InvoiceGenerator()
+private val appSettingsRepository = AppSettingsRepository()
+
+private const val INVOICE_NUMBER_TEMPLATE_KEY = "invoice_number_template"
+private const val DEFAULT_NUMBER_TEMPLATE = "СФ-0000000"
+
+/** Splits a template like "СФ-0000000" into the constant prefix and the digit count. */
+private fun parseNumberTemplate(template: String): Pair<String, Int> {
+    val padding = template.takeLastWhile { it == '0' }.length
+    return template.dropLast(padding) to maxOf(padding, 1)
+}
+
+private suspend fun currentNumberTemplate(): String =
+    appSettingsRepository.get(INVOICE_NUMBER_TEMPLATE_KEY)?.takeIf { it.isNotBlank() }
+        ?: DEFAULT_NUMBER_TEMPLATE
+
+private suspend fun nextInvoiceNumberFromSettings(): String {
+    val (prefix, padding) = parseNumberTemplate(currentNumberTemplate())
+    return invoiceRepository.nextInvoiceNumber(prefix, padding)
+}
 
 fun Route.configureInvoiceRoutes() {
     authenticate("app-jwt") {
@@ -62,7 +85,7 @@ fun Route.configureInvoiceRoutes() {
                         )
                     }
 
-                    val number = invoiceRepository.nextInvoiceNumber()
+                    val number = nextInvoiceNumberFromSettings()
                     val now = Clock.System.now()
                     val validUntil = now + request.validDays.days
 
@@ -229,22 +252,10 @@ fun Route.configureInvoiceRoutes() {
                         )
                     }
 
-                    val number = invoiceRepository.nextInvoiceNumber()
+                    val number = nextInvoiceNumberFromSettings()
                     val now = Clock.System.now()
 
-                    val lines = order.items.mapIndexed { index, item ->
-                        val lineTotal = item.price
-                        val unitPrice = if (item.quantity > 0) lineTotal / item.quantity else lineTotal
-                        InvoiceLine(
-                            lineNumber = index + 1,
-                            description = buildDescription(item),
-                            quantity = item.quantity,
-                            unit = item.unit.trimEnd('.'),
-                            usedMeters = item.usedMeters,
-                            unitPrice = unitPrice,
-                            lineTotal = lineTotal
-                        )
-                    }
+                    val lines = buildLinesFromOrderItems(order.items)
 
                     val subtotal = order.items.sumOf { it.price - it.taxAmount }
                     val taxAmount = order.items.sumOf { it.taxAmount }
@@ -299,6 +310,65 @@ fun Route.configureInvoiceRoutes() {
                 }
             }
 
+            post("{id}/regenerate") {
+                try {
+                    val id = call.parameters["id"]
+                        ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing invoice ID"))
+
+                    val existing = invoiceRepository.invoiceById(id)
+                        ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Invoice not found"))
+
+                    val orderId = existing.orderId
+                        ?: return@post call.respond(
+                            HttpStatusCode.BadRequest,
+                            mapOf("error" to "Invoice is not linked to an order")
+                        )
+
+                    val order = orderRepository.orderById(orderId)
+                        ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Order not found"))
+
+                    if (order.items.isEmpty()) {
+                        return@post call.respond(
+                            HttpStatusCode.BadRequest,
+                            mapOf("error" to "Order must contain at least one item to regenerate invoice")
+                        )
+                    }
+
+                    val client = clientRepository.clientById(order.clientId)
+
+                    val updated = existing.copy(
+                        client = client?.let {
+                            InvoiceClientSnapshot(
+                                type = it.type,
+                                name = it.displayName,
+                                address = it.address,
+                                phone = it.phone,
+                                email = it.email
+                            )
+                        } ?: existing.client,
+                        lines = buildLinesFromOrderItems(order.items),
+                        subtotal = order.items.sumOf { it.price - it.taxAmount },
+                        taxAmount = order.items.sumOf { it.taxAmount },
+                        totalAmount = order.items.sumOf { it.price },
+                        notes = order.notes
+                    )
+
+                    val saved = invoiceRepository.updateInvoice(id, updated)
+                        ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Invoice not found"))
+
+                    existing.filePath?.let { File(it).takeIf { f -> f.exists() }?.delete() }
+                    val filePath = invoiceGenerator.generateInvoicePdf(saved)
+                    val withFile = invoiceRepository.updateInvoiceFilePath(saved.id, filePath) ?: saved
+
+                    call.respond(HttpStatusCode.OK, withFile)
+                } catch (e: Exception) {
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        mapOf("error" to "Invoice regeneration failed", "details" to (e.message ?: "unknown error"))
+                    )
+                }
+            }
+
             get {
                 call.respond(HttpStatusCode.OK, invoiceRepository.allInvoices())
             }
@@ -320,6 +390,74 @@ fun Route.configureInvoiceRoutes() {
                     ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing order ID"))
 
                 call.respond(HttpStatusCode.OK, invoiceRepository.invoicesByOrderId(orderId))
+            }
+
+            get("/number-format") {
+                call.respond(
+                    HttpStatusCode.OK,
+                    InvoiceNumberFormatInfo(currentNumberTemplate(), nextInvoiceNumberFromSettings())
+                )
+            }
+
+            put("/number-format") {
+                val request = call.receive<InvoiceNumberFormatUpdateRequest>()
+                val template = request.template.trim()
+                if (template.isBlank()) {
+                    return@put call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Шаблон не може бути порожнім")
+                    )
+                }
+                if (!template.endsWith("0")) {
+                    return@put call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Шаблон має закінчуватися нулями — вони визначають кількість цифр номера, наприклад СФ-0000000")
+                    )
+                }
+                appSettingsRepository.set(INVOICE_NUMBER_TEMPLATE_KEY, template)
+                call.respond(
+                    HttpStatusCode.OK,
+                    InvoiceNumberFormatInfo(template, nextInvoiceNumberFromSettings())
+                )
+            }
+
+            put("{id}/number") {
+                try {
+                    val id = call.parameters["id"]
+                        ?: return@put call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing invoice ID"))
+
+                    val existing = invoiceRepository.invoiceById(id)
+                        ?: return@put call.respond(HttpStatusCode.NotFound, mapOf("error" to "Invoice not found"))
+
+                    val request = call.receive<InvoiceNumberOverrideRequest>()
+                    val newNumber = request.number.trim()
+                    if (newNumber.isBlank()) {
+                        return@put call.respond(
+                            HttpStatusCode.BadRequest,
+                            mapOf("error" to "Номер не може бути порожнім")
+                        )
+                    }
+                    if (invoiceRepository.numberExists(newNumber, excludeId = id)) {
+                        return@put call.respond(
+                            HttpStatusCode.Conflict,
+                            mapOf("error" to "Рахунок з номером $newNumber вже існує")
+                        )
+                    }
+
+                    val renamed = invoiceRepository.updateInvoiceNumber(id, newNumber)
+                        ?: return@put call.respond(HttpStatusCode.NotFound, mapOf("error" to "Invoice not found"))
+
+                    existing.filePath?.let { File(it).takeIf { f -> f.exists() }?.delete() }
+                    val filePath = invoiceGenerator.generateInvoicePdf(renamed)
+                    val withFile = invoiceRepository.updateInvoiceFilePath(renamed.id, filePath) ?: renamed
+
+                    call.respond(HttpStatusCode.OK, withFile)
+                } catch (e: Exception) {
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        mapOf("error" to "Invoice number update failed", "details" to (e.message ?: "unknown error"))
+                    )
+                }
             }
 
             get("/download/{id}") {
@@ -365,7 +503,24 @@ fun Route.configureInvoiceRoutes() {
     }
 }
 
+private fun buildLinesFromOrderItems(items: List<OrderItem>): List<InvoiceLine> =
+    items.mapIndexed { index, item ->
+        val lineTotal = item.price
+        val unitPrice = if (item.quantity > 0) lineTotal / item.quantity else lineTotal
+        InvoiceLine(
+            lineNumber = index + 1,
+            description = buildDescription(item),
+            quantity = item.quantity,
+            unit = item.unit.trimEnd('.'),
+            usedMeters = item.usedMeters,
+            unitPrice = unitPrice,
+            lineTotal = lineTotal
+        )
+    }
+
 private fun buildDescription(item: OrderItem): String {
+    item.name?.takeIf { it.isNotBlank() }?.let { return it }
+
     val serviceText = when (item.serviceType) {
         ServiceType.DTF -> "DTF друк"
         ServiceType.UV_DTF -> "UV DTF друк"
@@ -373,7 +528,7 @@ private fun buildDescription(item: OrderItem): String {
         ServiceType.DESIGN_ONLY -> "Підготовка дизайну"
     }
 
-    val productText = item.name?.takeIf { it.isNotBlank() } ?: when (item.productType) {
+    val productText = when (item.productType) {
         ProductType.T_SHIRT -> "футболка"
         ProductType.HOODIE -> "худі"
         ProductType.SWEATSHIRT -> "світшот"
@@ -396,8 +551,5 @@ private fun buildDescription(item: OrderItem): String {
         ProductType.OTHER -> "інший виріб"
     }
 
-    val metersSuffix = item.usedMeters.takeIf { it > 0.0 }
-        ?.let { " (${String.format("%.2f", it)} м)" }
-        .orEmpty()
-    return "$serviceText на $productText$metersSuffix"
+    return "$serviceText на $productText"
 }

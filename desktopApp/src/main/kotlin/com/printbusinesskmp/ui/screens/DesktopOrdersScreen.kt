@@ -62,7 +62,9 @@ import com.printbusinesskmp.ui.components.StatusFilterChips
 import com.printbusinesskmp.ui.theme.DesktopColors
 import com.printbusinesskmp.utils.FormatUtils
 import com.printbusinesskmp.utils.labelUa
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun DesktopOrdersScreen(onNavigate: (Screen) -> Unit) {
@@ -394,6 +396,8 @@ private fun OrderDetailPanel(
     var info by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var renamingInvoice by remember { mutableStateOf<com.printbusinesskmp.models.Invoice?>(null) }
+    var numberInput by remember { mutableStateOf("") }
 
     LaunchedEffect(order.id) {
         loadingInvoices = true
@@ -507,7 +511,8 @@ private fun OrderDetailPanel(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "${item.serviceType.labelUa()} / ${item.productType.labelUa()}",
+                                text = item.name?.takeIf { it.isNotBlank() }
+                                    ?: "${item.serviceType.labelUa()} / ${item.productType.labelUa()}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium
                             )
@@ -654,9 +659,17 @@ private fun OrderDetailPanel(
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 TextButton(onClick = {
+                                    numberInput = invoice.number
+                                    renamingInvoice = invoice
+                                }) {
+                                    Text("Змінити №", fontSize = 12.sp)
+                                }
+                                TextButton(onClick = {
                                     scope.launch {
                                         try {
-                                            val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(invoice)
+                                            val refreshed = ApiClient.regenerateInvoice(invoice.id)
+                                            val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(refreshed)
+                                            invoices = ApiClient.getInvoicesByOrderId(order.id)
                                             info = "PDF збережено: $saved"
                                         } catch (e: Exception) {
                                             error = e.message ?: "Помилка"
@@ -739,6 +752,49 @@ private fun OrderDetailPanel(
             },
             dismissButton = {
                 TextButton(onClick = { confirmDelete = false }) {
+                    Text("Скасувати")
+                }
+            }
+        )
+    }
+
+    renamingInvoice?.let { invoice ->
+        AlertDialog(
+            onDismissRequest = { renamingInvoice = null },
+            title = { Text("Номер рахунку") },
+            text = {
+                androidx.compose.material3.OutlinedTextField(
+                    value = numberInput,
+                    onValueChange = { numberInput = it },
+                    label = { Text("Номер") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val newNumber = numberInput.trim()
+                        if (newNumber.isBlank()) return@Button
+                        renamingInvoice = null
+                        scope.launch {
+                            try {
+                                val oldPath = com.printbusinesskmp.desktop.platform.invoiceFilePath(invoice)
+                                val renamed = ApiClient.updateInvoiceNumber(invoice.id, newNumber)
+                                withContext(Dispatchers.IO) { java.nio.file.Files.deleteIfExists(oldPath) }
+                                val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(renamed)
+                                invoices = ApiClient.getInvoicesByOrderId(order.id)
+                                info = "Номер змінено. PDF збережено: $saved"
+                            } catch (e: Exception) {
+                                error = e.message ?: "Помилка"
+                            }
+                        }
+                    }
+                ) {
+                    Text("Зберегти")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { renamingInvoice = null }) {
                     Text("Скасувати")
                 }
             }

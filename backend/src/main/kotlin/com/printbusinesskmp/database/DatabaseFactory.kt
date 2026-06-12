@@ -1,6 +1,7 @@
 package com.printbusinesskmp.database
 
 import com.printbusinesskmp.database.tables.AllowedEmailsTable
+import com.printbusinesskmp.database.tables.AppSettingsTable
 import com.printbusinesskmp.database.tables.BusinessProfilesTable
 import com.printbusinesskmp.database.tables.ClientsTable
 import com.printbusinesskmp.database.tables.InvoiceLinesTable
@@ -67,7 +68,8 @@ object DatabaseFactory {
                 InvoiceLinesTable,
                 LayoutsTable,
                 AllowedEmailsTable,
-                SavedItemsTable
+                SavedItemsTable,
+                AppSettingsTable
             )
         }
     }

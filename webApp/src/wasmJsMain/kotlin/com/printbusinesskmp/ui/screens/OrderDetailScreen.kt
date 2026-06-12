@@ -181,7 +181,7 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
                 current.items.forEach { item ->
                     Card(colors = CardDefaults.cardColors(containerColor = AppColors.CardItemBg)) {
                         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("${item.serviceType.labelUa()} / ${item.productType.labelUa()}", fontWeight = FontWeight.SemiBold)
+                            Text(item.name?.takeIf { it.isNotBlank() } ?: "${item.serviceType.labelUa()} / ${item.productType.labelUa()}", fontWeight = FontWeight.SemiBold)
                             Text("К-сть: ${item.quantity}, метри: ${FormatUtils.formatDecimal(item.usedMeters)}", fontSize = 13.sp)
                             Text("Собівартість: ${FormatUtils.formatCurrency(item.cost)}", fontSize = 13.sp)
                             Text("Ціна: ${FormatUtils.formatCurrency(item.price)}", fontSize = 13.sp)
