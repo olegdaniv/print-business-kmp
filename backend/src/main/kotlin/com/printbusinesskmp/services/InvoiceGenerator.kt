@@ -10,6 +10,7 @@ import com.itextpdf.kernel.font.PdfFontFactory.EmbeddingStrategy
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.layout.Document
+import com.itextpdf.layout.borders.Border
 import com.itextpdf.layout.borders.SolidBorder
 import com.itextpdf.layout.element.Cell
 import com.itextpdf.layout.element.Paragraph
@@ -56,7 +57,7 @@ class InvoiceGenerator {
         document.add(Paragraph("\n").setFontSize(3f))
 
         // ── Parties table ────────────────────────────────────────────────────────
-        val parties = Table(floatArrayOf(1f, 1f)).setWidth(UnitValue.createPercentValue(100f))
+        val parties = Table(floatArrayOf(1f, 0.5f, 1f)).setWidth(UnitValue.createPercentValue(100f))
 
         val sellerBlock = buildString {
             appendLine("Постачальник:")
@@ -84,8 +85,9 @@ class InvoiceGenerator {
             append("Замовлення: ${invoice.orderRef}")
         }
 
-        parties.addCell(Cell().add(Paragraph(sellerBlock).setFont(font).setFontSize(9f)).setPadding(6f))
-        parties.addCell(Cell().add(Paragraph(clientBlock).setFont(font).setFontSize(9f)).setPadding(6f))
+        parties.addCell(Cell().add(Paragraph(sellerBlock).setFont(font).setFontSize(9f)).setPadding(10f))
+        parties.addCell(Cell().setBorder(Border.NO_BORDER))
+        parties.addCell(Cell().add(Paragraph(clientBlock).setFont(font).setFontSize(9f)).setPadding(10f))
         document.add(parties)
 
         document.add(Paragraph("\n").setFontSize(3f))
@@ -162,12 +164,12 @@ class InvoiceGenerator {
         document.add(Paragraph("\n").setFontSize(3f))
 
         // ── Footer ───────────────────────────────────────────────────────────────
-        invoice.validUntil?.let { until ->
-            document.add(
-                Paragraph("Рахунок дійсний до сплати до: ${formatShortDate(until)}")
-                    .setFont(font).setFontSize(10f)
-            )
-        }
+//        invoice.validUntil?.let { until ->
+//            document.add(
+//                Paragraph("Рахунок дійсний до сплати до: ${formatShortDate(until)}")
+//                    .setFont(font).setFontSize(10f)
+//            )
+//        }
 
         document.add(Paragraph("\n").setFontSize(3f))
 
@@ -211,7 +213,7 @@ class InvoiceGenerator {
             if (!f.exists()) continue
             runCatching {
                 return PdfFontFactory.createFont(f.absolutePath, PdfEncodings.IDENTITY_H, EmbeddingStrategy.PREFER_EMBEDDED)
-            }.getOrNull()?.let { return it }
+            }.getOrNull()
         }
 
         return PdfFontFactory.createFont(StandardFonts.HELVETICA, PdfEncodings.WINANSI, EmbeddingStrategy.PREFER_NOT_EMBEDDED)

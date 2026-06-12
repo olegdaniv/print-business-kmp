@@ -1,8 +1,8 @@
 package com.printbusinesskmp.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -199,12 +199,12 @@ private fun OrderListPanel(
             .background(MaterialTheme.colorScheme.surface)
     ) {
         // Header
-        Row(
+        FlowRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            itemVerticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Замовлення",
@@ -242,7 +242,7 @@ private fun OrderListPanel(
 
         Spacer(Modifier.height(8.dp))
 
-        // Status filter chips (scrollable: the list pane can be as narrow as 25%)
+        // Status filter chips (wrap to new lines: the list pane can be as narrow as 25%)
         val filterStatuses = listOf(
             OrderStatus.DRAFT,
             OrderStatus.IN_PRODUCTION,
@@ -251,20 +251,13 @@ private fun OrderListPanel(
             OrderStatus.CANCELLED
         )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            StatusFilterChips(
-                values = filterStatuses,
-                selected = statusFilter,
-                onSelect = onStatusFilterChange,
-                labelMapper = { it.labelUa() }
-            )
-        }
+        StatusFilterChips(
+            values = filterStatuses,
+            selected = statusFilter,
+            onSelect = onStatusFilterChange,
+            labelMapper = { it.labelUa() },
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
 
         Spacer(Modifier.height(8.dp))
 

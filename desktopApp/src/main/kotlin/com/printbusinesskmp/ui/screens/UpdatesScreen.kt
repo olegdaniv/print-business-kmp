@@ -1,8 +1,8 @@
 package com.printbusinesskmp.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
@@ -66,9 +66,9 @@ fun UpdatesScreen(
                     state.lastCheckedAt?.let(::formatTimestamp) ?: "Ще не перевірялося"
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    itemVerticalAlignment = Alignment.CenterVertically
                 ) {
                     Button(
                         onClick = onCheckForUpdates,
@@ -174,7 +174,7 @@ fun UpdatesScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(text = state.errorMessage, color = AppColors.Error)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = onDismissError) {
                             Text("Закрити")
                         }

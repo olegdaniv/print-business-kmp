@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -186,12 +187,12 @@ private fun ClientListPanel(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        Row(
+        FlowRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            itemVerticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Клієнти",
@@ -228,19 +229,13 @@ private fun ClientListPanel(
 
         Spacer(Modifier.height(8.dp))
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            StatusFilterChips(
-                values = ClientType.entries,
-                selected = typeFilter,
-                onSelect = onTypeFilterChange,
-                labelMapper = { if (it == ClientType.PERSON) "Фізособи" else "Компанії" }
-            )
-        }
+        StatusFilterChips(
+            values = ClientType.entries,
+            selected = typeFilter,
+            onSelect = onTypeFilterChange,
+            labelMapper = { if (it == ClientType.PERSON) "Фізособи" else "Компанії" },
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
 
         Spacer(Modifier.height(8.dp))
 
@@ -356,13 +351,14 @@ private fun ClientDetailPanel(
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
 
-    Column(
+    FlowRow(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // Header
         Row(

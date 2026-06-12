@@ -4,6 +4,7 @@ package com.printbusinesskmp.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -140,10 +141,10 @@ fun LayoutsScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> Unit) {
         .sortedByDescending { it.updatedAt }
 
     Column {
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            itemVerticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Макети",
@@ -438,7 +439,10 @@ fun LayoutsScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> Unit) {
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         OutlinedButton(onClick = {
                             choosePreviewImage { dataUrl ->
                                 editorPreviewUrl = dataUrl

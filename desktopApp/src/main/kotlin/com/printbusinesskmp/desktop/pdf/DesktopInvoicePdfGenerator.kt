@@ -46,7 +46,7 @@ object DesktopInvoicePdfGenerator {
         document.setFontColor(ink)
 
         // ── 1. Header: supplier (top-left) + recipient (top-right) ──────────────
-        val headerTable = Table(UnitValue.createPercentArray(floatArrayOf(1f, 1f)))
+        val headerTable = Table(UnitValue.createPercentArray(floatArrayOf(40f, 20f, 40f)))
             .setWidth(UnitValue.createPercentValue(100f))
 
         fun partyLabel(text: String) = Paragraph(text)
@@ -78,7 +78,7 @@ object DesktopInvoicePdfGenerator {
         if (bankLine.isNotBlank()) supplierCell.add(partyLine(bankLine))
         supplierCell.add(partyLine(invoice.seller.address))
 
-        val recipientCell = Cell().setBorder(Border.NO_BORDER).setPaddingLeft(14f)
+        val recipientCell = Cell().setBorder(Border.NO_BORDER)
         recipientCell.add(partyLabel("ОДЕРЖУВАЧ"))
         recipientCell.add(partyName(invoice.client.name))
         if (invoice.client.phone.isNotBlank()) recipientCell.add(partyLine("тел. ${invoice.client.phone}"))
@@ -87,6 +87,7 @@ object DesktopInvoicePdfGenerator {
         recipientCell.add(partyLine("Платник: ${invoice.payer}"))
 
         headerTable.addCell(supplierCell)
+        headerTable.addCell(Cell().setBorder(Border.NO_BORDER))
         headerTable.addCell(recipientCell)
         document.add(headerTable)
 
@@ -212,13 +213,6 @@ object DesktopInvoicePdfGenerator {
         )
 
         val validUntilCell = Cell().setBorder(Border.NO_BORDER)
-        invoice.validUntil?.let {
-            validUntilCell.add(
-                Paragraph("Рахунок дійсний до сплати до ${formatShortDate(it)}")
-                    .setFont(font).setFontSize(9f).setFontColor(muted)
-                    .setTextAlignment(TextAlignment.RIGHT)
-            )
-        }
 
         footerTable.addCell(signatureCell)
         footerTable.addCell(validUntilCell)

@@ -3,6 +3,7 @@
 package com.printbusinesskmp.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -85,10 +86,10 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
     LaunchedEffect(orderId) { reload() }
 
     Column {
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            itemVerticalAlignment = Alignment.CenterVertically
         ) {
             Text("Замовлення #${orderId.take(8)}", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = AppColors.DarkSlate)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -7,10 +7,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -149,11 +148,12 @@ fun <T> StatusFilterChips(
     values: List<T>,
     selected: T?,
     onSelect: (T?) -> Unit,
-    labelMapper: (T) -> String
+    labelMapper: (T) -> String,
+    modifier: Modifier = Modifier
 ) {
-    Row(
+    FlowRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         FilterChip(
             selected = selected == null,
@@ -193,7 +193,10 @@ fun StatCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(10.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        FlowRow(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodySmall,
@@ -202,8 +205,7 @@ fun StatCard(
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineMedium,
-                color = valueColor,
-                modifier = Modifier.padding(top = 4.dp)
+                color = valueColor
             )
         }
     }

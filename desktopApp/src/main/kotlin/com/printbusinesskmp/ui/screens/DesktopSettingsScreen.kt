@@ -1,8 +1,8 @@
 package com.printbusinesskmp.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
@@ -68,7 +68,10 @@ fun DesktopSettingsScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Button(onClick = {
                         val chosen = chooseDirectory("Оберіть папку для інвойсів")
                         if (chosen != null) {
@@ -134,9 +137,10 @@ private fun InvoiceNumberCard() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Row(
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                itemVerticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedTextField(
                     value = templateInput,

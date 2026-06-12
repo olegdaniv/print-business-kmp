@@ -2,6 +2,7 @@ package com.printbusinesskmp.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -118,10 +119,10 @@ fun InvoiceScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> Unit) {
 
     Box(modifier = Modifier.fillMaxSize().padding(24.dp)) {
         Column {
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                itemVerticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Рахунки",
@@ -306,7 +307,7 @@ private fun InvoiceRow(
             color = AppColors.MediumGray,
             fontSize = 12.sp
         )
-        Row(modifier = Modifier.weight(2.5f), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
+        FlowRow(modifier = Modifier.weight(2.5f), horizontalArrangement = Arrangement.spacedBy(2.dp), itemVerticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onView, modifier = Modifier.size(36.dp)) {
                 Icon(Icons.Default.Visibility, contentDescription = "Переглянути", tint = DesktopColors.railSelected, modifier = Modifier.size(18.dp))
             }
@@ -616,10 +617,11 @@ private fun InvoiceFormDialog(
 
                 // ── Actions ─────────────────────────────────────────────────────
                 HorizontalDivider()
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically
                 ) {
                     if (validationError != null) {
                         Text(validationError, color = AppColors.Error, fontSize = 12.sp)
