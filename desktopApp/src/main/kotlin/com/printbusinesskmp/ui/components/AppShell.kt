@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -78,11 +77,12 @@ private val mainDestinations = listOf(
         icon = Icons.Default.People,
         screen = Screen.Clients,
         matchScreens = { it is Screen.Clients || it is Screen.ClientForm }),
-    NavDestination(
-        label = "Рахунки",
-        icon = Icons.Default.Receipt,
-        screen = Screen.Invoices,
-        matchScreens = { it is Screen.Invoices }),
+    // Тимчасово приховано — рахунки генеруються з картки замовлення
+    // NavDestination(
+    //     label = "Рахунки",
+    //     icon = Icons.Default.Receipt,
+    //     screen = Screen.Invoices,
+    //     matchScreens = { it is Screen.Invoices }),
     NavDestination(
         label = "Профіль",
         icon = Icons.Default.Business,

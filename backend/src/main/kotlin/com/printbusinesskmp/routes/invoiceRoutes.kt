@@ -5,6 +5,7 @@ import com.printbusinesskmp.models.InvoiceClientSnapshot
 import com.printbusinesskmp.models.InvoiceCreateRequest
 import com.printbusinesskmp.models.InvoiceLine
 import com.printbusinesskmp.models.InvoiceSellerSnapshot
+import com.printbusinesskmp.models.OrderItem
 import com.printbusinesskmp.models.ProductType
 import com.printbusinesskmp.models.ServiceType
 import com.printbusinesskmp.repository.BusinessProfileRepository
@@ -236,8 +237,9 @@ fun Route.configureInvoiceRoutes() {
                         val unitPrice = if (item.quantity > 0) lineTotal / item.quantity else lineTotal
                         InvoiceLine(
                             lineNumber = index + 1,
-                            description = buildDescription(item.serviceType, item.productType, item.usedMeters),
+                            description = buildDescription(item),
                             quantity = item.quantity,
+                            unit = item.unit.trimEnd('.'),
                             usedMeters = item.usedMeters,
                             unitPrice = unitPrice,
                             lineTotal = lineTotal
@@ -363,15 +365,15 @@ fun Route.configureInvoiceRoutes() {
     }
 }
 
-private fun buildDescription(serviceType: ServiceType, productType: ProductType, usedMeters: Double): String {
-    val serviceText = when (serviceType) {
+private fun buildDescription(item: OrderItem): String {
+    val serviceText = when (item.serviceType) {
         ServiceType.DTF -> "DTF друк"
         ServiceType.UV_DTF -> "UV DTF друк"
         ServiceType.DTF_TRANSFER_ONLY -> "DTF трансфер"
         ServiceType.DESIGN_ONLY -> "Підготовка дизайну"
     }
 
-    val productText = when (productType) {
+    val productText = item.name?.takeIf { it.isNotBlank() } ?: when (item.productType) {
         ProductType.T_SHIRT -> "футболка"
         ProductType.HOODIE -> "худі"
         ProductType.SWEATSHIRT -> "світшот"
@@ -394,5 +396,8 @@ private fun buildDescription(serviceType: ServiceType, productType: ProductType,
         ProductType.OTHER -> "інший виріб"
     }
 
-    return "$serviceText на $productText (${String.format("%.2f", usedMeters)} м)"
+    val metersSuffix = item.usedMeters.takeIf { it > 0.0 }
+        ?.let { " (${String.format("%.2f", it)} м)" }
+        .orEmpty()
+    return "$serviceText на $productText$metersSuffix"
 }

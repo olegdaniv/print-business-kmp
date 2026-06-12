@@ -28,7 +28,22 @@
       "Bash(./gradlew :desktopApp:processResources)",
       "Bash(./gradlew :desktopApp:compileKotlin :backend:compileKotlin)",
       "Bash(./gradlew :shared:compileKotlinWasmJs)",
-      "Bash(./gradlew :desktopApp:compileKotlin -q)"
+      "Bash(./gradlew :desktopApp:compileKotlin -q)",
+      "Bash(git ls-remote *)",
+      "Bash(gh release *)",
+      "Bash(cd *)",
+      "Bash(actionlint .github/workflows/release-windows.yml)",
+      "Bash(ruby -ryaml -e \"YAML.load_file\\('.github/workflows/release-windows.yml'\\); puts 'YAML OK \\(ruby\\)'\")",
+      "Bash(gh auth *)",
+      "Bash(git rm *)",
+      "Bash(git check-ignore *)",
+      "mcp__ide__getDiagnostics",
+      "Bash(./gradlew :desktopApp:compileKotlin --console=plain -q)",
+      "Bash(./gradlew :desktopApp:compileKotlin --console=plain)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}  time=%{time_total}s\\\\n\" --max-time 90 https://print-business-kmp.onrender.com/health)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" --max-time 90 https://print-business-kmp.onrender.com/api/clients)",
+      "Bash(./gradlew :backend:compileKotlin :desktopApp:compileKotlin -q)"
     ]
   },
   "enableAllProjectMcpServers": true,

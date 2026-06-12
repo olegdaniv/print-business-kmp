@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -156,7 +157,18 @@ fun DesktopOrdersScreen(onNavigate: (Screen) -> Unit) {
                     client = clientById[selectedOrder.clientId],
                     onEdit = { onNavigate(Screen.OrderForm(selectedOrder.id)) },
                     onNavigate = onNavigate,
-                    onOrderUpdated = { load() }
+                    onOrderUpdated = { load() },
+                    onDelete = {
+                        scope.launch {
+                            try {
+                                ApiClient.deleteOrder(selectedOrder.id)
+                                selectedOrderId = null
+                                load()
+                            } catch (e: Exception) {
+                                error = e.message
+                            }
+                        }
+                    }
                 )
             } else {
                 EmptyDetailPanel()
@@ -372,7 +384,8 @@ private fun OrderDetailPanel(
     client: Client?,
     onEdit: () -> Unit,
     onNavigate: (Screen) -> Unit,
-    onOrderUpdated: () -> Unit
+    onOrderUpdated: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     var invoices by remember(order.id) { mutableStateOf<List<com.printbusinesskmp.models.Invoice>>(emptyList()) }
@@ -380,6 +393,7 @@ private fun OrderDetailPanel(
     var processing by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    var confirmDelete by remember { mutableStateOf(false) }
 
     LaunchedEffect(order.id) {
         loadingInvoices = true
@@ -582,34 +596,36 @@ private fun OrderDetailPanel(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Рахунки", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Button(
-                        onClick = {
-                            processing = true
-                            scope.launch {
-                                try {
-                                    val inv = ApiClient.generateInvoice(order.id)
-                                    val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(inv)
-                                    invoices = ApiClient.getInvoicesByOrderId(order.id)
-                                    info = "Рахунок згенеровано: $saved"
-                                    onOrderUpdated()
-                                } catch (e: Exception) {
-                                    error = e.message ?: "Помилка"
-                                } finally {
-                                    processing = false
+                    if (!loadingInvoices && invoices.isEmpty()) {
+                        Button(
+                            onClick = {
+                                processing = true
+                                scope.launch {
+                                    try {
+                                        val inv = ApiClient.generateInvoice(order.id)
+                                        val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(inv)
+                                        invoices = ApiClient.getInvoicesByOrderId(order.id)
+                                        info = "Рахунок згенеровано: $saved"
+                                        onOrderUpdated()
+                                    } catch (e: Exception) {
+                                        error = e.message ?: "Помилка"
+                                    } finally {
+                                        processing = false
+                                    }
                                 }
-                            }
-                        },
-                        enabled = !processing,
-                        modifier = Modifier.height(32.dp),
-                        contentPadding = ButtonDefaults.ContentPadding.let {
-                            androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = DesktopColors.success)
-                    ) {
-                        Icon(Icons.Default.Receipt, null, modifier = Modifier.size(14.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Згенерувати", fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimary)
+                            },
+                            enabled = !processing,
+                            modifier = Modifier.height(32.dp),
+                            contentPadding = ButtonDefaults.ContentPadding.let {
+                                androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = DesktopColors.success)
+                        ) {
+                            Icon(Icons.Default.Receipt, null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Згенерувати", fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimary)
+                        }
                     }
                 }
 
@@ -677,6 +693,56 @@ private fun OrderDetailPanel(
         error?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
+
+        // Delete
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("Видалити замовлення", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
+                    Text("Ця дія незворотна", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Button(
+                    onClick = { confirmDelete = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Видалити", color = MaterialTheme.colorScheme.onError)
+                }
+            }
+        }
+    }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Видалити замовлення") },
+            text = { Text("Підтвердьте видалення замовлення #${order.id.take(8)}. Цю дію неможливо скасувати.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        confirmDelete = false
+                        onDelete()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Видалити", color = MaterialTheme.colorScheme.onError)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) {
+                    Text("Скасувати")
+                }
+            }
+        )
     }
 }
 
