@@ -1,8 +1,8 @@
 {
-  "version": "1.0.12",
-  "notes": "feat: redesign PDF invoices and add order deletion\r\n\r\n- Overhaul `DesktopInvoicePdfGenerator` with a modern slate-themed layout, improved typography, and zebra-striped tables\r\n- Implement order deletion with a confirmation dialog in `DesktopOrdersScreen`\r\n- Update backend invoice generation to include item names in descriptions and map unit types from order items\r\n- Hide the global \"Invoices\" navigation destination, moving invoice management into the order details panel\r\n- Only show the \"Generate Invoice\" button in the order details if no invoices currently exist\r\n- Expand allowed shell commands in `.claude/settings.local.json` for enhanced CI/CD and debugging tasks",
   "windows": {
-    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.12/PrintBusiness-1.0.12.msi",
-    "sha256": "526e63e02a43f96bc2f28579bb720e554f28c233873503653d20f4d27d9d682b"
-  }
+    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.13/PrintBusiness-1.0.13.msi",
+    "sha256": "5ea6bc7523b615af5c850800c5a4f3e1f8e81323c8a64a93b7473380fc7e5906"
+  },
+  "notes": "feat(desktop): adaptive FlowRow layouts and wider invoice header gap\r\n\r\n- Replace fixed Rows (filter chips, button groups, screen headers) with\r\n  FlowRow so controls wrap instead of clipping on narrow panes\r\n- Drop the horizontal scroll around order status chips that prevented\r\n  wrapping\r\n- Add modifier parameter to StatusFilterChips and StatCard FlowRow content\r\n- Spread supplier/recipient blocks to page corners in PDF invoices with\r\n  a 20% gap between columns (desktop and backend generators)\r\n\r\nCo-Authored-By: Claude Fable 5 <noreply@anthropic.com>",
+  "version": "1.0.13"
 }
