@@ -293,7 +293,7 @@ fun DesktopDashboardScreen(
                             )
                         }
                         HoverableRow(
-                            onClick = { onNavigate(Screen.Orders) }
+                            onClick = { onNavigate(Screen.OrderDetail(order.id)) }
                         ) {
                             Row(
                                 modifier = Modifier

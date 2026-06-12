@@ -17,7 +17,8 @@ object AppSettingsStore {
 
     @Serializable
     private data class PersistedSettings(
-        val invoicesDir: String? = null
+        val invoicesDir: String? = null,
+        val darkTheme: Boolean? = null
     )
 
     @Volatile
@@ -58,5 +59,12 @@ object AppSettingsStore {
             val normalized = value.toAbsolutePath().normalize()
             runCatching { Files.createDirectories(normalized) }
             persist(load().copy(invoicesDir = normalized.toString()))
+        }
+
+    /** UI theme choice; persists across restarts. Defaults to light. */
+    var isDarkTheme: Boolean
+        get() = load().darkTheme ?: false
+        set(value) {
+            persist(load().copy(darkTheme = value))
         }
 }

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -110,32 +111,21 @@ fun AppShell(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
             .onPreviewKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown && event.isCtrlPressed) {
-                    when (event.key) {
-                        Key.One -> {
-                            onNavigate(Screen.Dashboard); true
+                    // Digits follow the visible rail order so the Ctrl+N hints stay truthful
+                    val digitIndex = when (event.key) {
+                        Key.One -> 0
+                        Key.Two -> 1
+                        Key.Three -> 2
+                        Key.Four -> 3
+                        Key.Five -> 4
+                        else -> null
+                    }
+                    when {
+                        digitIndex != null && digitIndex < mainDestinations.size -> {
+                            onNavigate(mainDestinations[digitIndex].screen); true
                         }
 
-                        Key.Two -> {
-                            onNavigate(Screen.Orders); true
-                        }
-
-                        Key.Three -> {
-                            onNavigate(Screen.Clients); true
-                        }
-
-                        Key.Four -> {
-                            onNavigate(Screen.Invoices); true
-                        }
-
-                        Key.Five -> {
-                            onNavigate(Screen.BusinessProfile); true
-                        }
-
-                        Key.Six -> {
-                            onNavigate(Screen.Layouts); true
-                        }
-
-                        Key.N -> {
+                        event.key == Key.N -> {
                             onNavigate(Screen.OrderForm(null)); true
                         }
 
@@ -218,7 +208,7 @@ private fun NavigationRail(
             // Update indicator
             if (updateAvailable || currentScreen is Screen.Updates) {
                 RailItem(
-                    icon = Icons.Default.Settings,
+                    icon = Icons.Default.SystemUpdate,
                     label = "Оновлення",
                     selected = currentScreen is Screen.Updates,
                     onClick = { onNavigate(Screen.Updates) },

@@ -38,7 +38,17 @@ import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.models.OrderStatus
 import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.ui.theme.DesktopColors
+import com.printbusinesskmp.ui.theme.LocalIsDarkTheme
 import com.printbusinesskmp.utils.labelUa
+
+/**
+ * The palette in [DesktopColors.Status] is designed for light surfaces.
+ * In dark theme we invert the pair: the deep "text" hue becomes a translucent
+ * badge background and the pastel "bg" hue becomes readable light text.
+ */
+@Composable
+private fun adaptBadgeColors(lightBg: Color, lightText: Color): Pair<Color, Color> =
+    if (LocalIsDarkTheme.current) lightText.copy(alpha = 0.45f) to lightBg else lightBg to lightText
 
 @Composable
 fun StatusBadge(status: OrderStatus) {
@@ -61,7 +71,7 @@ fun StatusBadge(status: OrderStatus) {
             DesktopColors.Status.completedBg to DesktopColors.Status.completedText
         OrderStatus.CANCELLED ->
             DesktopColors.Status.cancelledBg to DesktopColors.Status.cancelledText
-    }
+    }.let { (lightBg, lightText) -> adaptBadgeColors(lightBg, lightText) }
 
     Box(
         modifier = Modifier
@@ -84,7 +94,7 @@ fun PaymentBadge(status: PaymentStatus) {
         PaymentStatus.UNPAID -> DesktopColors.Status.cancelledBg to DesktopColors.Status.cancelledText
         PaymentStatus.PARTIAL -> DesktopColors.Status.pendingBg to DesktopColors.Status.pendingText
         PaymentStatus.PAID -> DesktopColors.Status.completedBg to DesktopColors.Status.completedText
-    }
+    }.let { (lightBg, lightText) -> adaptBadgeColors(lightBg, lightText) }
 
     Box(
         modifier = Modifier

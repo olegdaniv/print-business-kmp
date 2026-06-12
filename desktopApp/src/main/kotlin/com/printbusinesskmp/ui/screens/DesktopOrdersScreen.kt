@@ -1,6 +1,7 @@
 package com.printbusinesskmp.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,7 +68,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun DesktopOrdersScreen(onNavigate: (Screen) -> Unit) {
+fun DesktopOrdersScreen(onNavigate: (Screen) -> Unit, initialOrderId: String? = null) {
     val scope = rememberCoroutineScope()
 
     var orders by remember { mutableStateOf<List<Order>>(emptyList()) }
@@ -76,7 +77,7 @@ fun DesktopOrdersScreen(onNavigate: (Screen) -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var search by remember { mutableStateOf("") }
     var statusFilter by remember { mutableStateOf<OrderStatus?>(null) }
-    var selectedOrderId by remember { mutableStateOf<String?>(null) }
+    var selectedOrderId by remember { mutableStateOf(initialOrderId) }
 
     fun load() {
         scope.launch {
@@ -241,8 +242,7 @@ private fun OrderListPanel(
 
         Spacer(Modifier.height(8.dp))
 
-        // Status filter chips
-        @Suppress("DEPRECATION")
+        // Status filter chips (scrollable: the list pane can be as narrow as 25%)
         val filterStatuses = listOf(
             OrderStatus.DRAFT,
             OrderStatus.IN_PRODUCTION,
@@ -254,22 +254,23 @@ private fun OrderListPanel(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-//            StatusFilterChips(
-//                values = filterStatuses,
-//                selected = statusFilter,
-//                onSelect = onStatusFilterChange,
-//                labelMapper = { it.labelUa() }
-//            )
+            StatusFilterChips(
+                values = filterStatuses,
+                selected = statusFilter,
+                onSelect = onStatusFilterChange,
+                labelMapper = { it.labelUa() }
+            )
         }
 
         Spacer(Modifier.height(8.dp))
 
         // Count
         Text(
-            text = "${orders.size} замовлень",
+            text = FormatUtils.countUa(orders.size, "замовлення", "замовлення", "замовлень"),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)

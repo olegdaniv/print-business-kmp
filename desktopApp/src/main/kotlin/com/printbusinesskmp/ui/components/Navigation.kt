@@ -39,8 +39,8 @@ fun NavigationContent(
         Screen.Orders -> DesktopOrdersScreen(onNavigate)
         is Screen.OrderForm -> OrderFormScreen(currentScreen.orderId, onNavigate)
         is Screen.OrderDetail -> {
-            // Redirect to Orders screen — detail is now inline in the split pane
-            DesktopOrdersScreen(onNavigate)
+            // Detail is inline in the split pane — open Orders with this order selected
+            DesktopOrdersScreen(onNavigate, initialOrderId = currentScreen.orderId)
         }
         Screen.Layouts -> DesktopLayoutsPlaceholder(onNavigate)
         Screen.Invoices -> InvoiceScreen(onNavigate)

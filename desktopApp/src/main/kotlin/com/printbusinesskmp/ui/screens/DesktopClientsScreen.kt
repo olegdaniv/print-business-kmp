@@ -245,7 +245,7 @@ private fun ClientListPanel(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "${clients.size} клієнтів",
+            text = FormatUtils.countUa(clients.size, "клієнт", "клієнти", "клієнтів"),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -335,7 +335,7 @@ private fun ClientListItem(
             }
             if (client.orderCount > 0) {
                 Text(
-                    text = "${client.orderCount} замовлень",
+                    text = FormatUtils.countUa(client.orderCount, "замовлення", "замовлення", "замовлень"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )

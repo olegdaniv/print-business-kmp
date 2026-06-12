@@ -55,6 +55,10 @@ object FormatUtils {
 
     private fun String.capitalizeFirst() = if (isEmpty()) this else this[0].uppercaseChar() + substring(1)
 
+    /** "1 замовлення", "2 замовлення", "5 замовлень" — count with the correct Ukrainian form. */
+    fun countUa(n: Int, one: String, few: String, many: String): String =
+        "$n ${declineUkrainian(n.toLong(), one, few, many)}"
+
     private fun declineUkrainian(n: Long, one: String, few: String, many: String): String {
         val lastTwo = (n % 100).toInt()
         val lastOne = (n % 10).toInt()

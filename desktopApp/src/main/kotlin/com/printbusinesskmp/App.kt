@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.printbusinesskmp.desktop.platform.AppSettingsStore
 import com.printbusinesskmp.desktop.update.UpdateService
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.ui.components.AppShell
@@ -18,7 +19,7 @@ fun App() {
     // Local-first desktop: data lives in a local H2 database served by the
     // embedded in-process backend. No sign-in — the app opens straight in.
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Orders) }
-    var isDarkTheme by remember { mutableStateOf(false) }
+    var isDarkTheme by remember { mutableStateOf(AppSettingsStore.isDarkTheme) }
     val updateService = remember { UpdateService() }
     val updateState by updateService.uiState.collectAsState()
 
@@ -31,7 +32,10 @@ fun App() {
             currentScreen = currentScreen,
             onNavigate = { screen -> currentScreen = screen },
             isDarkTheme = isDarkTheme,
-            onToggleTheme = { isDarkTheme = !isDarkTheme },
+            onToggleTheme = {
+                isDarkTheme = !isDarkTheme
+                AppSettingsStore.isDarkTheme = isDarkTheme
+            },
             updateAvailable = updateState.updateAvailable
         ) {
             NavigationContent(
