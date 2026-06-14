@@ -15,6 +15,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 # Serialize releases so two quick pushes don't race for the same version number.
 concurrency:
@@ -198,14 +200,17 @@ jobs:
           body: ${{ steps.feed.outputs.release_notes }}
           files: ${{ steps.feed.outputs.msi_path }}
 
-      - name: Publish updates to gh-pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Disable Jekyll on the feed site
+        shell: pwsh
+        run: New-Item -ItemType File -Force -Path "dist/.nojekyll" | Out-Null
+
+      - name: Upload feed artifact for Pages
+        uses: actions/upload-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: ./dist
-          keep_files: true
-          enable_jekyll: false
+          name: pages-dist
+          path: dist
+          include-hidden-files: true
+          retention-days: 1
 
       - name: Job summary
         shell: pwsh
@@ -216,3 +221,33 @@ jobs:
           MSI URL: https://github.com/${{ github.repository }}/releases/download/${{ steps.meta.outputs.tag }}/${{ steps.meta.outputs.msi_name }}
           SHA256: ${{ steps.feed.outputs.sha256 }}
           "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
+
+  # Publishes the update feed to GitHub Pages. configure-pages with
+  # enablement:true turns Pages on automatically the first time, so no manual
+  # repo-settings step is ever required.
+  deploy-pages:
+    needs: release-windows
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download feed artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pages-dist
+          path: dist
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
