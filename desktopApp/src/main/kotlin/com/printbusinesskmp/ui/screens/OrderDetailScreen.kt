@@ -43,6 +43,7 @@ import com.printbusinesskmp.models.OrderStatus
 import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
+import com.printbusinesskmp.ui.components.LabeledDropdown
 import com.printbusinesskmp.utils.FormatUtils
 import com.printbusinesskmp.utils.labelUa
 import kotlinx.coroutines.launch
@@ -348,26 +349,12 @@ private fun <T> EnumField(
     textMapper: (T) -> String = { value -> value.toString() },
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Column(modifier = modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("$label: ${textMapper(selected)}")
-            TextButton(onClick = { expanded = true }) {
-                Text("Змінити")
-            }
-        }
-
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            values.forEach { value ->
-                DropdownMenuItem(
-                    text = { Text(textMapper(value)) },
-                    onClick = {
-                        onSelect(value)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
+    LabeledDropdown(
+        label = label,
+        selectedText = textMapper(selected),
+        options = values,
+        optionLabel = textMapper,
+        onSelect = onSelect,
+        modifier = modifier
+    )
 }

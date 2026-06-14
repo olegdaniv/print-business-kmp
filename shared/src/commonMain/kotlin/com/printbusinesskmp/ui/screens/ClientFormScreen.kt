@@ -15,8 +15,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
@@ -29,7 +27,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -43,7 +40,10 @@ import com.printbusinesskmp.models.ClientUpdateRequest
 import com.printbusinesskmp.models.DeliveryType
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
+import com.printbusinesskmp.ui.components.EdrpouField
 import com.printbusinesskmp.ui.components.IbanField
+import com.printbusinesskmp.ui.components.IpnField
+import com.printbusinesskmp.ui.components.LabeledDropdown
 import com.printbusinesskmp.ui.components.PhoneField
 import kotlinx.coroutines.launch
 
@@ -86,8 +86,7 @@ fun ClientFormScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var phoneError by remember { mutableStateOf<String?>(null) }
     var ibanError by remember { mutableStateOf<String?>(null) }
-    var typeExpanded by remember { mutableStateOf(false) }
-    var deliveryTypeExpanded by remember { mutableStateOf(false) }
+    var taxIdError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(clientId) {
         if (clientId != null) {
@@ -98,7 +97,7 @@ fun ClientFormScreen(
                 contactName = client.contactName.orEmpty()
                 email = client.email.orEmpty()
                 phone = client.phone.filter { it.isDigit() }.take(10)
-                taxId = client.taxId.orEmpty()
+                taxId = client.taxId.orEmpty().filter { it.isDigit() }.take(10)
                 address = client.address
                 iban = client.iban.orEmpty().replace(" ", "").uppercase().take(29)
                 bankName = client.bankName.orEmpty()
@@ -153,25 +152,17 @@ fun ClientFormScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // ── Client type ───────────────────────────────────────────
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Тип: ${if (type == ClientType.PERSON) "Фізособа" else "Компанія"}")
-                    TextButton(onClick = { typeExpanded = true }) {
-                        Text("Змінити")
+                LabeledDropdown(
+                    label = "Тип клієнта",
+                    selectedText = if (type == ClientType.PERSON) "Фізособа" else "Компанія",
+                    options = listOf(ClientType.PERSON, ClientType.COMPANY),
+                    optionLabel = { if (it == ClientType.PERSON) "Фізособа" else "Компанія" },
+                    onSelect = { selected ->
+                        type = selected
+                        taxId = if (selected == ClientType.COMPANY) taxId.take(8) else taxId.take(10)
+                        taxIdError = null
                     }
-                    DropdownMenu(
-                        expanded = typeExpanded,
-                        onDismissRequest = { typeExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Фізособа") },
-                            onClick = { type = ClientType.PERSON; typeExpanded = false }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Компанія") },
-                            onClick = { type = ClientType.COMPANY; typeExpanded = false }
-                        )
-                    }
-                }
+                )
 
                 OutlinedTextField(
                     value = displayName,
@@ -199,12 +190,25 @@ fun ClientFormScreen(
                     errorMessage = phoneError,
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = taxId,
-                    onValueChange = { taxId = it },
-                    label = { Text("ЄДРПОУ / РНОКПП") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (type == ClientType.COMPANY) {
+                    EdrpouField(
+                        value = taxId,
+                        onValueChange = { taxId = it; taxIdError = null },
+                        label = "ЄДРПОУ",
+                        isError = taxIdError != null,
+                        errorMessage = taxIdError,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    IpnField(
+                        value = taxId,
+                        onValueChange = { taxId = it; taxIdError = null },
+                        label = "РНОКПП",
+                        isError = taxIdError != null,
+                        errorMessage = taxIdError,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 OutlinedTextField(
                     value = address,
                     onValueChange = { address = it },
@@ -244,36 +248,20 @@ fun ClientFormScreen(
                     color = AppColors.DarkSlate.copy(alpha = 0.6f)
                 )
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Тип: ${deliveryType?.displayName() ?: "Не вказано"}",
-                        color = AppColors.DarkSlate
-                    )
-                    TextButton(onClick = { deliveryTypeExpanded = true }) {
-                        Text("Змінити")
-                    }
-                    DropdownMenu(
-                        expanded = deliveryTypeExpanded,
-                        onDismissRequest = { deliveryTypeExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Не вказано") },
-                            onClick = {
-                                deliveryType = null
-                                deliveryCity = ""; deliveryBranch = ""
-                                deliveryStreet = ""; deliveryBuilding = ""
-                                deliveryFreeAddress = ""
-                                deliveryTypeExpanded = false
-                            }
-                        )
-                        DeliveryType.entries.forEach { dt ->
-                            DropdownMenuItem(
-                                text = { Text(dt.displayName()) },
-                                onClick = { deliveryType = dt; deliveryTypeExpanded = false }
-                            )
+                LabeledDropdown(
+                    label = "Тип доставки",
+                    selectedText = deliveryType?.displayName() ?: "Не вказано",
+                    options = listOf<DeliveryType?>(null) + DeliveryType.entries,
+                    optionLabel = { it?.displayName() ?: "Не вказано" },
+                    onSelect = { dt ->
+                        deliveryType = dt
+                        if (dt == null) {
+                            deliveryCity = ""; deliveryBranch = ""
+                            deliveryStreet = ""; deliveryBuilding = ""
+                            deliveryFreeAddress = ""
                         }
                     }
-                }
+                )
 
                 when (deliveryType) {
                     DeliveryType.NOVA_POSHTA_BRANCH -> {
@@ -354,6 +342,15 @@ fun ClientFormScreen(
                             if (iban.isNotBlank() && (!iban.startsWith("UA") || iban.length != 29)) {
                                 ibanError = "Формат: UA + 27 цифр (29 символів)"
                                 valid = false
+                            }
+                            if (taxId.isNotBlank()) {
+                                if (type == ClientType.COMPANY && taxId.length != 8) {
+                                    taxIdError = "ЄДРПОУ: рівно 8 цифр"
+                                    valid = false
+                                } else if (type == ClientType.PERSON && taxId.length != 10) {
+                                    taxIdError = "РНОКПП: рівно 10 цифр"
+                                    valid = false
+                                }
                             }
                             if (!valid) return@Button
 

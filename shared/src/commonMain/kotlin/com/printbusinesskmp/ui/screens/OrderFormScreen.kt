@@ -53,6 +53,7 @@ import com.printbusinesskmp.models.SavedItemCreateRequest
 import com.printbusinesskmp.models.ServiceType
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
+import com.printbusinesskmp.ui.components.LabeledDropdown
 import com.printbusinesskmp.utils.FormatUtils
 import com.printbusinesskmp.utils.labelUa
 import kotlinx.coroutines.launch
@@ -512,28 +513,13 @@ private fun ClientSelector(
     selectedId: String?,
     onSelect: (String) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Клієнт: ${clients.find { it.id == selectedId }?.displayName ?: "-"}")
-            TextButton(onClick = { expanded = true }) {
-                Text("Обрати")
-            }
-        }
-
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            clients.forEach { client ->
-                DropdownMenuItem(
-                    text = { Text("${client.displayName} (${client.phone})") },
-                    onClick = {
-                        onSelect(client.id)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
+    LabeledDropdown(
+        label = "Клієнт",
+        selectedText = clients.find { it.id == selectedId }?.displayName ?: "Не обрано",
+        options = clients,
+        optionLabel = { "${it.displayName} (${it.phone})" },
+        onSelect = { onSelect(it.id) }
+    )
 }
 
 @Composable
@@ -545,26 +531,12 @@ private fun <T> EnumSelector(
     textMapper: (T) -> String,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Column(modifier = modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("$label: ${textMapper(selected)}")
-            TextButton(onClick = { expanded = true }) {
-                Text("Змінити")
-            }
-        }
-
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            values.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(textMapper(option)) },
-                    onClick = {
-                        onSelect(option)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
+    LabeledDropdown(
+        label = label,
+        selectedText = textMapper(selected),
+        options = values,
+        optionLabel = textMapper,
+        onSelect = onSelect,
+        modifier = modifier
+    )
 }

@@ -48,7 +48,17 @@
       "Bash(./gradlew :backend:compileKotlin -q)",
       "Bash(perl -pi -e 's/val number = invoiceRepository\\\\.nextInvoiceNumber\\\\\\(\\\\\\)/val number = com.printbusinesskmp.repository.InvoiceRepository.formatInvoiceNumber\\(nextInvoiceSeqWithOverride\\(\\)\\)/g' backend/src/main/kotlin/com/printbusinesskmp/routes/invoiceRoutes.kt)",
       "Bash(perl *)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(./gradlew :backend:jar :shared:jvmJar -q)",
+      "Bash(./gradlew :desktopApp:jar -q)",
+      "Bash(git -C /Users/od/AndroidStudioProjects/print-business-kmp tag --list)",
+      "Bash(git -C /Users/od/AndroidStudioProjects/print-business-kmp status --short)",
+      "Bash(git -C /Users/od/AndroidStudioProjects/print-business-kmp log --oneline -3)",
+      "Bash(git config *)",
+      "Bash(git credential *)",
+      "Bash(./gradlew :shared:compileKotlinJvm -q --console=plain)",
+      "Bash(./gradlew :desktopApp:help -q --console=plain)",
+      "Bash(./gradlew :desktopApp:compileKotlin -q --console=plain)"
     ]
   },
   "enableAllProjectMcpServers": true,

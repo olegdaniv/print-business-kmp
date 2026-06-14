@@ -8,13 +8,13 @@ enum class OrderStatus {
 DRAFT,
     PENDING_APPROVAL,
     APPROVED,
-    OUTSOURCE_ORDERED,
-    OUTSOURCE_RECEIVED,
     IN_PRODUCTION,
     QUALITY_CHECK,
     READY,
     SHIPPED,
     COMPLETED,
+    OUTSOURCE_ORDERED,
+    OUTSOURCE_RECEIVED,
     CANCELLED,
 
     // Backward compat — maps to DRAFT

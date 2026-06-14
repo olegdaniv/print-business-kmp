@@ -130,11 +130,12 @@ compose.desktop {
             vendor = appVendor
             description = appDescription
 
-            modules(
-                "java.net.http",
-                "jdk.crypto.ec",
-                "jdk.httpserver"
-            )
+            // The desktop app embeds a full backend stack (Netty, H2, HikariCP,
+            // Exposed) that starts in main() before any Compose code. Hand-listing
+            // every JDK module those libraries touch is fragile — a missing one
+            // makes the jpackage launcher fail with "Failed to launch JVM" on
+            // Windows. Bundle the full module set so the runtime is always complete.
+            includeAllModules = true
 
             windows {
                 menu = true
