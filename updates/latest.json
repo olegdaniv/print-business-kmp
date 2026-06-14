@@ -1,8 +1,8 @@
 {
+  "notes": "fix(desktop): bundle full JDK runtime; clearer dropdowns and client validation\r\n\r\n- Set includeAllModules so the jpackage Windows runtime always has the\r\n  modules the embedded backend (Netty/H2/HikariCP/Exposed) needs at startup,\r\n  fixing the recurring \"Failed to launch JVM\" error.\r\n- Add a shared LabeledDropdown component (outlined, accent-bordered, ▾ arrow)\r\n  and use it for the client type, delivery type, client/enum selectors on the\r\n  client and order screens so the controls read as tappable.\r\n- Validate ЄДРПОУ/РНОКПП on the client form (8 digits company / 10 person),\r\n  matching the ФОП profile checks.\r\n- Reorder OrderStatus enum so outsource states sit after the main flow.\r\n\r\nCo-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>",
+  "version": "1.0.14",
   "windows": {
-    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.13/PrintBusiness-1.0.13.msi",
-    "sha256": "5ea6bc7523b615af5c850800c5a4f3e1f8e81323c8a64a93b7473380fc7e5906"
-  },
-  "notes": "feat(desktop): adaptive FlowRow layouts and wider invoice header gap\r\n\r\n- Replace fixed Rows (filter chips, button groups, screen headers) with\r\n  FlowRow so controls wrap instead of clipping on narrow panes\r\n- Drop the horizontal scroll around order status chips that prevented\r\n  wrapping\r\n- Add modifier parameter to StatusFilterChips and StatCard FlowRow content\r\n- Spread supplier/recipient blocks to page corners in PDF invoices with\r\n  a 20% gap between columns (desktop and backend generators)\r\n\r\nCo-Authored-By: Claude Fable 5 <noreply@anthropic.com>",
-  "version": "1.0.13"
+    "sha256": "2d2e01b74726c26d7beef1e1d0f1b8cbfafc2ee72723f22e38aeacd9cfc1460a",
+    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.14/PrintBusiness-1.0.14.msi"
+  }
 }
