@@ -11,6 +11,13 @@ plugins {
 
 group = "com.printbusinesskmp"
 
+// Pin a vendor-neutral JDK 21 toolchain. Without this the Compose Desktop plugin
+// requests a JetBrains Runtime (vendor=JetBrains) toolchain, which CI cannot
+// download via foojay (HTTP 400). Any JDK 21 (JBR locally, Temurin on CI) matches.
+kotlin {
+    jvmToolchain(21)
+}
+
 val appName = "SouvenirPrint"
 val appVendor = "SouvenirPrint"
 val appDescription = "Souvenir printing management desktop application"
