@@ -43,6 +43,7 @@ data class InvoiceSellerSnapshot(
     val address: String,
     val iban: String,
     val bankName: String,
+    val bankEdrpou: String? = null,
     val taxPercent: Double,
     val taxNote: String? = null,
     val mfo: String? = null,

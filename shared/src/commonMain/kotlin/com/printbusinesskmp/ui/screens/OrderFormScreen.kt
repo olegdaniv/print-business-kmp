@@ -5,6 +5,7 @@ package com.printbusinesskmp.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -69,6 +70,22 @@ private fun lineTotal(row: LineRow): Double {
     val qty = row.quantity.toIntOrNull() ?: 0
     val price = row.unitPrice.toDoubleOrNull() ?: 0.0
     return qty * price
+}
+
+// Приймаємо і крапку, і кому як роздільник копійок; усе після нього — копійки.
+private fun sanitizePrice(input: String): String {
+    val sb = StringBuilder()
+    var separatorSeen = false
+    for (ch in input) {
+        when {
+            ch.isDigit() -> sb.append(ch)
+            (ch == '.' || ch == ',') && !separatorSeen -> {
+                separatorSeen = true
+                sb.append('.')
+            }
+        }
+    }
+    return sb.toString()
 }
 
 @Composable
@@ -151,9 +168,10 @@ fun OrderFormScreen(
             colors = CardDefaults.cardColors(containerColor = AppColors.White),
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
         ) {
-            Column(
+            FlowRow(
                 modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 ClientSelector(
                     clients = clients,
@@ -161,25 +179,19 @@ fun OrderFormScreen(
                     onSelect = { selectedClientId = it }
                 )
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    EnumSelector(
+                EnumSelector(
                         label = "Статус",
                         values = OrderStatus.entries,
                         selected = status,
                         onSelect = { status = it },
                         textMapper = { it.labelUa() },
-                        modifier = Modifier.weight(1f)
                     )
-                    EnumSelector(
+                EnumSelector(
                         label = "Оплата",
                         values = PaymentStatus.entries,
                         selected = paymentStatus,
                         onSelect = { paymentStatus = it },
                         textMapper = { it.labelUa() },
-                        modifier = Modifier.weight(1f)
                     )
                 }
 
@@ -189,7 +201,6 @@ fun OrderFormScreen(
                     label = { Text("Примітки") },
                     modifier = Modifier.fillMaxWidth()
                 )
-            }
         }
 
         Card(
@@ -482,7 +493,7 @@ private fun OrderLineRow(
 
         OutlinedTextField(
             value = row.unitPrice,
-            onValueChange = { onRowChange(row.copy(unitPrice = it)) },
+            onValueChange = { onRowChange(row.copy(unitPrice = sanitizePrice(it))) },
             label = { Text("Ціна") },
             modifier = Modifier.weight(1f),
             singleLine = true

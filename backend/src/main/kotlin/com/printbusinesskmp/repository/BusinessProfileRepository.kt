@@ -37,6 +37,7 @@ class BusinessProfileRepository {
                 it[address] = request.address.trim()
                 it[iban] = request.iban.replace(" ", "").uppercase()
                 it[bankName] = request.bankName?.trim().orEmpty()
+                it[bankEdrpou] = request.bankEdrpou?.filter { c -> c.isDigit() }?.takeIf { v -> v.isNotEmpty() }
                 it[mfo] = request.mfo?.filter { c -> c.isDigit() }?.takeIf { v -> v.isNotEmpty() }
                 it[taxNote] = request.taxNote?.trim()?.takeIf { v -> v.isNotEmpty() }
                 it[certificateNumber] = request.certificateNumber?.trim()?.takeIf { v -> v.isNotEmpty() }
@@ -59,6 +60,7 @@ class BusinessProfileRepository {
                 it[address] = request.address.trim()
                 it[iban] = request.iban.replace(" ", "").uppercase()
                 it[bankName] = request.bankName?.trim().orEmpty()
+                it[bankEdrpou] = request.bankEdrpou?.filter { c -> c.isDigit() }?.takeIf { v -> v.isNotEmpty() }
                 it[mfo] = request.mfo?.filter { c -> c.isDigit() }?.takeIf { v -> v.isNotEmpty() }
                 it[taxNote] = request.taxNote?.trim()?.takeIf { v -> v.isNotEmpty() }
                 it[certificateNumber] = request.certificateNumber?.trim()?.takeIf { v -> v.isNotEmpty() }
@@ -84,6 +86,7 @@ class BusinessProfileRepository {
             address = row[BusinessProfilesTable.address],
             iban = row[BusinessProfilesTable.iban],
             bankName = row[BusinessProfilesTable.bankName].takeIf { it.isNotEmpty() },
+            bankEdrpou = row[BusinessProfilesTable.bankEdrpou],
             mfo = row[BusinessProfilesTable.mfo],
             taxNote = row[BusinessProfilesTable.taxNote],
             certificateNumber = row[BusinessProfilesTable.certificateNumber],

@@ -329,11 +329,18 @@ private fun OrderListItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val itemsSummary = order.items.joinToString(", ") { item ->
+                    val itemName = item.name?.takeIf { it.isNotBlank() } ?: item.productType.labelUa()
+                    "$itemName ${item.quantity} ${item.unit}"
+                }.ifBlank { "#${order.id.take(8)}" }
                 Text(
-                    text = "#${order.id.take(8)}",
+                    text = itemsSummary,
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp)
                 )
                 Text(
                     text = FormatUtils.formatCurrency(order.totalPrice),
@@ -392,6 +399,8 @@ private fun OrderDetailPanel(
     var confirmDelete by remember { mutableStateOf(false) }
     var renamingInvoice by remember { mutableStateOf<com.printbusinesskmp.models.Invoice?>(null) }
     var numberInput by remember { mutableStateOf("") }
+    // Bumped after a delivery note is (re)generated so its number/date refreshes.
+    var deliveryNoteTick by remember { mutableStateOf(0) }
 
     LaunchedEffect(order.id) {
         loadingInvoices = true
@@ -511,24 +520,24 @@ private fun OrderDetailPanel(
                                 fontWeight = FontWeight.Medium
                             )
                             Text(
-                                text = "К-сть: ${item.quantity} · ${FormatUtils.formatDecimal(item.usedMeters)} м",
+                                text = "К-сть: ${item.quantity}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            item.size?.let { size ->
-                                Text(
-                                    text = "Розмір: $size",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            item.color?.let { color ->
-                                Text(
-                                    text = "Колір: $color",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+//                            item.size?.let { size ->
+//                                Text(
+//                                    text = "Розмір: $size",
+//                                    style = MaterialTheme.typography.bodySmall,
+//                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+//                                )
+//                            }
+//                            item.color?.let { color ->
+//                                Text(
+//                                    text = "Колір: $color",
+//                                    style = MaterialTheme.typography.bodySmall,
+//                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+//                                )
+//                            }
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
@@ -536,11 +545,11 @@ private fun OrderDetailPanel(
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium
                             )
-                            Text(
-                                text = "Собівартість: ${FormatUtils.formatCurrency(item.cost)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+//                            Text(
+//                                text = "Собівартість: ${FormatUtils.formatCurrency(item.cost)}",
+//                                style = MaterialTheme.typography.bodySmall,
+//                                color = MaterialTheme.colorScheme.onSurfaceVariant
+//                            )
                             Text(
                                 text = FormatUtils.formatCurrency(item.profit),
                                 style = MaterialTheme.typography.bodySmall,
@@ -563,11 +572,11 @@ private fun OrderDetailPanel(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                SummaryRow("Собівартість", FormatUtils.formatCurrency(order.totalCost))
+//                SummaryRow("Собівартість", FormatUtils.formatCurrency(order.totalCost))
                 if (order.discountAmount > 0) {
                     SummaryRow("Знижка", "-${FormatUtils.formatCurrency(order.discountAmount)}")
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+//                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SummaryRow(
                     "Ціна",
                     FormatUtils.formatCurrency(order.totalPrice),
@@ -639,52 +648,90 @@ private fun OrderDetailPanel(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
-                    invoices.forEach { invoice ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "${invoice.number} · ${FormatUtils.formatDate(invoice.issuedAt)}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                TextButton(onClick = {
-                                    numberInput = invoice.number
-                                    renamingInvoice = invoice
-                                }) {
-                                    Text("Змінити №", fontSize = 12.sp)
-                                }
-                                TextButton(onClick = {
-                                    scope.launch {
-                                        try {
-                                            val refreshed = ApiClient.regenerateInvoice(invoice.id)
-                                            val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(refreshed)
-                                            invoices = ApiClient.getInvoicesByOrderId(order.id)
-                                            info = "PDF збережено: $saved"
-                                        } catch (e: Exception) {
-                                            error = e.message ?: "Помилка"
-                                        }
-                                    }
-                                }) {
-                                    Text("Перегенерувати", fontSize = 12.sp)
-                                }
-                                TextButton(onClick = {
-                                    scope.launch {
-                                        try {
-                                            val opened = com.printbusinesskmp.desktop.platform.openInvoiceFromFolder(invoice)
-                                            if (!opened) {
-                                                error = "Файл не знайдено. Натисніть «Перегенерувати»."
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        invoices.forEach { invoice ->
+                            val vnNumber = remember(invoice.id, deliveryNoteTick) {
+                                com.printbusinesskmp.desktop.platform.AppSettingsStore.existingDeliveryNoteNumber(invoice.id)
+                            }
+                            val issuedDate = FormatUtils.formatDate(invoice.issuedAt)
+
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                                ),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    // Рахунок-фактура
+                                    DocumentSection(
+                                        label = "Рахунок-фактура",
+                                        number = "№ ${invoice.number}",
+                                        date = issuedDate
+                                    ) {
+                                        TextButton(onClick = {
+                                            numberInput = invoice.number
+                                            renamingInvoice = invoice
+                                        }) { Text("Змінити №", fontSize = 12.sp) }
+                                        TextButton(onClick = {
+                                            scope.launch {
+                                                try {
+                                                    val refreshed = ApiClient.regenerateInvoice(invoice.id)
+                                                    val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(refreshed)
+                                                    invoices = ApiClient.getInvoicesByOrderId(order.id)
+                                                    info = "PDF збережено: $saved"
+                                                } catch (e: Exception) {
+                                                    error = e.message ?: "Помилка"
+                                                }
                                             }
-                                        } catch (e: Exception) {
-                                            error = e.message ?: "Помилка"
-                                        }
+                                        }) { Text("Перегенерувати", fontSize = 12.sp) }
+                                        TextButton(onClick = {
+                                            scope.launch {
+                                                try {
+                                                    val opened = com.printbusinesskmp.desktop.platform.openInvoiceFromFolder(invoice)
+                                                    if (!opened) error = "Файл не знайдено. Натисніть «Перегенерувати»."
+                                                } catch (e: Exception) {
+                                                    error = e.message ?: "Помилка"
+                                                }
+                                            }
+                                        }) { Text("Відкрити", fontSize = 12.sp) }
                                     }
-                                }) {
-                                    Text("Відкрити", fontSize = 12.sp)
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                                    // Видаткова накладна
+                                    DocumentSection(
+                                        label = "Видаткова накладна",
+                                        number = vnNumber?.let { "№ $it" } ?: "Ще не створена",
+                                        date = if (vnNumber != null) issuedDate else null
+                                    ) {
+                                        TextButton(onClick = {
+                                            scope.launch {
+                                                try {
+                                                    val saved = com.printbusinesskmp.desktop.platform.generateDeliveryNoteToFolder(invoice)
+                                                    deliveryNoteTick++
+                                                    info = "Видаткову накладну збережено: $saved"
+                                                } catch (e: Exception) {
+                                                    error = e.message ?: "Помилка"
+                                                }
+                                            }
+                                        }) { Text(if (vnNumber == null) "Створити" else "Перегенерувати", fontSize = 12.sp) }
+                                        TextButton(
+                                            enabled = vnNumber != null,
+                                            onClick = {
+                                                scope.launch {
+                                                    try {
+                                                        val opened = com.printbusinesskmp.desktop.platform.openDeliveryNoteFromFolder(invoice)
+                                                        if (!opened) error = "Файл не знайдено. Натисніть «Перегенерувати»."
+                                                    } catch (e: Exception) {
+                                                        error = e.message ?: "Помилка"
+                                                    }
+                                                }
+                                            }
+                                        ) { Text("Відкрити", fontSize = 12.sp) }
+                                    }
                                 }
                             }
                         }
@@ -793,6 +840,46 @@ private fun OrderDetailPanel(
                 }
             }
         )
+    }
+}
+
+/**
+ * One document line inside an invoice card: a label + number/date on the left
+ * and its actions (FlowRow) on the right.
+ */
+@Composable
+private fun DocumentSection(
+    label: String,
+    number: String,
+    date: String?,
+    actions: @Composable () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                buildString {
+                    append(number)
+                    if (date != null) append(" · $date")
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            actions()
+        }
     }
 }
 

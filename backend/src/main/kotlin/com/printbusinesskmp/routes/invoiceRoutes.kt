@@ -119,6 +119,7 @@ fun Route.configureInvoiceRoutes() {
                             address = profile.address,
                             iban = profile.iban,
                             bankName = profile.bankName.orEmpty(),
+                            bankEdrpou = profile.bankEdrpou,
                             taxPercent = profile.taxPercent,
                             taxNote = profile.taxNote,
                             mfo = profile.mfo,
@@ -276,6 +277,7 @@ fun Route.configureInvoiceRoutes() {
                             address = profile.address,
                             iban = profile.iban,
                             bankName = profile.bankName.orEmpty(),
+                            bankEdrpou = profile.bankEdrpou,
                             taxPercent = profile.taxPercent,
                             taxNote = profile.taxNote,
                             mfo = profile.mfo,
@@ -335,8 +337,23 @@ fun Route.configureInvoiceRoutes() {
                     }
 
                     val client = clientRepository.clientById(order.clientId)
+                    val profile = businessProfileRepository.getProfile()
 
                     val updated = existing.copy(
+                        seller = profile?.let {
+                            existing.seller.copy(
+                                ownerName = it.ownerName,
+                                taxId = it.edrpou,
+                                address = it.address,
+                                iban = it.iban,
+                                bankName = it.bankName.orEmpty(),
+                                bankEdrpou = it.bankEdrpou,
+                                taxPercent = it.taxPercent,
+                                taxNote = it.taxNote,
+                                mfo = it.mfo,
+                                ipn = it.ipn
+                            )
+                        } ?: existing.seller,
                         client = client?.let {
                             InvoiceClientSnapshot(
                                 type = it.type,

@@ -90,6 +90,7 @@ class InvoiceRepository {
             it[sellerAddress] = invoice.seller.address
             it[sellerIban] = invoice.seller.iban
             it[sellerBankName] = invoice.seller.bankName
+            it[sellerBankEdrpou] = invoice.seller.bankEdrpou
             it[sellerTaxPercent] = invoice.seller.taxPercent
             it[sellerTaxNote] = invoice.seller.taxNote
             it[sellerMfo] = invoice.seller.mfo
@@ -209,6 +210,7 @@ class InvoiceRepository {
                 address = row[InvoicesTable.sellerAddress],
                 iban = row[InvoicesTable.sellerIban],
                 bankName = row[InvoicesTable.sellerBankName],
+                bankEdrpou = row[InvoicesTable.sellerBankEdrpou],
                 taxPercent = row[InvoicesTable.sellerTaxPercent],
                 taxNote = row[InvoicesTable.sellerTaxNote],
                 mfo = row[InvoicesTable.sellerMfo],

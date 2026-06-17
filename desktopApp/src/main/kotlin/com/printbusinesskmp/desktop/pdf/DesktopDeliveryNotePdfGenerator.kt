@@ -16,7 +16,6 @@ import com.itextpdf.layout.element.Cell
 import com.itextpdf.layout.element.Paragraph
 import com.itextpdf.layout.element.Table
 import com.itextpdf.layout.element.Text
-import com.itextpdf.layout.properties.HorizontalAlignment
 import com.itextpdf.layout.properties.TextAlignment
 import com.itextpdf.layout.properties.UnitValue
 import com.printbusinesskmp.models.Invoice
@@ -27,16 +26,19 @@ import kotlinx.datetime.toLocalDateTime
 import java.io.File
 import java.nio.file.Path
 
-object DesktopInvoicePdfGenerator {
+/**
+ * Видаткова накладна (goods-issue note) PDF, built from the same [Invoice] data
+ * as the invoice but with its own number and "Відпустив / Отримав" signatures.
+ */
+object DesktopDeliveryNotePdfGenerator {
 
-    private val ink = DeviceRgb(10, 48, 45)         // основний текст (#0A302D глибокий теал)
-    private val muted = DeviceRgb(23, 111, 104)     // другорядний текст (#176F68)
-    private val faint = DeviceRgb(32, 159, 149)     // дрібні підписи (#209F95)
-    private val lineColor = DeviceRgb(226, 232, 240) // роздільники (slate-200)
-    private val accent = DeviceRgb(48, 213, 200)    // акцент бренду (#30D5C8 turquoise)
-    private val accentDeep = DeviceRgb(30, 148, 139) // глибокий акцент (#1E948B)
+    private val ink = DeviceRgb(10, 48, 45)
+    private val muted = DeviceRgb(23, 111, 104)
+    private val faint = DeviceRgb(32, 159, 149)
+    private val lineColor = DeviceRgb(226, 232, 240)
+    private val accent = DeviceRgb(48, 213, 200)
 
-    fun generate(invoice: Invoice, destination: Path) {
+    fun generate(invoice: Invoice, deliveryNoteNumber: String, destination: Path) {
         val writer = PdfWriter(destination.toString())
         val pdfDoc = PdfDocument(writer)
         val document = Document(pdfDoc, PageSize.A4)
@@ -47,96 +49,57 @@ object DesktopInvoicePdfGenerator {
         document.setFont(font)
         document.setFontColor(ink)
 
-        // ── 1. Header: supplier (top-left) + recipient (top-right) ──────────────
-        val headerTable = Table(UnitValue.createPercentArray(floatArrayOf(40f, 20f, 40f)))
-            .setWidth(UnitValue.createPercentValue(100f))
-
         // ── Text styles (single source of truth) ───────────────────────────────
         fun partyLabel(text: String) = Paragraph(text)
-            .setFont(bold)
-            .setFontSize(11f)
-            .setCharacterSpacing(1f)
-            .setMarginBottom(2f)
+            .setFont(bold).setFontSize(11f).setCharacterSpacing(1f).setMarginBottom(2f)
 
         fun partyName(text: String) = Paragraph(text)
-            .setFont(bold)
-            .setFontSize(11f)
-            .setMarginBottom(2f)
+            .setFont(bold).setFontSize(11f).setMarginBottom(2f)
 
         fun partyLine(text: String) = Paragraph(text)
-            .setFont(font)
-            .setFontSize(8.5f)
-//            .setFontColor(muted)
-            .setMultipliedLeading(1.25f)
-            .setMargin(0f)
+            .setFont(font).setFontSize(8.5f).setMultipliedLeading(1.25f).setMargin(0f)
 
         fun docTitle(text: String) = Paragraph(text)
-            .setFont(bold)
-            .setFontSize(17f)
-            .setTextAlignment(TextAlignment.CENTER)
-            .setMarginTop(14f)
-            .setMarginBottom(0f)
+            .setFont(bold).setFontSize(17f).setTextAlignment(TextAlignment.CENTER)
+            .setMarginTop(14f).setMarginBottom(0f)
 
         fun docSubtitle(text: String) = Paragraph(text)
-            .setFont(font)
-            .setFontSize(9.5f)
+            .setFont(font).setFontSize(9.5f)
 //            .setFontColor(muted)
-            .setTextAlignment(TextAlignment.CENTER)
-            .setMarginTop(2f)
-            .setMarginBottom(14f)
+            .setTextAlignment(TextAlignment.CENTER).setMarginTop(2f).setMarginBottom(14f)
 
         fun headerText(text: String, align: TextAlignment) = Paragraph(text)
-            .setFont(bold)
-            .setFontSize(8.5f)
+            .setFont(bold).setFontSize(8.5f)
 //            .setFontColor(ink)
             .setTextAlignment(align)
 
         fun cellText(text: String, align: TextAlignment) = Paragraph(text)
-            .setFont(font)
-            .setFontSize(9f)
-            .setTextAlignment(align)
-
-        fun totalText(text: String, emphasized: Boolean, align: TextAlignment) = Paragraph(text)
-            .setFont(if (emphasized) bold else font)
-            .setFontSize(if (emphasized) 11f else 9.5f)
-            .setTextAlignment(align)
+            .setFont(font).setFontSize(9f).setTextAlignment(align)
 
         fun signatureTitle(text: String) = Paragraph(text)
-            .setFont(bold)
-            .setFontSize(9.5f)
-            .setMarginBottom(14f)
+            .setFont(bold).setFontSize(9.5f).setMarginBottom(14f)
 
         fun signatureName(text: String) = Paragraph(text)
-            .setFont(font)
-            .setFontSize(8.5f)
+            .setFont(font).setFontSize(8.5f)
 //            .setFontColor(muted)
-            .setWidth(UnitValue.createPercentValue(70f))
-            .setBorderTop(SolidBorder(faint, 0.7f))
-            .setPaddingTop(3f)
-            .setMargin(0f)
-
-        fun vatNote(text: String) = Paragraph(text)
-            .setFont(font)
-            .setFontSize(9f)
-//            .setFontColor(muted)
-            .setMarginTop(1f)
-
-        fun taxNoteText(text: String) = Paragraph(text)
-            .setFont(font)
-            .setFontSize(7.5f)
-//            .setFontColor(faint)
-            .setMarginTop(14f)
-            .setBorderTop(SolidBorder(lineColor, 0.5f))
-            .setPaddingTop(5f)
+            .setWidth(UnitValue.createPercentValue(80f))
+            .setBorderTop(SolidBorder(faint, 0.7f)).setPaddingTop(3f).setMargin(0f)
 
         fun sumInWords(prefix: String, words: String) = Paragraph()
             .add(Text(prefix).setFont(font)
 //                .setFontColor(muted)
             )
             .add(Text(words).setFont(bold))
-            .setFontSize(9.5f)
-            .setMarginTop(10f)
-            .setMarginBottom(0f)
+            .setFontSize(9.5f).setMarginTop(10f).setMarginBottom(0f)
+
+        fun taxNoteText(text: String) = Paragraph(text)
+            .setFont(font).setFontSize(7.5f)
+//            .setFontColor(faint)
+            .setMarginTop(14f).setBorderTop(SolidBorder(lineColor, 0.5f)).setPaddingTop(5f)
+
+        // ── 1. Header: supplier (left) + recipient (right) ──────────────────────
+        val headerTable = Table(UnitValue.createPercentArray(floatArrayOf(40f, 20f, 40f)))
+            .setWidth(UnitValue.createPercentValue(100f))
 
         val supplierCell = Cell().setBorder(Border.NO_BORDER).setPaddingRight(14f)
         supplierCell.add(partyLabel("ПОСТАЧАЛЬНИК"))
@@ -170,12 +133,11 @@ object DesktopInvoicePdfGenerator {
         // ── 2. Accent divider + title ────────────────────────────────────────────
         document.add(
             Paragraph().setMarginTop(10f).setMarginBottom(0f)
-                .setBorderBottom(SolidBorder(accent, 1.6f))
-                .setHeight(1f)
+                .setBorderBottom(SolidBorder(accent, 1.6f)).setHeight(1f)
         )
 
-        document.add(docTitle("Рахунок-фактура № ${invoice.number}"))
-        document.add(docSubtitle("від ${formatLongDate(invoice.issuedAt)} р."))
+        document.add(docTitle("Видаткова накладна № $deliveryNoteNumber"))
+        document.add(docSubtitle("від ${formatLongDate(invoice.issuedAt)} р.  ·  до рахунку № ${invoice.number}"))
 
         // ── 3. Items table ───────────────────────────────────────────────────────
         val itemsTable = Table(
@@ -209,53 +171,36 @@ object DesktopInvoicePdfGenerator {
 
         document.add(itemsTable)
 
-        // ── 4. Totals (borderless, right-aligned) ────────────────────────────────
-        val totalsTable = Table(UnitValue.createPercentArray(floatArrayOf(3f, 2f)))
-            .setWidth(UnitValue.createPercentValue(40f))
-            .setHorizontalAlignment(HorizontalAlignment.RIGHT)
-            .setMarginTop(8f)
+        // ── 4. Totals summary + sum in words ─────────────────────────────────────
+        val itemsCount = invoice.lines.size
+        document.add(
+            Paragraph("Всього найменувань $itemsCount, на суму ${fmt(invoice.totalAmount)} грн")
+                .setFont(font).setFontSize(9.5f).setMarginTop(10f).setMarginBottom(0f)
+        )
+        document.add(sumInWords("Сума прописом: ", FormatUtils.amountInUkrainianWords(invoice.totalAmount)))
+        document.add(
+            Paragraph("У тому числі ПДВ: 0.00 грн.")
+                .setFont(font).setFontSize(9f)
+//                .setFontColor(muted)
+                .setMarginTop(1f)
+        )
 
-        fun totalRow(label: String, value: String, emphasized: Boolean = false) {
-            val labelCell = Cell().add(
-                totalText(label, emphasized, TextAlignment.LEFT)
-//                    .setFontColor(if (emphasized) ink else muted)
-            ).setPadding(3f).setBorder(Border.NO_BORDER)
-            val valueCell = Cell().add(
-                totalText(value, emphasized, TextAlignment.RIGHT).setFontColor(ink)
-            ).setPadding(3f).setBorder(Border.NO_BORDER)
-            if (emphasized) {
-                labelCell.setBorderTop(SolidBorder(accentDeep, 1.4f)).setPaddingTop(5f)
-                valueCell.setBorderTop(SolidBorder(accentDeep, 1.4f)).setPaddingTop(5f)
-            }
-            totalsTable.addCell(labelCell)
-            totalsTable.addCell(valueCell)
-        }
+        // ── 6. Signatures: released (left) + received (right) ────────────────────
+        val signTable = Table(UnitValue.createPercentArray(floatArrayOf(1f, 0.15f, 1f)))
+            .setWidth(UnitValue.createPercentValue(100f)).setMarginTop(34f)
 
-        if (invoice.discountAmount > 0.0) totalRow("Знижка:", "${fmt(invoice.discountAmount)} грн")
-        totalRow("Разом без ПДВ:", "${fmt(invoice.subtotal)} грн")
-        totalRow("ПДВ:", "0.00 грн")
-        totalRow("Всього з ПДВ:", "${fmt(invoice.totalAmount)} грн", emphasized = true)
+        val releasedCell = Cell().setBorder(Border.NO_BORDER)
+        releasedCell.add(signatureTitle("Відпустив(ла):"))
+        releasedCell.add(signatureName("ФОП ${invoice.seller.ownerName}"))
 
-        document.add(totalsTable)
+        val receivedCell = Cell().setBorder(Border.NO_BORDER)
+        receivedCell.add(signatureTitle("Отримав(ла):"))
+        receivedCell.add(signatureName(" "))
 
-        // ── 5. Sum in words ──────────────────────────────────────────────────────
-        document.add(sumInWords("Всього на суму: ", FormatUtils.amountInUkrainianWords(invoice.totalAmount)))
-        document.add(vatNote("У тому числі ПДВ: 0.00 грн."))
-
-        // ── 6. Footer: signature (left) + valid-until (right) ────────────────────
-        val footerTable = Table(UnitValue.createPercentArray(floatArrayOf(1f, 1f)))
-            .setWidth(UnitValue.createPercentValue(100f))
-            .setMarginTop(28f)
-
-        val signatureCell = Cell().setBorder(Border.NO_BORDER)
-        signatureCell.add(signatureTitle("Виписав(ла):"))
-        signatureCell.add(signatureName("ФОП ${invoice.seller.ownerName}"))
-
-        val validUntilCell = Cell().setBorder(Border.NO_BORDER)
-
-        footerTable.addCell(signatureCell)
-        footerTable.addCell(validUntilCell)
-        document.add(footerTable)
+        signTable.addCell(releasedCell)
+        signTable.addCell(Cell().setBorder(Border.NO_BORDER))
+        signTable.addCell(receivedCell)
+        document.add(signTable)
 
         val taxNote = invoice.seller.taxNote?.takeIf { it.isNotBlank() }
             ?: "Не є платником податку на прибуток на загальних підставах"
@@ -265,16 +210,14 @@ object DesktopInvoicePdfGenerator {
     }
 
     private fun loadFont(fileName: String): PdfFont? {
-        // 1) classpath resource (bundled in desktopApp)
         runCatching {
-            val bytes = DesktopInvoicePdfGenerator::class.java.classLoader
+            val bytes = DesktopDeliveryNotePdfGenerator::class.java.classLoader
                 .getResourceAsStream("fonts/$fileName")?.use { it.readBytes() }
             if (bytes != null && bytes.isNotEmpty()) {
                 return PdfFontFactory.createFont(bytes, PdfEncodings.IDENTITY_H, EmbeddingStrategy.PREFER_EMBEDDED)
             }
         }
 
-        // 2) backend resources (dev mode — running from project root)
         val devPath = File("backend/src/main/resources/fonts/$fileName")
         if (devPath.exists()) {
             runCatching {
@@ -282,7 +225,6 @@ object DesktopInvoicePdfGenerator {
             }
         }
 
-        // 3) system fonts
         val systemCandidates = listOf(
             "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
             "/Library/Fonts/Arial Unicode.ttf",
@@ -298,10 +240,7 @@ object DesktopInvoicePdfGenerator {
             }.getOrNull()
         }
 
-        // 4) built-in fallback (no Cyrillic but PDF will not crash)
-        return runCatching {
-            PdfFontFactory.createFont(StandardFonts.HELVETICA)
-        }.getOrNull()
+        return runCatching { PdfFontFactory.createFont(StandardFonts.HELVETICA) }.getOrNull()
     }
 
     private fun formatLongDate(instant: kotlin.time.Instant): String {
@@ -312,11 +251,6 @@ object DesktopInvoicePdfGenerator {
             9 to "вересня", 10 to "жовтня", 11 to "листопада", 12 to "грудня"
         )
         return "${dt.day} ${months[dt.month.number] ?: dt.month.number} ${dt.year}"
-    }
-
-    private fun formatShortDate(instant: kotlin.time.Instant): String {
-        val dt = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-        return "${dt.day.toString().padStart(2, '0')}.${dt.month.number.toString().padStart(2, '0')}.${dt.year.toString().takeLast(2)}"
     }
 
     private fun fmt(value: Double): String = String.format("%.2f", value)

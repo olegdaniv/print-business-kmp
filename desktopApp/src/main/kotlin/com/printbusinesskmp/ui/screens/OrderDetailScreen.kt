@@ -64,6 +64,8 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
 
     var confirmDelete by remember { mutableStateOf(false) }
     var processing by remember { mutableStateOf(false) }
+    // Bumped after a delivery note is (re)generated so its number/date refreshes.
+    var deliveryNoteTick by remember { mutableStateOf(0) }
 
     fun reload() {
         scope.launch {
@@ -236,40 +238,79 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
                         Text("Згенерувати рахунок", color = AppColors.White)
                     }
                 } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(invoices) { invoice ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            val vnNumber = remember(invoice.id, deliveryNoteTick) {
+                                com.printbusinesskmp.desktop.platform.AppSettingsStore.existingDeliveryNoteNumber(invoice.id)
+                            }
+                            val issuedDate = FormatUtils.formatDate(invoice.issuedAt)
+
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = AppColors.CardItemBg),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("${invoice.number} • ${FormatUtils.formatDate(invoice.issuedAt)}")
-                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    TextButton(onClick = {
-                                        scope.launch {
-                                            try {
-                                                val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(invoice)
-                                                info = "PDF збережено: $saved"
-                                            } catch (e: Exception) {
-                                                error = e.message ?: "Не вдалося зберегти PDF"
-                                            }
-                                        }
-                                    }) {
-                                        Text("Перегенерувати", color = AppColors.PrimaryBlue)
-                                    }
-                                    TextButton(onClick = {
-                                        scope.launch {
-                                            try {
-                                                val opened = com.printbusinesskmp.desktop.platform.openInvoiceFromFolder(invoice)
-                                                if (!opened) {
-                                                    error = "Файл не знайдено. Натисніть «Перегенерувати»."
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    DocumentSection(
+                                        label = "Рахунок-фактура",
+                                        number = "№ ${invoice.number}",
+                                        date = issuedDate
+                                    ) {
+                                        TextButton(onClick = {
+                                            scope.launch {
+                                                try {
+                                                    val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(invoice)
+                                                    info = "PDF збережено: $saved"
+                                                } catch (e: Exception) {
+                                                    error = e.message ?: "Не вдалося зберегти PDF"
                                                 }
-                                            } catch (e: Exception) {
-                                                error = e.message ?: "Не вдалося відкрити PDF"
                                             }
-                                        }
-                                    }) {
-                                        Text("Відкрити", color = AppColors.PrimaryBlue)
+                                        }) { Text("Перегенерувати", color = AppColors.PrimaryBlue) }
+                                        TextButton(onClick = {
+                                            scope.launch {
+                                                try {
+                                                    val opened = com.printbusinesskmp.desktop.platform.openInvoiceFromFolder(invoice)
+                                                    if (!opened) error = "Файл не знайдено. Натисніть «Перегенерувати»."
+                                                } catch (e: Exception) {
+                                                    error = e.message ?: "Не вдалося відкрити PDF"
+                                                }
+                                            }
+                                        }) { Text("Відкрити", color = AppColors.PrimaryBlue) }
+                                    }
+
+                                    HorizontalDivider()
+
+                                    DocumentSection(
+                                        label = "Видаткова накладна",
+                                        number = vnNumber?.let { "№ $it" } ?: "Ще не створена",
+                                        date = if (vnNumber != null) issuedDate else null
+                                    ) {
+                                        TextButton(onClick = {
+                                            scope.launch {
+                                                try {
+                                                    val saved = com.printbusinesskmp.desktop.platform.generateDeliveryNoteToFolder(invoice)
+                                                    deliveryNoteTick++
+                                                    info = "Видаткову накладну збережено: $saved"
+                                                } catch (e: Exception) {
+                                                    error = e.message ?: "Не вдалося згенерувати видаткову накладну"
+                                                }
+                                            }
+                                        }) { Text(if (vnNumber == null) "Створити" else "Перегенерувати", color = AppColors.PrimaryBlue) }
+                                        TextButton(
+                                            enabled = vnNumber != null,
+                                            onClick = {
+                                                scope.launch {
+                                                    try {
+                                                        val opened = com.printbusinesskmp.desktop.platform.openDeliveryNoteFromFolder(invoice)
+                                                        if (!opened) error = "Файл не знайдено. Натисніть «Перегенерувати»."
+                                                    } catch (e: Exception) {
+                                                        error = e.message ?: "Не вдалося відкрити видаткову накладну"
+                                                    }
+                                                }
+                                            }
+                                        ) { Text("Відкрити", color = AppColors.PrimaryBlue) }
                                     }
                                 }
                             }
@@ -357,4 +398,39 @@ private fun <T> EnumField(
         onSelect = onSelect,
         modifier = modifier
     )
+}
+
+/**
+ * One document line inside an invoice card: a label + number/date on the left
+ * and its actions (FlowRow) on the right.
+ */
+@Composable
+private fun DocumentSection(
+    label: String,
+    number: String,
+    date: String?,
+    actions: @Composable () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, color = AppColors.MediumGray, fontSize = 11.sp)
+            Text(
+                buildString {
+                    append(number)
+                    if (date != null) append(" • $date")
+                },
+                fontWeight = FontWeight.Medium
+            )
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            actions()
+        }
+    }
 }

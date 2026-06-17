@@ -18,7 +18,9 @@ object AppSettingsStore {
     @Serializable
     private data class PersistedSettings(
         val invoicesDir: String? = null,
-        val darkTheme: Boolean? = null
+        val darkTheme: Boolean? = null,
+        val deliveryNoteSeq: Int = 0,
+        val deliveryNoteByInvoice: Map<String, String> = emptyMap()
     )
 
     @Volatile
@@ -67,4 +69,28 @@ object AppSettingsStore {
         set(value) {
             persist(load().copy(darkTheme = value))
         }
+
+    /**
+     * Returns the delivery-note number for an invoice, allocating the next number
+     * in the local "ВН-" series on first request. Idempotent per invoice, so
+     * regenerating keeps the same number.
+     */
+    /** Delivery-note number already assigned to an invoice, or null if none yet. */
+    fun existingDeliveryNoteNumber(invoiceId: String): String? =
+        load().deliveryNoteByInvoice[invoiceId]
+
+    @Synchronized
+    fun deliveryNoteNumber(invoiceId: String): String {
+        val current = load()
+        current.deliveryNoteByInvoice[invoiceId]?.let { return it }
+        val nextSeq = current.deliveryNoteSeq + 1
+        val number = "ВН-" + nextSeq.toString().padStart(4, '0')
+        persist(
+            current.copy(
+                deliveryNoteSeq = nextSeq,
+                deliveryNoteByInvoice = current.deliveryNoteByInvoice + (invoiceId to number)
+            )
+        )
+        return number
+    }
 }

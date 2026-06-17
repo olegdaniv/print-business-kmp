@@ -423,7 +423,8 @@ private fun InvoiceFormDialog(
                                     append(profile.bankName ?: "")
                                     profile.mfo?.takeIf { it.isNotBlank() }?.let { append(", МФО: $it") }
                                 }
-                                if (bankInfo.isNotBlank()) InfoLine(bankInfo)
+                                if (bankInfo.isNotBlank()) InfoLine("Банк: $bankInfo")
+                                profile.bankEdrpou?.takeIf { it.isNotBlank() }?.let { InfoLine("ЄДРПОУ банку: $it") }
                                 val taxNote = profile.taxNote?.takeIf { it.isNotBlank() }
                                     ?: "Не є платником податку на прибуток на загальних підставах"
                                 InfoLine(taxNote, color = AppColors.MediumGray)
@@ -721,7 +722,8 @@ private fun InvoiceViewDialog(invoice: Invoice, onDismiss: () -> Unit) {
                                         if (isNotEmpty()) append(", МФО: $it") else append("МФО: $it")
                                     }
                                 }
-                                if (bankInfo.isNotBlank()) ViewInfoLine(bankInfo)
+                                if (bankInfo.isNotBlank()) ViewInfoLine("Банк: $bankInfo")
+                                invoice.seller.bankEdrpou?.takeIf { it.isNotBlank() }?.let { ViewInfoLine("ЄДРПОУ банку: $it") }
                                 val taxNote = invoice.seller.taxNote?.takeIf { it.isNotBlank() }
                                     ?: "Не є платником податку на прибуток на загальних підставах"
                                 ViewInfoLine(taxNote, color = AppColors.MediumGray)

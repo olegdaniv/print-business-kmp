@@ -24,6 +24,7 @@ object InvoicesTable : Table("invoices") {
     val sellerAddress = varchar("seller_address", 500)
     val sellerIban = varchar("seller_iban", 64)
     val sellerBankName = varchar("seller_bank_name", 255)
+    val sellerBankEdrpou = varchar("seller_bank_edrpou", 50).nullable()
     val sellerTaxPercent = double("seller_tax_percent")
     val sellerTaxNote = text("seller_tax_note").nullable()
     val sellerMfo = varchar("seller_mfo", 10).nullable()

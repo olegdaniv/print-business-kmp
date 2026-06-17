@@ -16,6 +16,7 @@ object BusinessProfilesTable : Table("business_profiles") {
     val iban = varchar("iban", 64)
     // Kept non-null in DB; empty string used when optional value is absent
     val bankName = varchar("bank_name", 255)
+    val bankEdrpou = varchar("bank_edrpou", 50).nullable()
     val mfo = varchar("mfo", 10).nullable()
     // DB column "notes" repurposed as taxNote
     val taxNote = text("notes").nullable()

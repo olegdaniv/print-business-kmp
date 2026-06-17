@@ -54,6 +54,7 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
     var address by remember { mutableStateOf("") }
     var iban by remember { mutableStateOf("") }
     var bankName by remember { mutableStateOf("") }
+    var bankEdrpou by remember { mutableStateOf("") }
     var mfo by remember { mutableStateOf("") }
     var taxNote by remember { mutableStateOf(DEFAULT_TAX_NOTE) }
     var certificateNumber by remember { mutableStateOf("") }
@@ -82,6 +83,7 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                 address = profile.address
                 iban = profile.iban.replace(" ", "").uppercase().take(29)
                 bankName = profile.bankName.orEmpty()
+                bankEdrpou = profile.bankEdrpou.orEmpty().filter { it.isDigit() }.take(10)
                 mfo = profile.mfo.orEmpty().filter { it.isDigit() }.take(6)
                 taxNote = profile.taxNote.takeIf { !it.isNullOrBlank() } ?: DEFAULT_TAX_NOTE
                 certificateNumber = profile.certificateNumber.orEmpty()
@@ -216,6 +218,13 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                     )
                 }
 
+                OutlinedTextField(
+                    value = bankEdrpou,
+                    onValueChange = { bankEdrpou = it.filter { c -> c.isDigit() }.take(10); message = null },
+                    label = { Text("ЄДРПОУ банку") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 Spacer(Modifier.height(4.dp))
                 HorizontalDivider()
                 Spacer(Modifier.height(4.dp))
@@ -289,6 +298,7 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                                             address = address.trim(),
                                             iban = iban,
                                             bankName = bankName.ifBlank { null },
+                                            bankEdrpou = bankEdrpou.ifBlank { null },
                                             mfo = mfo.ifBlank { null },
                                             taxNote = taxNote.ifBlank { null },
                                             certificateNumber = certificateNumber.ifBlank { null },
