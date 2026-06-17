@@ -222,15 +222,16 @@ jobs:
           SHA256: ${{ steps.feed.outputs.sha256 }}
           "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
 
-  # Publishes the update feed to GitHub Pages. configure-pages with
-  # enablement:true turns Pages on automatically the first time, so no manual
-  # repo-settings step is ever required.
+  # Publishes the update feed by pushing it to the `gh-pages` branch with a plain
+  # git push (contents: write). This avoids the Pages REST API used by
+  # actions/configure-pages, which fails with "Resource not accessible by
+  # integration" when the default token cannot create the Pages site. Enable
+  # Pages once via Settings → Pages → Source: "Deploy from a branch" → gh-pages.
   deploy-pages:
     needs: release-windows
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: write
     steps:
       - name: Download feed artifact
         uses: actions/download-artifact@v4
@@ -238,16 +239,10 @@ jobs:
           name: pages-dist
           path: dist
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
+      - name: Publish feed to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          enablement: true
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          keep_files: true
