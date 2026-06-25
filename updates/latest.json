@@ -1,8 +1,8 @@
 {
-  "notes": "fix(desktop): bundle full JDK runtime; clearer dropdowns and client validation\r\n\r\n- Set includeAllModules so the jpackage Windows runtime always has the\r\n  modules the embedded backend (Netty/H2/HikariCP/Exposed) needs at startup,\r\n  fixing the recurring \"Failed to launch JVM\" error.\r\n- Add a shared LabeledDropdown component (outlined, accent-bordered, ▾ arrow)\r\n  and use it for the client type, delivery type, client/enum selectors on the\r\n  client and order screens so the controls read as tappable.\r\n- Validate ЄДРПОУ/РНОКПП on the client form (8 digits company / 10 person),\r\n  matching the ФОП profile checks.\r\n- Reorder OrderStatus enum so outsource states sit after the main flow.\r\n\r\nCo-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>",
-  "version": "1.0.14",
   "windows": {
-    "sha256": "2d2e01b74726c26d7beef1e1d0f1b8cbfafc2ee72723f22e38aeacd9cfc1460a",
-    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.14/PrintBusiness-1.0.14.msi"
-  }
+    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.16/PrintBusiness-1.0.16.msi",
+    "sha256": "a907b3988249722072e881f48371baddc82d499d784e1453f11078e3f543c1c4"
+  },
+  "version": "1.0.16",
+  "notes": "ci: pin JDK 21 toolchain and run CI on Java 21\r\n\r\nThe Compose Desktop plugin defaulted desktopApp to a JetBrains Runtime\r\n(vendor=JetBrains) JDK 21 toolchain, which CI could not download via foojay\r\n(HTTP 400) on its JDK 17 runner. Pin a vendor-neutral jvmToolchain(21) so any\r\nJDK 21 (JBR locally, Temurin on CI) satisfies it, and bump the CI workflow to\r\nJava 21 to match the release build.\r\n\r\nCo-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 }
