@@ -204,7 +204,7 @@ fun StatCard(
             )
             Text(
                 text = value,
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = valueColor
             )
         }

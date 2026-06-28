@@ -77,7 +77,7 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
             val profile = ApiClient.getBusinessProfile()
             if (profile != null) {
                 ownerName = profile.ownerName
-                edrpou = profile.edrpou.filter { it.isDigit() }.take(8)
+                edrpou = profile.edrpou.filter { it.isDigit() }.take(10)
                 ipn = profile.ipn.orEmpty().filter { it.isDigit() }.take(10)
                 phone = profile.phone.orEmpty().filter { it.isDigit() }.take(10)
                 address = profile.address
@@ -142,6 +142,7 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                         label = "ЄДРПОУ *",
                         isError = edrpouError != null,
                         errorMessage = edrpouError,
+                        allowFop = true,
                         modifier = Modifier.weight(1f)
                     )
                     IpnField(
@@ -256,8 +257,8 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                                 ownerNameError = "Обов'язкове поле"
                                 valid = false
                             }
-                            if (edrpou.length != 8) {
-                                edrpouError = "Має бути рівно 8 цифр"
+                            if (edrpou.length != 8 && edrpou.length != 10) {
+                                edrpouError = "8 цифр (юр. особа) або 10 (ФОП)"
                                 valid = false
                             }
                             if (ipn.isNotBlank() && ipn.length != 10) {

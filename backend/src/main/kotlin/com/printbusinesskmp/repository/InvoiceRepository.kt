@@ -72,6 +72,23 @@ class InvoiceRepository {
         }
     }
 
+    suspend fun updateInvoiceIssuedAt(
+        id: String,
+        issuedAtEpochMs: Long,
+        validUntilEpochMs: Long?
+    ): Invoice? = dbQuery {
+        val changed = InvoicesTable.update({ InvoicesTable.id eq id }) {
+            it[issuedAt] = Instant.ofEpochMilli(issuedAtEpochMs)
+            it[validUntil] = validUntilEpochMs?.let { ms -> Instant.ofEpochMilli(ms) }
+        }
+        if (changed == 0) {
+            null
+        } else {
+            val row = InvoicesTable.selectAll().where { InvoicesTable.id eq id }.single()
+            toInvoice(row, getLines(id))
+        }
+    }
+
     suspend fun addInvoice(invoice: Invoice): Invoice = dbQuery {
         val id = invoice.id.ifBlank { UUID.randomUUID().toString() }
 

@@ -20,7 +20,9 @@ object AppSettingsStore {
         val invoicesDir: String? = null,
         val darkTheme: Boolean? = null,
         val deliveryNoteSeq: Int = 0,
-        val deliveryNoteByInvoice: Map<String, String> = emptyMap()
+        val deliveryNoteByInvoice: Map<String, String> = emptyMap(),
+        // Per-invoice delivery-note date override, stored as epoch milliseconds.
+        val deliveryNoteDateByInvoice: Map<String, Long> = emptyMap()
     )
 
     @Volatile
@@ -92,5 +94,27 @@ object AppSettingsStore {
             )
         )
         return number
+    }
+
+    /** Delivery-note date override (epoch ms) for an invoice, or null to use the invoice date. */
+    fun deliveryNoteDateMillis(invoiceId: String): Long? =
+        load().deliveryNoteDateByInvoice[invoiceId]
+
+    @Synchronized
+    fun setDeliveryNoteDateMillis(invoiceId: String, epochMs: Long) {
+        persist(load().let { it.copy(deliveryNoteDateByInvoice = it.deliveryNoteDateByInvoice + (invoiceId to epochMs)) })
+    }
+
+    /** Forgets the delivery-note number and date for an invoice (used when deleting the ВН). */
+    @Synchronized
+    fun removeDeliveryNote(invoiceId: String) {
+        persist(
+            load().let {
+                it.copy(
+                    deliveryNoteByInvoice = it.deliveryNoteByInvoice - invoiceId,
+                    deliveryNoteDateByInvoice = it.deliveryNoteDateByInvoice - invoiceId
+                )
+            }
+        )
     }
 }

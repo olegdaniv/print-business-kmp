@@ -195,7 +195,12 @@ fun CardNumberField(
 // ── EDRPOU ──────────────────────────────────────────────────────────────────
 
 /**
- * ЄДРПОУ field: exactly 8 digits.
+ * ЄДРПОУ field.
+ *
+ * Legal entities have an 8-digit code. A ФОП (sole proprietor) has no ЄДРПОУ —
+ * its code is the 10-digit ІПН/РНОКПП. Set [allowFop] to accept either 8 or 10
+ * digits; leave it false to enforce exactly 8 (legal entities only).
+ *
  * Value is stored/returned as raw digits.
  */
 @Composable
@@ -205,14 +210,15 @@ fun EdrpouField(
     modifier: Modifier = Modifier,
     label: String = "ЄДРПОУ",
     isError: Boolean = false,
-    errorMessage: String? = null
+    errorMessage: String? = null,
+    allowFop: Boolean = false
 ) {
-    val maxLen = 8
+    val maxLen = if (allowFop) 10 else 8
     OutlinedTextField(
         value = value,
         onValueChange = { onValueChange(it.filter { c -> c.isDigit() }.take(maxLen)) },
         label = { Text(label) },
-        placeholder = { Text("8 цифр") },
+        placeholder = { Text(if (allowFop) "8 або 10 цифр" else "8 цифр") },
         isError = isError,
         supportingText = {
             when {

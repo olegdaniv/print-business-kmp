@@ -22,3 +22,9 @@ data class InvoiceNumberFormatUpdateRequest(
 data class InvoiceNumberOverrideRequest(
     val number: String
 )
+
+/** Manual issue-date override for a single invoice, as epoch milliseconds. */
+@Serializable
+data class InvoiceDateOverrideRequest(
+    val issuedAtEpochMs: Long
+)

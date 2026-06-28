@@ -399,6 +399,13 @@ private fun OrderDetailPanel(
     var confirmDelete by remember { mutableStateOf(false) }
     var renamingInvoice by remember { mutableStateOf<com.printbusinesskmp.models.Invoice?>(null) }
     var numberInput by remember { mutableStateOf("") }
+    // Date-change dialog: target invoice + whether it edits the ВН (true) or the invoice (false).
+    var dateEditInvoice by remember { mutableStateOf<com.printbusinesskmp.models.Invoice?>(null) }
+    var dateEditIsVn by remember { mutableStateOf(false) }
+    var dateInput by remember { mutableStateOf("") }
+    // Delete-document confirmation: target invoice + whether it deletes the ВН or the invoice.
+    var confirmDeleteDoc by remember { mutableStateOf<com.printbusinesskmp.models.Invoice?>(null) }
+    var confirmDeleteIsVn by remember { mutableStateOf(false) }
     // Bumped after a delivery note is (re)generated so its number/date refreshes.
     var deliveryNoteTick by remember { mutableStateOf(0) }
 
@@ -583,8 +590,8 @@ private fun OrderDetailPanel(
                     bold = true
                 )
                 SummaryRow(
-                    "Прибуток",
-                    FormatUtils.formatCurrency(order.profit),
+                    label = "Прибуток",
+                    value = FormatUtils.formatCurrency(order.profit),
                     valueColor = if (order.profit >= 0) DesktopColors.success else MaterialTheme.colorScheme.error,
                     bold = true
                 )
@@ -654,6 +661,11 @@ private fun OrderDetailPanel(
                                 com.printbusinesskmp.desktop.platform.AppSettingsStore.existingDeliveryNoteNumber(invoice.id)
                             }
                             val issuedDate = FormatUtils.formatDate(invoice.issuedAt)
+                            val vnDate = remember(invoice.id, deliveryNoteTick) {
+                                FormatUtils.formatDate(
+                                    com.printbusinesskmp.desktop.platform.deliveryNoteIssuedDate(invoice)
+                                )
+                            }
 
                             Card(
                                 colors = CardDefaults.cardColors(
@@ -697,6 +709,15 @@ private fun OrderDetailPanel(
                                                 }
                                             }
                                         }) { Text("Відкрити", fontSize = 12.sp) }
+                                        TextButton(onClick = {
+                                            dateInput = issuedDate
+                                            dateEditIsVn = false
+                                            dateEditInvoice = invoice
+                                        }) { Text("Змінити дату", fontSize = 12.sp) }
+                                        TextButton(onClick = {
+                                            confirmDeleteIsVn = false
+                                            confirmDeleteDoc = invoice
+                                        }) { Text("Видалити", fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }
                                     }
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -705,7 +726,7 @@ private fun OrderDetailPanel(
                                     DocumentSection(
                                         label = "Видаткова накладна",
                                         number = vnNumber?.let { "№ $it" } ?: "Ще не створена",
-                                        date = if (vnNumber != null) issuedDate else null
+                                        date = if (vnNumber != null) vnDate else null
                                     ) {
                                         TextButton(onClick = {
                                             scope.launch {
@@ -731,6 +752,21 @@ private fun OrderDetailPanel(
                                                 }
                                             }
                                         ) { Text("Відкрити", fontSize = 12.sp) }
+                                        TextButton(
+                                            enabled = vnNumber != null,
+                                            onClick = {
+                                                dateInput = vnDate
+                                                dateEditIsVn = true
+                                                dateEditInvoice = invoice
+                                            }
+                                        ) { Text("Змінити дату", fontSize = 12.sp) }
+                                        TextButton(
+                                            enabled = vnNumber != null,
+                                            onClick = {
+                                                confirmDeleteIsVn = true
+                                                confirmDeleteDoc = invoice
+                                            }
+                                        ) { Text("Видалити", fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }
                                     }
                                 }
                             }
@@ -840,6 +876,128 @@ private fun OrderDetailPanel(
                 }
             }
         )
+    }
+
+    dateEditInvoice?.let { invoice ->
+        val isVn = dateEditIsVn
+        val parsedMs = parseUaDateToEpochMs(dateInput)
+        AlertDialog(
+            onDismissRequest = { dateEditInvoice = null },
+            title = { Text(if (isVn) "Дата видаткової накладної" else "Дата рахунку-фактури") },
+            text = {
+                Column {
+                    androidx.compose.material3.OutlinedTextField(
+                        value = dateInput,
+                        onValueChange = { dateInput = it },
+                        label = { Text("Дата (дд.мм.рррр)") },
+                        singleLine = true,
+                        isError = dateInput.isNotBlank() && parsedMs == null
+                    )
+                    if (dateInput.isNotBlank() && parsedMs == null) {
+                        Text(
+                            "Невірний формат. Приклад: 25.06.2026",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    enabled = parsedMs != null,
+                    onClick = {
+                        val ms = parsedMs ?: return@Button
+                        dateEditInvoice = null
+                        scope.launch {
+                            try {
+                                if (isVn) {
+                                    // Remove the old-dated PDF first (the filename embeds the date).
+                                    val oldPath = com.printbusinesskmp.desktop.platform.deliveryNoteFilePath(invoice)
+                                    withContext(Dispatchers.IO) { java.nio.file.Files.deleteIfExists(oldPath) }
+                                    com.printbusinesskmp.desktop.platform.AppSettingsStore.setDeliveryNoteDateMillis(invoice.id, ms)
+                                    val saved = com.printbusinesskmp.desktop.platform.generateDeliveryNoteToFolder(invoice)
+                                    deliveryNoteTick++
+                                    info = "Дату ВН змінено. PDF збережено: $saved"
+                                } else {
+                                    val oldPath = com.printbusinesskmp.desktop.platform.invoiceFilePath(invoice)
+                                    val updated = ApiClient.updateInvoiceDate(invoice.id, ms)
+                                    withContext(Dispatchers.IO) { java.nio.file.Files.deleteIfExists(oldPath) }
+                                    val saved = com.printbusinesskmp.desktop.platform.generateInvoiceToFolder(updated)
+                                    invoices = ApiClient.getInvoicesByOrderId(order.id)
+                                    deliveryNoteTick++
+                                    info = "Дату рахунку змінено. PDF збережено: $saved"
+                                }
+                            } catch (e: Exception) {
+                                error = e.message ?: "Помилка"
+                            }
+                        }
+                    }
+                ) { Text("Зберегти") }
+            },
+            dismissButton = {
+                TextButton(onClick = { dateEditInvoice = null }) { Text("Скасувати") }
+            }
+        )
+    }
+
+    confirmDeleteDoc?.let { invoice ->
+        val isVn = confirmDeleteIsVn
+        AlertDialog(
+            onDismissRequest = { confirmDeleteDoc = null },
+            title = { Text(if (isVn) "Видалити видаткову накладну" else "Видалити рахунок-фактуру") },
+            text = {
+                Text(
+                    if (isVn) "Видалити видаткову накладну для рахунку № ${invoice.number}? PDF буде видалено."
+                    else "Видалити рахунок № ${invoice.number} разом із видатковою накладною та файлами PDF? Цю дію неможливо скасувати."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        confirmDeleteDoc = null
+                        scope.launch {
+                            try {
+                                if (isVn) {
+                                    com.printbusinesskmp.desktop.platform.deleteDeliveryNote(invoice)
+                                    deliveryNoteTick++
+                                    info = "Видаткову накладну видалено"
+                                } else {
+                                    com.printbusinesskmp.desktop.platform.deleteInvoiceDocuments(invoice)
+                                    ApiClient.deleteInvoice(invoice.id)
+                                    invoices = ApiClient.getInvoicesByOrderId(order.id)
+                                    deliveryNoteTick++
+                                    info = "Рахунок видалено"
+                                    onOrderUpdated()
+                                }
+                            } catch (e: Exception) {
+                                error = e.message ?: "Помилка"
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Видалити", color = MaterialTheme.colorScheme.onError) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDeleteDoc = null }) { Text("Скасувати") }
+            }
+        )
+    }
+}
+
+/** Parses a "dd.MM.yyyy" string to epoch milliseconds at local start-of-day, or null. */
+private fun parseUaDateToEpochMs(input: String): Long? {
+    val parts = input.trim().split('.')
+    if (parts.size != 3) return null
+    val day = parts[0].toIntOrNull() ?: return null
+    val month = parts[1].toIntOrNull() ?: return null
+    val year = parts[2].toIntOrNull() ?: return null
+    return try {
+        java.time.LocalDate.of(year, month, day)
+            .atStartOfDay(java.time.ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+    } catch (_: Exception) {
+        null
     }
 }
 
