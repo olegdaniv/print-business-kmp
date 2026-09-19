@@ -1,6 +1,9 @@
 [versions]
 androidx-lifecycle = "2.9.6"
 composeMultiplatform = "1.12.0"
+# Material 3 and the icon set are versioned separately from Compose Multiplatform
+composeMaterial3 = "1.9.0"
+composeMaterialIcons = "1.7.3"
 exposed = "0.58.0"
 h2 = "2.3.232"
 hikari = "5.1.0"
@@ -13,6 +16,12 @@ logback = "1.5.22"
 postgres = "42.7.4"
 
 [libraries]
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMaterial3" }
+compose-materialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "composeMaterialIcons" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
