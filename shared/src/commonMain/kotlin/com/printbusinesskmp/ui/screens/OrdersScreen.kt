@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
@@ -35,6 +36,7 @@ import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.utils.FormatUtils
+import com.printbusinesskmp.utils.itemsSummary
 import com.printbusinesskmp.utils.labelUa
 import kotlinx.coroutines.launch
 
@@ -107,7 +109,7 @@ fun OrdersScreen(onNavigate: (Screen) -> Unit) {
                     .background(AppColors.CardItemBg)
                     .padding(14.dp)
             ) {
-                Header("ID", Modifier.weight(1f))
+                Header("Комплектація", Modifier.weight(2f))
                 Header("Клієнт", Modifier.weight(1.8f))
                 Header("Статус", Modifier.weight(1f))
                 Header("Оплата", Modifier.weight(1f))
@@ -125,7 +127,13 @@ fun OrdersScreen(onNavigate: (Screen) -> Unit) {
                         modifier = Modifier.fillMaxWidth().padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("#${order.id.take(8)}", Modifier.weight(1f), color = AppColors.DarkSlate)
+                        Text(
+                            order.itemsSummary(),
+                            Modifier.weight(2f),
+                            color = AppColors.DarkSlate,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
                         Text(
                             clientById[order.clientId]?.displayName ?: "Невідомий",
                             Modifier.weight(1.8f),

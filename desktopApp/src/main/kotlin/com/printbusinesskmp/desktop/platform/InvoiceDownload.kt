@@ -55,7 +55,7 @@ suspend fun openInvoiceFromFolder(invoice: Invoice): Boolean {
 
 /** Deterministic destination of a delivery-note PDF inside the configured folder. */
 fun deliveryNoteFilePath(invoice: Invoice): Path =
-    AppSettingsStore.invoicesDir.resolve(buildDeliveryNoteFileName(invoice))
+    AppSettingsStore.deliveryNotesDir.resolve(buildDeliveryNoteFileName(invoice))
 
 /**
  * Effective date printed on (and used in the filename of) the delivery note: the

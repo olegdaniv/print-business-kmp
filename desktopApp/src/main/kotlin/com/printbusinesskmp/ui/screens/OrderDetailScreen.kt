@@ -45,6 +45,7 @@ import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.ui.components.LabeledDropdown
 import com.printbusinesskmp.utils.FormatUtils
+import com.printbusinesskmp.utils.itemsSummary
 import com.printbusinesskmp.utils.labelUa
 import kotlinx.coroutines.launch
 
@@ -94,7 +95,7 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             itemVerticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Замовлення #${orderId.take(8)}", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = AppColors.DarkSlate)
+            Text(order?.itemsSummary() ?: "Замовлення #${orderId.take(8)}", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = AppColors.DarkSlate)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = { onNavigate(Screen.OrderForm(orderId)) }) {
                     Text("Редагувати")

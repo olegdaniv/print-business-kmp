@@ -62,6 +62,7 @@ import com.printbusinesskmp.ui.components.StatusBadge
 import com.printbusinesskmp.ui.components.StatusFilterChips
 import com.printbusinesskmp.ui.theme.DesktopColors
 import com.printbusinesskmp.utils.FormatUtils
+import com.printbusinesskmp.utils.itemsSummary
 import com.printbusinesskmp.utils.labelUa
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -329,12 +330,8 @@ private fun OrderListItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val itemsSummary = order.items.joinToString(", ") { item ->
-                    val itemName = item.name?.takeIf { it.isNotBlank() } ?: item.productType.labelUa()
-                    "$itemName ${item.quantity} ${item.unit}"
-                }.ifBlank { "#${order.id.take(8)}" }
                 Text(
-                    text = itemsSummary,
+                    text = order.itemsSummary(),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
@@ -433,14 +430,19 @@ private fun OrderDetailPanel(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                 Text(
-                    text = "Замовлення #${order.id.take(8)}",
+                    text = order.itemsSummary(),
                     style = MaterialTheme.typography.headlineMedium
                 )
                 Text(
                     text = client?.displayName ?: "Невідомий клієнт",
                     style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "#${order.id.take(8)}",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -815,7 +817,7 @@ private fun OrderDetailPanel(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("Видалити замовлення") },
-            text = { Text("Підтвердьте видалення замовлення #${order.id.take(8)}. Цю дію неможливо скасувати.") },
+            text = { Text("Підтвердьте видалення замовлення «${order.itemsSummary()}». Цю дію неможливо скасувати.") },
             confirmButton = {
                 Button(
                     onClick = {

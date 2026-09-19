@@ -18,6 +18,7 @@ object AppSettingsStore {
     @Serializable
     private data class PersistedSettings(
         val invoicesDir: String? = null,
+        val deliveryNotesDir: String? = null,
         val darkTheme: Boolean? = null,
         val deliveryNoteSeq: Int = 0,
         val deliveryNoteByInvoice: Map<String, String> = emptyMap(),
@@ -63,6 +64,20 @@ object AppSettingsStore {
             val normalized = value.toAbsolutePath().normalize()
             runCatching { Files.createDirectories(normalized) }
             persist(load().copy(invoicesDir = normalized.toString()))
+        }
+
+    /** Folder where delivery-note (видаткова накладна) PDFs are stored. */
+    var deliveryNotesDir: Path
+        get() {
+            val stored = load().deliveryNotesDir?.trim()?.takeIf { it.isNotEmpty() }
+            val dir = stored?.let { Paths.get(it) } ?: DesktopPaths.deliveryNoteDownloadsDir
+            runCatching { Files.createDirectories(dir) }
+            return dir
+        }
+        set(value) {
+            val normalized = value.toAbsolutePath().normalize()
+            runCatching { Files.createDirectories(normalized) }
+            persist(load().copy(deliveryNotesDir = normalized.toString()))
         }
 
     /** UI theme choice; persists across restarts. Defaults to light. */
