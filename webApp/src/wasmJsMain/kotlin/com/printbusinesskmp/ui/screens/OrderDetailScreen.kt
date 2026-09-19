@@ -39,7 +39,6 @@ import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.Invoice
 import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.models.OrderStatus
-import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.utils.FormatUtils
@@ -59,7 +58,6 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
     var info by remember { mutableStateOf<String?>(null) }
 
     var selectedStatus by remember { mutableStateOf(OrderStatus.DRAFT) }
-    var selectedPayment by remember { mutableStateOf(PaymentStatus.UNPAID) }
 
     var confirmDelete by remember { mutableStateOf(false) }
     var processing by remember { mutableStateOf(false) }
@@ -72,7 +70,6 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
                 val loadedOrder = ApiClient.getOrder(orderId)
                 order = loadedOrder
                 selectedStatus = loadedOrder.status
-                selectedPayment = loadedOrder.paymentStatus
                 client = ApiClient.getClient(loadedOrder.clientId)
                 invoices = ApiClient.getInvoicesByOrderId(orderId)
             } catch (e: Exception) {
@@ -122,6 +119,10 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
                 Text("Клієнт: ${client?.displayName ?: "-"}")
                 Text("Створено: ${FormatUtils.formatDateTime(current.createdAt)}")
                 Text("Оновлено: ${FormatUtils.formatDateTime(current.updatedAt)}")
+                Text(
+                    "Оплата: ${current.paymentStatus.labelUa()} · " +
+                        "${FormatUtils.formatCurrency(current.paidAmount)} з ${FormatUtils.formatCurrency(current.totalPrice)}"
+                )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     EnumField(
@@ -132,24 +133,12 @@ fun OrderDetailScreen(orderId: String, onNavigate: (Screen) -> Unit) {
                         textMapper = { it.labelUa() },
                         modifier = Modifier.weight(1f)
                     )
-                    EnumField(
-                        label = "Оплата",
-                        values = PaymentStatus.entries,
-                        selected = selectedPayment,
-                        onSelect = { selectedPayment = it },
-                        textMapper = { it.labelUa() },
-                        modifier = Modifier.weight(1f)
-                    )
                     Button(
                         onClick = {
                             processing = true
                             scope.launch {
                                 try {
-                                    ApiClient.updateOrderState(
-                                        id = orderId,
-                                        status = selectedStatus,
-                                        paymentStatus = selectedPayment
-                                    )
+                                    ApiClient.updateOrderState(id = orderId, status = selectedStatus)
                                     info = "Статус оновлено"
                                     reload()
                                 } catch (e: Exception) {

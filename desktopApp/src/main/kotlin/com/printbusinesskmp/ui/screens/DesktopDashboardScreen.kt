@@ -3,6 +3,7 @@ package com.printbusinesskmp.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,6 +52,7 @@ import com.printbusinesskmp.ui.components.StatusBadge
 import com.printbusinesskmp.ui.theme.DesktopColors
 import com.printbusinesskmp.utils.FormatUtils
 import com.printbusinesskmp.utils.itemsSummary
+import kotlin.time.Duration.Companion.days
 
 @Composable
 fun DesktopDashboardScreen(
@@ -62,6 +64,8 @@ fun DesktopDashboardScreen(
 ) {
     var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
     var orders by remember { mutableStateOf<List<Order>>(emptyList()) }
+    var payments by remember { mutableStateOf<List<com.printbusinesskmp.models.Payment>>(emptyList()) }
+    var invoices by remember { mutableStateOf<List<com.printbusinesskmp.models.Invoice>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var showInstallDialog by remember { mutableStateOf(false) }
@@ -70,6 +74,8 @@ fun DesktopDashboardScreen(
         try {
             clients = ApiClient.getClients()
             orders = ApiClient.getOrders()
+            payments = runCatching { ApiClient.getPayments() }.getOrDefault(emptyList())
+            invoices = runCatching { ApiClient.getAllInvoices() }.getOrDefault(emptyList())
         } catch (e: Exception) {
             error = e.message ?: "Помилка завантаження"
         } finally {
@@ -96,8 +102,15 @@ fun DesktopDashboardScreen(
     val activeOrders = orders.count { !it.status.isFinal }
     val totalRevenue = orders.filter { it.status == OrderStatus.COMPLETED }.sumOf { it.totalPrice }
     val totalProfit = orders.filter { it.status == OrderStatus.COMPLETED }.sumOf { it.profit }
-    val pendingPayment = orders.count {
-        it.paymentStatus != com.printbusinesskmp.models.PaymentStatus.PAID && !it.status.isFinal
+    val invoicedOrderIds = invoices.mapNotNull { it.orderId }.toSet()
+    val receivables = orders.filter { it.isReceivable(hasInvoice = it.id in invoicedOrderIds) }
+    val receivableTotal = receivables.sumOf { it.balanceDue }
+    val receivedThisMonth = payments.filter { PaymentPeriod.THIS_MONTH.contains(it.paidAt) }.sumOf { it.amount }
+    // Invoices sent over a week ago whose order is still not fully paid.
+    val overdueSent = run {
+        val weekAgo = kotlin.time.Clock.System.now() - 7.days
+        val receivableIds = receivables.map { it.id }.toSet()
+        invoices.count { inv -> inv.orderId in receivableIds && inv.sentAt?.let { it < weekAgo } == true }
     }
 
     Column(
@@ -374,16 +387,44 @@ fun DesktopDashboardScreen(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Spacer(Modifier.height(12.dp))
 
-                    Text(
-                        "Очікують оплати",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        pendingPayment.toString(),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = if (pendingPayment > 0) DesktopColors.warning else MaterialTheme.colorScheme.onSurface
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth().clickable { onNavigate(Screen.Payments) },
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            "Дебіторка",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            FormatUtils.formatCurrency(receivableTotal),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = if (receivables.isNotEmpty()) DesktopColors.warning else MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            FormatUtils.countUa(receivables.size, "замовлення", "замовлення", "замовлень") + " очікують оплати",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (overdueSent > 0) {
+                            Text(
+                                "Надіслано понад 7 днів тому й не оплачено: $overdueSent",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Надійшло цього місяця",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            FormatUtils.formatCurrency(receivedThisMonth),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = DesktopColors.success
+                        )
+                    }
                 }
             }
         }

@@ -29,5 +29,6 @@ fun NavigationContent(
         Screen.Invoices -> InvoiceScreen(onNavigate)
         Screen.Updates -> { /* Updates not available on web */ }
         Screen.Settings -> { /* Desktop-only (local folders, invoice numbering) */ }
+        Screen.Payments -> { /* Desktop-only */ }
     }
 }

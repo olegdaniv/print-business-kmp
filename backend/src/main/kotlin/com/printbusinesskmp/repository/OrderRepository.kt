@@ -4,6 +4,7 @@ import com.printbusinesskmp.database.DatabaseFactory.dbQuery
 import com.printbusinesskmp.database.tables.ClientsTable
 import com.printbusinesskmp.database.tables.OrderItemsTable
 import com.printbusinesskmp.database.tables.OrdersTable
+import com.printbusinesskmp.database.tables.PaymentAllocationsTable
 import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.models.OrderCreateRequest
 import com.printbusinesskmp.models.OrderItem
@@ -27,18 +28,14 @@ import java.util.UUID
 class OrderRepository {
 
     suspend fun allOrders(): List<Order> = dbQuery {
+        val totals = PaymentRepository.paymentTotals()
         OrdersTable.selectAll().map { row ->
             val orderId = row[OrdersTable.id]
-            toOrder(row, getOrderItems(orderId))
+            toOrder(row, getOrderItems(orderId), totals[orderId])
         }
     }
 
-    suspend fun orderById(id: String): Order? = dbQuery {
-        OrdersTable.selectAll()
-            .where { OrdersTable.id eq id }
-            .map { row -> toOrder(row, getOrderItems(id)) }
-            .singleOrNull()
-    }
+    suspend fun orderById(id: String): Order? = dbQuery { findOrder(id) }
 
     suspend fun addOrder(request: OrderCreateRequest): Order = dbQuery {
         validateOrderRequest(request.clientId, request.items)
@@ -51,7 +48,7 @@ class OrderRepository {
             it[OrdersTable.id] = id
             it[clientId] = request.clientId
             it[status] = request.status.name
-            it[paymentStatus] = request.paymentStatus.name
+            it[paymentStatus] = PaymentStatus.UNPAID.name
             it[totalCost] = items.sumOf { item -> item.cost }
             it[totalPrice] = items.sumOf { item -> item.price }
             it[profit] = items.sumOf { item -> item.profit }
@@ -62,8 +59,7 @@ class OrderRepository {
 
         insertOrderItems(id, items)
 
-        val orderRow = OrdersTable.selectAll().where { OrdersTable.id eq id }.single()
-        toOrder(orderRow, getOrderItems(id))
+        findOrder(id)!!
     }
 
     suspend fun updateOrder(id: String, request: OrderUpdateRequest): Order? = dbQuery {
@@ -77,7 +73,6 @@ class OrderRepository {
         OrdersTable.update({ OrdersTable.id eq id }) {
             it[clientId] = request.clientId
             it[status] = request.status.name
-            it[paymentStatus] = request.paymentStatus.name
             it[totalCost] = items.sumOf { item -> item.cost }
             it[totalPrice] = items.sumOf { item -> item.price }
             it[profit] = items.sumOf { item -> item.profit }
@@ -89,32 +84,21 @@ class OrderRepository {
         OrderItemsTable.deleteWhere { OrderItemsTable.orderId eq id }
         insertOrderItems(id, items)
 
-        val orderRow = OrdersTable.selectAll().where { OrdersTable.id eq id }.single()
-        toOrder(orderRow, getOrderItems(id))
+        findOrder(id)!!
     }
 
-    suspend fun updateStatus(
-        id: String,
-        status: OrderStatus,
-        paymentStatus: PaymentStatus?
-    ): Order? = dbQuery {
+    suspend fun updateStatus(id: String, status: OrderStatus): Order? = dbQuery {
         val changed = OrdersTable.update({ OrdersTable.id eq id }) {
             it[OrdersTable.status] = status.name
-            paymentStatus?.let { value ->
-                it[OrdersTable.paymentStatus] = value.name
-            }
             it[updatedAt] = Instant.now()
         }
 
-        if (changed == 0) {
-            null
-        } else {
-            val row = OrdersTable.selectAll().where { OrdersTable.id eq id }.single()
-            toOrder(row, getOrderItems(id))
-        }
+        if (changed == 0) null else findOrder(id)
     }
 
+    /** Payments stay; their share for this order becomes unallocated (client advance). */
     suspend fun deleteOrder(id: String): Boolean = dbQuery {
+        PaymentAllocationsTable.deleteWhere { orderId eq id }
         OrderItemsTable.deleteWhere { orderId eq id }
         OrdersTable.deleteWhere { OrdersTable.id eq id } > 0
     }
@@ -201,23 +185,31 @@ class OrderRepository {
         }
     }
 
+    private fun findOrder(id: String): Order? {
+        val row = OrdersTable.selectAll().where { OrdersTable.id eq id }.singleOrNull() ?: return null
+        return toOrder(row, getOrderItems(id), PaymentRepository.paymentTotals(listOf(id))[id])
+    }
+
     private fun getOrderItems(orderId: String): List<OrderItem> {
         return OrderItemsTable.selectAll()
             .where { OrderItemsTable.orderId eq orderId }
             .map(::toOrderItem)
     }
 
-    private fun toOrder(row: ResultRow, items: List<OrderItem>): Order {
+    private fun toOrder(row: ResultRow, items: List<OrderItem>, payments: OrderPaymentTotals?): Order {
+        val paidAmount = payments?.paidAmount ?: 0.0
         return Order(
             id = row[OrdersTable.id],
             clientId = row[OrdersTable.clientId],
             status = OrderStatus.valueOf(row[OrdersTable.status]),
-            paymentStatus = PaymentStatus.valueOf(row[OrdersTable.paymentStatus]),
+            paymentStatus = PaymentStatus.from(paidAmount, row[OrdersTable.totalPrice]),
             items = items,
             totalCost = row[OrdersTable.totalCost],
             totalPrice = row[OrdersTable.totalPrice],
             profit = row[OrdersTable.profit],
             notes = row[OrdersTable.notes],
+            paidAmount = paidAmount,
+            lastPaidAt = payments?.lastPaidAt?.let { kotlin.time.Instant.fromEpochMilliseconds(it.toEpochMilli()) },
             createdAt = kotlin.time.Instant.fromEpochMilliseconds(row[OrdersTable.createdAt].toEpochMilli()),
             updatedAt = kotlin.time.Instant.fromEpochMilliseconds(row[OrdersTable.updatedAt].toEpochMilli())
         )

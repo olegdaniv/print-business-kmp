@@ -10,6 +10,7 @@ sealed class Screen {
     data class OrderDetail(val orderId: String) : Screen()
     data object Layouts : Screen()
     data object Invoices : Screen()
+    data object Payments : Screen()
     data object Updates : Screen()
     data object Settings : Screen()
 }

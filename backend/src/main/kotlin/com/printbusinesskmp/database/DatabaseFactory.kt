@@ -11,6 +11,8 @@ import com.printbusinesskmp.database.tables.OrderItemsTable
 import com.printbusinesskmp.database.tables.OrdersTable
 import com.printbusinesskmp.database.tables.OutsourceJobsTable
 import com.printbusinesskmp.database.tables.PartnersTable
+import com.printbusinesskmp.database.tables.PaymentAllocationsTable
+import com.printbusinesskmp.database.tables.PaymentsTable
 import com.printbusinesskmp.database.tables.SavedItemsTable
 import com.printbusinesskmp.platform.AppDataPaths
 import com.zaxxer.hikari.HikariConfig
@@ -69,8 +71,12 @@ object DatabaseFactory {
                 LayoutsTable,
                 AllowedEmailsTable,
                 SavedItemsTable,
-                AppSettingsTable
+                AppSettingsTable,
+                PaymentsTable,
+                PaymentAllocationsTable
             )
+
+            PaymentsMigration.migrateLegacyPaidOrders()
         }
     }
 

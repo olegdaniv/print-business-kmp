@@ -10,6 +10,8 @@ object OrdersTable : Table("orders") {
     val clientId = varchar("client_id", 36)
         .references(ClientsTable.id, onDelete = ReferenceOption.RESTRICT)
     val status = varchar("status", 50)
+    // Legacy manual status. Payment status is now derived from payments; this column is
+    // only written as UNPAID for new orders and read once by the payments migration.
     val paymentStatus = varchar("payment_status", 50)
     val totalCost = double("total_cost")
     val totalPrice = double("total_price")

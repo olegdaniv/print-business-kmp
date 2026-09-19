@@ -19,7 +19,9 @@ import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.models.OrderCreateRequest
 import com.printbusinesskmp.models.OrderStatus
 import com.printbusinesskmp.models.OrderUpdateRequest
-import com.printbusinesskmp.models.PaymentStatus
+import com.printbusinesskmp.models.InvoiceSentRequest
+import com.printbusinesskmp.models.Payment
+import com.printbusinesskmp.models.PaymentUpsertRequest
 import com.printbusinesskmp.models.PricingRequest
 import com.printbusinesskmp.models.PricingResult
 import com.printbusinesskmp.models.SavedItem
@@ -50,8 +52,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 private data class OrderStateRequest(
-    val status: OrderStatus? = null,
-    val paymentStatus: PaymentStatus? = null
+    val status: OrderStatus? = null
 )
 
 @Serializable
@@ -240,12 +241,11 @@ object  ApiClient {
 
     suspend fun updateOrderState(
         id: String,
-        status: OrderStatus? = null,
-        paymentStatus: PaymentStatus? = null
+        status: OrderStatus? = null
     ): Order {
         return client.patch("$baseUrl/api/orders/$id/state") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            setBody(OrderStateRequest(status = status, paymentStatus = paymentStatus))
+            setBody(OrderStateRequest(status = status))
         }.body()
     }
 
@@ -293,6 +293,13 @@ object  ApiClient {
         }.body()
     }
 
+    suspend fun setInvoiceSent(id: String, sentAtEpochMs: Long?): Invoice {
+        return client.put("$baseUrl/api/invoices/$id/sent") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(InvoiceSentRequest(sentAtEpochMs))
+        }.body()
+    }
+
     suspend fun createInvoice(request: InvoiceCreateRequest): Invoice {
         return client.post("$baseUrl/api/invoices") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
@@ -329,6 +336,37 @@ object  ApiClient {
 
     fun getInvoiceDownloadUrl(id: String): String {
         return "$baseUrl/api/invoices/download/$id"
+    }
+
+    suspend fun getPayments(orderId: String? = null): List<Payment> {
+        return client.get("$baseUrl/api/payments") {
+            url {
+                orderId?.let { parameters.append("orderId", it) }
+            }
+        }.body()
+    }
+
+    suspend fun createPayment(request: PaymentUpsertRequest): Payment {
+        return client.post("$baseUrl/api/payments") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun updatePayment(id: String, request: PaymentUpsertRequest): Payment {
+        return client.put("$baseUrl/api/payments/$id") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun deletePayment(id: String) {
+        client.delete("$baseUrl/api/payments/$id")
+    }
+
+    /** Orders that were marked "partially paid" before payments were tracked and still have none. */
+    suspend fun getLegacyPartialOrderIds(): List<String> {
+        return client.get("$baseUrl/api/payments/legacy-partial").body()
     }
 
     suspend fun getLayouts(

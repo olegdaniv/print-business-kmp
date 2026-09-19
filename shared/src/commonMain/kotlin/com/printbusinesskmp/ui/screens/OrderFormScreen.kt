@@ -47,7 +47,6 @@ import com.printbusinesskmp.models.OrderCreateRequest
 import com.printbusinesskmp.models.OrderItemDraft
 import com.printbusinesskmp.models.OrderStatus
 import com.printbusinesskmp.models.OrderUpdateRequest
-import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.models.PricingConfig
 import com.printbusinesskmp.models.ProductType
 import com.printbusinesskmp.models.SavedItem
@@ -106,7 +105,8 @@ fun OrderFormScreen(
     var savedItems by remember { mutableStateOf<List<SavedItem>>(emptyList()) }
     var selectedClientId by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf(OrderStatus.DRAFT) }
-    var paymentStatus by remember { mutableStateOf(PaymentStatus.UNPAID) }
+    // Payment is recorded in the «Оплати» tab; the form only shows what was received.
+    var paymentSummary by remember { mutableStateOf<String?>(null) }
     var notes by remember { mutableStateOf("") }
     var rows by remember { mutableStateOf(listOf(LineRow())) }
 
@@ -123,7 +123,8 @@ fun OrderFormScreen(
                 val order = ApiClient.getOrder(orderId)
                 selectedClientId = order.clientId
                 status = order.status
-                paymentStatus = order.paymentStatus
+                paymentSummary = "${order.paymentStatus.labelUa()} · " +
+                    "${FormatUtils.formatCurrency(order.paidAmount)} з ${FormatUtils.formatCurrency(order.totalPrice)}"
                 notes = order.notes.orEmpty()
                 rows = order.items.map { item ->
                     val total = item.manualPrice ?: item.price
@@ -190,13 +191,18 @@ fun OrderFormScreen(
                         onSelect = { status = it },
                         textMapper = { it.labelUa() },
                     )
-                EnumSelector(
-                        label = "Оплата",
-                        values = PaymentStatus.entries,
-                        selected = paymentStatus,
-                        onSelect = { paymentStatus = it },
-                        textMapper = { it.labelUa() },
-                    )
+                paymentSummary?.let { summary ->
+                    Column {
+                        Text(
+                            text = "Оплата",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        Text(summary, modifier = Modifier.padding(vertical = 10.dp))
+                    }
+                }
                 }
 
                 OutlinedTextField(
@@ -364,7 +370,6 @@ fun OrderFormScreen(
                                 OrderUpdateRequest(
                                     clientId = clientId,
                                     status = status,
-                                    paymentStatus = paymentStatus,
                                     items = drafts,
                                     notes = notes.ifBlank { null }
                                 )
@@ -374,7 +379,6 @@ fun OrderFormScreen(
                                 OrderCreateRequest(
                                     clientId = clientId,
                                     status = status,
-                                    paymentStatus = paymentStatus,
                                     items = drafts,
                                     notes = notes.ifBlank { null }
                                 )

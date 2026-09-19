@@ -89,6 +89,18 @@ class InvoiceRepository {
         }
     }
 
+    suspend fun updateInvoiceSentAt(id: String, sentAtEpochMs: Long?): Invoice? = dbQuery {
+        val changed = InvoicesTable.update({ InvoicesTable.id eq id }) {
+            it[sentAt] = sentAtEpochMs?.let { ms -> Instant.ofEpochMilli(ms) }
+        }
+        if (changed == 0) {
+            null
+        } else {
+            val row = InvoicesTable.selectAll().where { InvoicesTable.id eq id }.single()
+            toInvoice(row, getLines(id))
+        }
+    }
+
     suspend fun addInvoice(invoice: Invoice): Invoice = dbQuery {
         val id = invoice.id.ifBlank { UUID.randomUUID().toString() }
 
@@ -246,7 +258,8 @@ class InvoiceRepository {
             taxAmount = row[InvoicesTable.taxAmount],
             totalAmount = row[InvoicesTable.totalAmount],
             notes = row[InvoicesTable.notes],
-            filePath = row[InvoicesTable.filePath]
+            filePath = row[InvoicesTable.filePath],
+            sentAt = row[InvoicesTable.sentAt]?.let { kotlin.time.Instant.fromEpochMilliseconds(it.toEpochMilli()) }
         )
     }
 

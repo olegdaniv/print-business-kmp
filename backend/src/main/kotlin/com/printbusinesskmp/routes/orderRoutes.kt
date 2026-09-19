@@ -3,7 +3,6 @@ package com.printbusinesskmp.routes
 import com.printbusinesskmp.models.OrderCreateRequest
 import com.printbusinesskmp.models.OrderStatus
 import com.printbusinesskmp.models.OrderUpdateRequest
-import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.repository.OrderRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.authenticate
@@ -22,8 +21,7 @@ private val orderRepository = OrderRepository()
 
 @Serializable
 data class UpdateOrderStateRequest(
-    val status: OrderStatus? = null,
-    val paymentStatus: PaymentStatus? = null
+    val status: OrderStatus? = null
 )
 
 fun Route.configureOrderRoutes() {
@@ -81,11 +79,7 @@ fun Route.configureOrderRoutes() {
                     ?: orderRepository.orderById(id)?.status
                     ?: return@patch call.respond(HttpStatusCode.NotFound, mapOf("error" to "Order not found"))
 
-                val updated = orderRepository.updateStatus(
-                    id = id,
-                    status = targetStatus,
-                    paymentStatus = request.paymentStatus
-                )
+                val updated = orderRepository.updateStatus(id = id, status = targetStatus)
 
                 if (updated == null) {
                     call.respond(HttpStatusCode.NotFound, mapOf("error" to "Order not found"))

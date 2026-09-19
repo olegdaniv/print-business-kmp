@@ -180,6 +180,8 @@ fun DesktopOrdersScreen(onNavigate: (Screen) -> Unit, initialOrderId: String? = 
                     OrderDetailPanel(
                         order = selectedOrder,
                         client = clientById[selectedOrder.clientId],
+                        clients = clients,
+                        orders = orders,
                         onEdit = { onNavigate(Screen.OrderForm(selectedOrder.id)) },
                         onNavigate = onNavigate,
                         onOrderUpdated = { load() },
@@ -417,6 +419,8 @@ private fun OrderListItem(
 private fun OrderDetailPanel(
     order: Order,
     client: Client?,
+    clients: List<Client>,
+    orders: List<Order>,
     onEdit: () -> Unit,
     onNavigate: (Screen) -> Unit,
     onOrderUpdated: () -> Unit,
@@ -438,6 +442,7 @@ private fun OrderDetailPanel(
     // Delete-document confirmation: target invoice + whether it deletes the ВН or the invoice.
     var confirmDeleteDoc by remember { mutableStateOf<com.printbusinesskmp.models.Invoice?>(null) }
     var confirmDeleteIsVn by remember { mutableStateOf(false) }
+    var sentDialogInvoice by remember { mutableStateOf<com.printbusinesskmp.models.Invoice?>(null) }
     // Bumped after a delivery note is (re)generated so its number/date refreshes.
     var deliveryNoteTick by remember { mutableStateOf(0) }
 
@@ -635,6 +640,13 @@ private fun OrderDetailPanel(
             }
         }
 
+        OrderPaymentsCard(
+            order = order,
+            clients = clients,
+            orders = orders,
+            onChanged = onOrderUpdated
+        )
+
         // Invoices section
         Card(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -716,8 +728,14 @@ private fun OrderDetailPanel(
                                     DocumentSection(
                                         label = "Рахунок-фактура",
                                         number = "№ ${invoice.number}",
-                                        date = issuedDate
+                                        date = issuedDate,
+                                        status = invoice.sentAt
+                                            ?.let { "Надіслано ${FormatUtils.formatDate(it)}" }
+                                            ?: "Не надіслано клієнту"
                                     ) {
+                                        TextButton(onClick = { sentDialogInvoice = invoice }) {
+                                            Text(if (invoice.sentAt == null) "Надіслано" else "Дата надсилання", fontSize = 12.sp)
+                                        }
                                         TextButton(onClick = {
                                             numberInput = invoice.number
                                             renamingInvoice = invoice
@@ -975,6 +993,19 @@ private fun OrderDetailPanel(
         )
     }
 
+    sentDialogInvoice?.let { invoice ->
+        InvoiceSentDialog(
+            invoice = invoice,
+            onDismiss = { sentDialogInvoice = null },
+            onSaved = { updated ->
+                invoices = invoices.map { if (it.id == updated.id) updated else it }
+                info = updated.sentAt?.let { "Рахунок позначено надісланим ${FormatUtils.formatDate(it)}" }
+                    ?: "Позначку про надсилання знято"
+            },
+            onError = { error = it }
+        )
+    }
+
     confirmDeleteDoc?.let { invoice ->
         val isVn = confirmDeleteIsVn
         AlertDialog(
@@ -1019,23 +1050,6 @@ private fun OrderDetailPanel(
     }
 }
 
-/** Parses a "dd.MM.yyyy" string to epoch milliseconds at local start-of-day, or null. */
-private fun parseUaDateToEpochMs(input: String): Long? {
-    val parts = input.trim().split('.')
-    if (parts.size != 3) return null
-    val day = parts[0].toIntOrNull() ?: return null
-    val month = parts[1].toIntOrNull() ?: return null
-    val year = parts[2].toIntOrNull() ?: return null
-    return try {
-        java.time.LocalDate.of(year, month, day)
-            .atStartOfDay(java.time.ZoneId.systemDefault())
-            .toInstant()
-            .toEpochMilli()
-    } catch (_: Exception) {
-        null
-    }
-}
-
 /**
  * One document line inside an invoice card: a label + number/date on the left
  * and its actions (FlowRow) on the right.
@@ -1045,26 +1059,30 @@ private fun DocumentSection(
     label: String,
     number: String,
     date: String?,
+    status: String? = null,
     actions: @Composable () -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
+    // Info on top, actions below: a side-by-side row squeezed the number into a sliver
+    // once the invoice got its "Надіслано" action.
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            buildString {
+                append(number)
+                if (date != null) append(" · $date")
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
+        )
+        status?.let {
             Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
+                it,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                buildString {
-                    append(number)
-                    if (date != null) append(" · $date")
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
             )
         }
         FlowRow(

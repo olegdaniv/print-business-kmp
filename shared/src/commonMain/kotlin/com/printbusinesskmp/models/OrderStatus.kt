@@ -50,5 +50,16 @@ DRAFT,
 enum class PaymentStatus {
     UNPAID,
     PARTIAL,
-    PAID
+    PAID,
+    OVERPAID;
+
+    companion object {
+        /** Payment status is derived from the money actually received against the order total. */
+        fun from(paidAmount: Double, totalAmount: Double): PaymentStatus = when {
+            paidAmount <= MONEY_EPSILON -> UNPAID
+            paidAmount < totalAmount - MONEY_EPSILON -> PARTIAL
+            paidAmount > totalAmount + MONEY_EPSILON -> OVERPAID
+            else -> PAID
+        }
+    }
 }

@@ -93,6 +93,7 @@ fun PaymentBadge(status: PaymentStatus) {
         PaymentStatus.UNPAID -> DesktopColors.Status.cancelledBg to DesktopColors.Status.cancelledText
         PaymentStatus.PARTIAL -> DesktopColors.Status.pendingBg to DesktopColors.Status.pendingText
         PaymentStatus.PAID -> DesktopColors.Status.completedBg to DesktopColors.Status.completedText
+        PaymentStatus.OVERPAID -> DesktopColors.Status.shippedBg to DesktopColors.Status.shippedText
     }.let { (lightBg, lightText) -> adaptBadgeColors(lightBg, lightText) }
 
     Box(

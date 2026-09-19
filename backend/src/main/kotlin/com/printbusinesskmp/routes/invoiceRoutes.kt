@@ -9,6 +9,7 @@ import com.printbusinesskmp.models.InvoiceNumberFormatInfo
 import com.printbusinesskmp.models.InvoiceNumberFormatUpdateRequest
 import com.printbusinesskmp.models.InvoiceNumberOverrideRequest
 import com.printbusinesskmp.models.InvoiceSellerSnapshot
+import com.printbusinesskmp.models.InvoiceSentRequest
 import com.printbusinesskmp.models.OrderItem
 import com.printbusinesskmp.models.ProductType
 import com.printbusinesskmp.models.ServiceType
@@ -511,6 +512,19 @@ fun Route.configureInvoiceRoutes() {
                         HttpStatusCode.InternalServerError,
                         mapOf("error" to "Invoice date update failed", "details" to (e.message ?: "unknown error"))
                     )
+                }
+            }
+
+            put("{id}/sent") {
+                val id = call.parameters["id"]
+                    ?: return@put call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing invoice ID"))
+
+                val request = call.receive<InvoiceSentRequest>()
+                val updated = invoiceRepository.updateInvoiceSentAt(id, request.sentAtEpochMs)
+                if (updated == null) {
+                    call.respond(HttpStatusCode.NotFound, mapOf("error" to "Invoice not found"))
+                } else {
+                    call.respond(HttpStatusCode.OK, updated)
                 }
             }
 

@@ -23,6 +23,8 @@ data class Invoice(
     val finalAmount: Double = 0.0,
     val notes: String? = null,
     val filePath: String? = null,
+    /** When the invoice was sent to the client; null while not sent. */
+    val sentAt: Instant? = null,
 )
 
 @Serializable

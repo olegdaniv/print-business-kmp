@@ -42,6 +42,7 @@ object InvoicesTable : Table("invoices") {
     val totalAmount = double("total_amount")
     val notes = text("notes").nullable()
     val filePath = varchar("file_path", 500).nullable()
+    val sentAt = timestamp("sent_at").nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

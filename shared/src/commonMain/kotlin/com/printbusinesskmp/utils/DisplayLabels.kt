@@ -32,6 +32,7 @@ fun PaymentStatus.labelUa(): String = when (this) {
     PaymentStatus.UNPAID -> "Не оплачено"
     PaymentStatus.PARTIAL -> "Частково"
     PaymentStatus.PAID -> "Оплачено"
+    PaymentStatus.OVERPAID -> "Переплата"
 }
 
 fun ServiceType.labelUa(): String = when (this) {
@@ -143,4 +144,12 @@ fun ClientSource.labelUa(): String = when (this) {
     ClientSource.WALK_IN -> "Прямий візит"
     ClientSource.B2B_OUTREACH -> "B2B"
     ClientSource.OTHER -> "Інше"
+}
+
+fun PaymentMethod.labelUa(): String = when (this) {
+    PaymentMethod.BANK_TRANSFER -> "Р/р"
+    PaymentMethod.CARD -> "Картка"
+    PaymentMethod.CASH -> "Готівка"
+    PaymentMethod.COD -> "Накладений платіж"
+    PaymentMethod.OTHER -> "Інше"
 }
