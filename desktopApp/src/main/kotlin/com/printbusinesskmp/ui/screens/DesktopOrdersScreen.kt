@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,12 +34,14 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,7 +67,9 @@ import com.printbusinesskmp.ui.theme.DesktopColors
 import com.printbusinesskmp.utils.FormatUtils
 import com.printbusinesskmp.utils.itemsSummary
 import com.printbusinesskmp.utils.labelUa
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -74,41 +79,50 @@ fun DesktopOrdersScreen(onNavigate: (Screen) -> Unit, initialOrderId: String? = 
 
     var orders by remember { mutableStateOf<List<Order>>(emptyList()) }
     var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
+    // `loaded` gates the full-screen spinner to the first load only. Later refreshes
+    // (after an invoice is generated, an order deleted, ...) keep the split pane and the
+    // detail panel alive, so their scroll position and status messages survive.
+    var loaded by remember { mutableStateOf(false) }
+    var refreshing by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var search by remember { mutableStateOf("") }
     var statusFilter by remember { mutableStateOf<OrderStatus?>(null) }
     var selectedOrderId by remember { mutableStateOf(initialOrderId) }
+    var loadJob by remember { mutableStateOf<Job?>(null) }
 
     fun load() {
-        scope.launch {
-            loading = true
+        loadJob?.cancel()
+        loadJob = scope.launch {
+            refreshing = true
             error = null
             try {
                 clients = ApiClient.getClients()
                 orders = ApiClient.getOrders()
-                // Auto-select first order if none selected
-                if (selectedOrderId == null && orders.isNotEmpty()) {
-                    selectedOrderId = orders.sortedByDescending { it.updatedAt }.first().id
+                // Auto-select the most recent order if nothing (valid) is selected
+                if (orders.none { it.id == selectedOrderId }) {
+                    selectedOrderId = orders.maxByOrNull { it.updatedAt }?.id
                 }
+                loaded = true
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                error = e.message
+                error = e.message ?: "Помилка завантаження"
             } finally {
-                loading = false
+                refreshing = false
             }
         }
     }
 
     LaunchedEffect(Unit) { load() }
 
-    if (loading) {
+    if (!loaded && error == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
         return
     }
 
-    if (error != null) {
+    if (!loaded) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(error ?: "", color = MaterialTheme.colorScheme.error)
@@ -119,20 +133,22 @@ fun DesktopOrdersScreen(onNavigate: (Screen) -> Unit, initialOrderId: String? = 
         return
     }
 
-    val clientById = clients.associateBy { it.id }
+    val clientById = remember(clients) { clients.associateBy { it.id } }
 
-    val filtered = orders
-        .filter { order ->
-            val matchesSearch = search.isBlank() || run {
-                val q = search.lowercase()
-                order.id.lowercase().contains(q) ||
+    val filtered = remember(orders, clientById, search, statusFilter) {
+        val q = search.trim().lowercase()
+        orders
+            .filter { order ->
+                val matchesSearch = q.isEmpty() ||
+                    order.id.lowercase().contains(q) ||
+                    order.itemsSummary().lowercase().contains(q) ||
                     clientById[order.clientId]?.displayName?.lowercase()?.contains(q) == true ||
                     order.notes?.lowercase()?.contains(q) == true
+                val matchesStatus = statusFilter == null || order.status == statusFilter
+                matchesSearch && matchesStatus
             }
-            val matchesStatus = statusFilter == null || order.status == statusFilter
-            matchesSearch && matchesStatus
-        }
-        .sortedByDescending { it.updatedAt }
+            .sortedByDescending { it.updatedAt }
+    }
 
     val selectedOrder = selectedOrderId?.let { id -> orders.find { it.id == id } }
 
@@ -151,29 +167,35 @@ fun DesktopOrdersScreen(onNavigate: (Screen) -> Unit, initialOrderId: String? = 
                 selectedOrderId = selectedOrderId,
                 onSelectOrder = { selectedOrderId = it },
                 onNewOrder = { onNavigate(Screen.OrderForm(null)) },
-                onRefresh = { load() }
+                onRefresh = { load() },
+                refreshing = refreshing,
+                error = error
             )
         },
         rightContent = {
             if (selectedOrder != null) {
-                OrderDetailPanel(
-                    order = selectedOrder,
-                    client = clientById[selectedOrder.clientId],
-                    onEdit = { onNavigate(Screen.OrderForm(selectedOrder.id)) },
-                    onNavigate = onNavigate,
-                    onOrderUpdated = { load() },
-                    onDelete = {
-                        scope.launch {
-                            try {
-                                ApiClient.deleteOrder(selectedOrder.id)
-                                selectedOrderId = null
-                                load()
-                            } catch (e: Exception) {
-                                error = e.message
+                // Keyed by id: dialogs, messages and scroll belong to one order and must
+                // not leak into the next one when the selection changes.
+                key(selectedOrder.id) {
+                    OrderDetailPanel(
+                        order = selectedOrder,
+                        client = clientById[selectedOrder.clientId],
+                        onEdit = { onNavigate(Screen.OrderForm(selectedOrder.id)) },
+                        onNavigate = onNavigate,
+                        onOrderUpdated = { load() },
+                        onDelete = {
+                            scope.launch {
+                                try {
+                                    ApiClient.deleteOrder(selectedOrder.id)
+                                    selectedOrderId = null
+                                    load()
+                                } catch (e: Exception) {
+                                    error = e.message ?: "Не вдалося видалити замовлення"
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             } else {
                 EmptyDetailPanel()
             }
@@ -192,7 +214,9 @@ private fun OrderListPanel(
     selectedOrderId: String?,
     onSelectOrder: (String) -> Unit,
     onNewOrder: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    refreshing: Boolean,
+    error: String?
 ) {
     Column(
         modifier = Modifier
@@ -219,9 +243,7 @@ private fun OrderListPanel(
                 Button(
                     onClick = onNewOrder,
                     modifier = Modifier.height(32.dp),
-                    contentPadding = ButtonDefaults.ContentPadding.let {
-                        androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                    },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
@@ -235,7 +257,7 @@ private fun OrderListPanel(
         SearchField(
             value = search,
             onValueChange = onSearchChange,
-            placeholder = "Пошук за ID, клієнтом...",
+            placeholder = "Пошук за назвою, клієнтом...",
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
@@ -270,7 +292,20 @@ private fun OrderListPanel(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
         )
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        error?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
+
+        if (refreshing) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(1.dp))
+        } else {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        }
 
         // Order list
         if (orders.isEmpty()) {
@@ -633,9 +668,7 @@ private fun OrderDetailPanel(
                             },
                             enabled = !processing,
                             modifier = Modifier.height(32.dp),
-                            contentPadding = ButtonDefaults.ContentPadding.let {
-                                androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                            },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = DesktopColors.success)
                         ) {

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -26,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -104,7 +104,7 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
             text = "Профіль ФОП",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = AppColors.DarkSlate,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 20.dp)
         )
 
@@ -114,7 +114,7 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
         }
 
         Card(
-            colors = CardDefaults.cardColors(containerColor = AppColors.White),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -128,7 +128,7 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                     onValueChange = { ownerName = it; ownerNameError = null; message = null },
                     label = { Text("ПІБ *") },
                     isError = ownerNameError != null,
-                    supportingText = ownerNameError?.let { { Text(it, color = Color.Red) } },
+                    supportingText = ownerNameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -180,7 +180,7 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                     onValueChange = { address = it; addressError = null; message = null },
                     label = { Text("Адреса *") },
                     isError = addressError != null,
-                    supportingText = addressError?.let { { Text(it, color = Color.Red) } },
+                    supportingText = addressError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2
                 )
@@ -242,7 +242,7 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                 Spacer(Modifier.height(8.dp))
 
                 if (globalError != null) {
-                    Text(globalError ?: "", color = Color.Red, fontSize = 13.sp)
+                    Text(globalError ?: "", color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
                 }
                 if (message != null) {
                     Text(message ?: "", color = AppColors.Success, fontSize = 13.sp)
@@ -314,16 +314,16 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                             }
                         },
                         enabled = !saving,
-                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
                         if (saving) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
-                                color = AppColors.White,
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Зберегти", color = AppColors.White)
+                            Text("Зберегти", color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }
@@ -338,7 +338,7 @@ private fun SectionTitle(text: String) {
         text = text,
         fontSize = 13.sp,
         fontWeight = FontWeight.SemiBold,
-        color = AppColors.DarkSlate.copy(alpha = 0.6f),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(bottom = 2.dp)
     )
 }

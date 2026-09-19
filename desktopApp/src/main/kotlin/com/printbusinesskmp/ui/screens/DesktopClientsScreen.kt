@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,12 +33,14 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,6 +62,8 @@ import com.printbusinesskmp.ui.components.SplitPane
 import com.printbusinesskmp.ui.components.StatusFilterChips
 import com.printbusinesskmp.ui.theme.DesktopColors
 import com.printbusinesskmp.utils.FormatUtils
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 private fun DeliveryType.displayName(): String = when (this) {
@@ -72,39 +77,47 @@ fun DesktopClientsScreen(onNavigate: (Screen) -> Unit) {
     val scope = rememberCoroutineScope()
 
     var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
+    // Full-screen spinner/error only until the first successful load; refreshes keep
+    // the split pane on screen (see DesktopOrdersScreen for the same pattern).
+    var loaded by remember { mutableStateOf(false) }
+    var refreshing by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var search by remember { mutableStateOf("") }
     var typeFilter by remember { mutableStateOf<ClientType?>(null) }
     var selectedClientId by remember { mutableStateOf<String?>(null) }
+    var loadJob by remember { mutableStateOf<Job?>(null) }
 
     fun load() {
-        scope.launch {
-            loading = true
+        loadJob?.cancel()
+        loadJob = scope.launch {
+            refreshing = true
             error = null
             try {
                 clients = ApiClient.getClients()
-                if (selectedClientId == null && clients.isNotEmpty()) {
-                    selectedClientId = clients.first().id
+                if (clients.none { it.id == selectedClientId }) {
+                    selectedClientId = clients.firstOrNull()?.id
                 }
+                loaded = true
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                error = e.message
+                error = e.message ?: "Помилка завантаження"
             } finally {
-                loading = false
+                refreshing = false
             }
         }
     }
 
     LaunchedEffect(Unit) { load() }
 
-    if (loading) {
+    if (!loaded && error == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
         return
     }
 
-    if (error != null) {
+    if (!loaded) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(error ?: "", color = MaterialTheme.colorScheme.error)
@@ -115,16 +128,19 @@ fun DesktopClientsScreen(onNavigate: (Screen) -> Unit) {
         return
     }
 
-    val filtered = clients.filter { client ->
-        val matchesSearch = search.isBlank() || run {
-            val q = search.lowercase()
-            client.displayName.lowercase().contains(q) ||
-                client.phone.contains(q) ||
+    val filtered = remember(clients, search, typeFilter) {
+        val q = search.trim().lowercase()
+        // Phones are stored as bare digits, so compare digits-only to match "067 123..."
+        val qDigits = q.filter { it.isDigit() }
+        clients.filter { client ->
+            val matchesSearch = q.isEmpty() ||
+                client.displayName.lowercase().contains(q) ||
+                (qDigits.isNotEmpty() && client.phone.contains(qDigits)) ||
                 client.email?.lowercase()?.contains(q) == true ||
                 client.taxId?.contains(q) == true
+            val matchesType = typeFilter == null || client.type == typeFilter
+            matchesSearch && matchesType
         }
-        val matchesType = typeFilter == null || client.type == typeFilter
-        matchesSearch && matchesType
     }
 
     val selectedClient = selectedClientId?.let { id -> clients.find { it.id == id } }
@@ -143,26 +159,30 @@ fun DesktopClientsScreen(onNavigate: (Screen) -> Unit) {
                 selectedClientId = selectedClientId,
                 onSelectClient = { selectedClientId = it },
                 onNewClient = { onNavigate(Screen.ClientForm(null)) },
-                onRefresh = { load() }
+                onRefresh = { load() },
+                refreshing = refreshing,
+                error = error
             )
         },
         rightContent = {
             if (selectedClient != null) {
-                ClientDetailPanel(
-                    client = selectedClient,
-                    onEdit = { onNavigate(Screen.ClientForm(selectedClient.id)) },
-                    onDelete = {
-                        scope.launch {
-                            try {
-                                ApiClient.deleteClient(selectedClient.id)
-                                selectedClientId = null
-                                load()
-                            } catch (e: Exception) {
-                                error = e.message
+                key(selectedClient.id) {
+                    ClientDetailPanel(
+                        client = selectedClient,
+                        onEdit = { onNavigate(Screen.ClientForm(selectedClient.id)) },
+                        onDelete = {
+                            scope.launch {
+                                try {
+                                    ApiClient.deleteClient(selectedClient.id)
+                                    selectedClientId = null
+                                    load()
+                                } catch (e: Exception) {
+                                    error = e.message ?: "Не вдалося видалити клієнта"
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             } else {
                 EmptyClientPanel()
             }
@@ -180,7 +200,9 @@ private fun ClientListPanel(
     selectedClientId: String?,
     onSelectClient: (String) -> Unit,
     onNewClient: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    refreshing: Boolean,
+    error: String?
 ) {
     Column(
         modifier = Modifier
@@ -206,9 +228,7 @@ private fun ClientListPanel(
                 Button(
                     onClick = onNewClient,
                     modifier = Modifier.height(32.dp),
-                    contentPadding = ButtonDefaults.ContentPadding.let {
-                        androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                    },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
@@ -246,7 +266,20 @@ private fun ClientListPanel(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
         )
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        error?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
+
+        if (refreshing) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(1.dp))
+        } else {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        }
 
         if (clients.isEmpty()) {
             Box(

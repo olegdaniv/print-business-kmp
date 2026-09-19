@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -28,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,7 +39,6 @@ import com.printbusinesskmp.models.ClientType
 import com.printbusinesskmp.models.ClientUpdateRequest
 import com.printbusinesskmp.models.DeliveryType
 import com.printbusinesskmp.navigation.Screen
-import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.ui.components.EdrpouField
 import com.printbusinesskmp.ui.components.IbanField
 import com.printbusinesskmp.ui.components.IpnField
@@ -134,7 +133,7 @@ fun ClientFormScreen(
             text = if (editMode) "Редагування клієнта" else "Новий клієнт",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
-            color = AppColors.DarkSlate,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 20.dp)
         )
 
@@ -144,7 +143,7 @@ fun ClientFormScreen(
         }
 
         Card(
-            colors = CardDefaults.cardColors(containerColor = AppColors.White),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -245,7 +244,7 @@ fun ClientFormScreen(
                     text = "Доставка",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = AppColors.DarkSlate.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 LabeledDropdown(
@@ -318,7 +317,7 @@ fun ClientFormScreen(
 
                 // ── Error + actions ───────────────────────────────────────
                 if (error != null) {
-                    Text(error ?: "", color = Color.Red)
+                    Text(error ?: "", color = MaterialTheme.colorScheme.error)
                 }
 
                 Row(
@@ -404,16 +403,16 @@ fun ClientFormScreen(
                         },
                         enabled = !saving,
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
                         if (saving) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
-                                color = AppColors.White,
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Зберегти", color = AppColors.White)
+                            Text("Зберегти", color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }

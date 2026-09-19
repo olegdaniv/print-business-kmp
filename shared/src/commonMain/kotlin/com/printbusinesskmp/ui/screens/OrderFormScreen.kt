@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -28,16 +29,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.GarmentSource
@@ -53,13 +55,17 @@ import com.printbusinesskmp.models.SavedItemBulkUpsertRequest
 import com.printbusinesskmp.models.SavedItemCreateRequest
 import com.printbusinesskmp.models.ServiceType
 import com.printbusinesskmp.navigation.Screen
-import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.ui.components.LabeledDropdown
 import com.printbusinesskmp.utils.FormatUtils
 import com.printbusinesskmp.utils.labelUa
 import kotlinx.coroutines.launch
 
+// Row ids only need to be unique within one form session; they give each line a
+// stable composition key so removing a middle row doesn't shift per-row UI state.
+private var lineRowSeq = 0L
+
 private data class LineRow(
+    val id: Long = ++lineRowSeq,
     val name: String = "",
     val unit: String = "шт.",
     val quantity: String = "1",
@@ -109,34 +115,32 @@ fun OrderFormScreen(
     var error by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(orderId) {
-        scope.launch {
-            try {
-                clients = ApiClient.getClients()
-                savedItems = runCatching { ApiClient.getSavedItems() }.getOrDefault(emptyList())
+        try {
+            clients = ApiClient.getClients()
+            savedItems = runCatching { ApiClient.getSavedItems() }.getOrDefault(emptyList())
 
-                if (orderId != null) {
-                    val order = ApiClient.getOrder(orderId)
-                    selectedClientId = order.clientId
-                    status = order.status
-                    paymentStatus = order.paymentStatus
-                    notes = order.notes.orEmpty()
-                    rows = order.items.map { item ->
-                        val total = item.manualPrice ?: item.price
-                        val unitPrice = if (item.quantity > 0) total / item.quantity else total
-                        LineRow(
-                            name = item.name
-                                ?: "${item.serviceType.labelUa()} / ${item.productType.labelUa()}",
-                            unit = item.unit,
-                            quantity = item.quantity.toString(),
-                            unitPrice = FormatUtils.formatDecimal(unitPrice)
-                        )
-                    }.takeIf { it.isNotEmpty() } ?: listOf(LineRow())
-                }
-            } catch (e: Exception) {
-                error = e.message ?: "Помилка завантаження"
-            } finally {
-                loading = false
+            if (orderId != null) {
+                val order = ApiClient.getOrder(orderId)
+                selectedClientId = order.clientId
+                status = order.status
+                paymentStatus = order.paymentStatus
+                notes = order.notes.orEmpty()
+                rows = order.items.map { item ->
+                    val total = item.manualPrice ?: item.price
+                    val unitPrice = if (item.quantity > 0) total / item.quantity else total
+                    LineRow(
+                        name = item.name
+                            ?: "${item.serviceType.labelUa()} / ${item.productType.labelUa()}",
+                        unit = item.unit,
+                        quantity = item.quantity.toString(),
+                        unitPrice = FormatUtils.formatDecimal(unitPrice)
+                    )
+                }.takeIf { it.isNotEmpty() } ?: listOf(LineRow())
             }
+        } catch (e: Exception) {
+            error = e.message ?: "Помилка завантаження"
+        } finally {
+            loading = false
         }
     }
 
@@ -152,9 +156,9 @@ fun OrderFormScreen(
                 text = if (editMode) "Редагування замовлення" else "Нове замовлення",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = AppColors.DarkSlate
+                color = MaterialTheme.colorScheme.onSurface
             )
-            TextButton(onClick = { onNavigate(Screen.Orders) }) {
+            TextButton(onClick = { onNavigate(orderId?.let(Screen::OrderDetail) ?: Screen.Orders) }) {
                 Text("Скасувати")
             }
         }
@@ -165,7 +169,7 @@ fun OrderFormScreen(
         }
 
         Card(
-            colors = CardDefaults.cardColors(containerColor = AppColors.White),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
         ) {
             FlowRow(
@@ -204,7 +208,7 @@ fun OrderFormScreen(
         }
 
         Card(
-            colors = CardDefaults.cardColors(containerColor = AppColors.White),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
         ) {
             Column(
@@ -219,9 +223,9 @@ fun OrderFormScreen(
                     Text("Позиції (${rows.size})", fontWeight = FontWeight.SemiBold)
                     Button(
                         onClick = { rows = rows + LineRow() },
-                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("+ Додати рядок", color = AppColors.White)
+                        Text("+ Додати рядок", color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
 
@@ -234,50 +238,52 @@ fun OrderFormScreen(
                         "Назва",
                         modifier = Modifier.weight(3f),
                         fontSize = 12.sp,
-                        color = AppColors.MediumGray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         "Од.",
                         modifier = Modifier.weight(0.7f),
                         fontSize = 12.sp,
-                        color = AppColors.MediumGray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         "К-сть",
                         modifier = Modifier.weight(0.8f),
                         fontSize = 12.sp,
-                        color = AppColors.MediumGray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         "Ціна",
                         modifier = Modifier.weight(1f),
                         fontSize = 12.sp,
-                        color = AppColors.MediumGray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         "Сума",
                         modifier = Modifier.weight(1f),
                         fontSize = 12.sp,
-                        color = AppColors.MediumGray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.width(36.dp))
                 }
 
                 HorizontalDivider()
 
-                rows.forEachIndexed { index, row ->
-                    OrderLineRow(
-                        row = row,
-                        savedItems = savedItems,
-                        onRowChange = { updated ->
-                            rows = rows.mapIndexed { i, r -> if (i == index) updated else r }
-                        },
-                        onRemove = {
-                            if (rows.size > 1) {
-                                rows = rows.filterIndexed { i, _ -> i != index }
+                rows.forEach { row ->
+                    key(row.id) {
+                        OrderLineRow(
+                            row = row,
+                            savedItems = savedItems,
+                            onRowChange = { updated ->
+                                rows = rows.map { if (it.id == updated.id) updated else it }
+                            },
+                            onRemove = {
+                                if (rows.size > 1) {
+                                    rows = rows.filterNot { it.id == row.id }
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
 
                 HorizontalDivider()
@@ -288,14 +294,14 @@ fun OrderFormScreen(
                     Text(
                         "Разом: ${FormatUtils.formatCurrency(totalPrice)}",
                         fontWeight = FontWeight.SemiBold,
-                        color = AppColors.DarkSlate
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
         }
 
         if (error != null) {
-            Text(error ?: "", color = Color.Red, modifier = Modifier.padding(bottom = 8.dp))
+            Text(error ?: "", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
         }
 
         Button(
@@ -352,7 +358,7 @@ fun OrderFormScreen(
                             )
                         }
 
-                        if (editMode) {
+                        val saved = if (editMode) {
                             ApiClient.updateOrder(
                                 orderId,
                                 OrderUpdateRequest(
@@ -393,7 +399,7 @@ fun OrderFormScreen(
                             }
                         }
 
-                        onNavigate(Screen.Orders)
+                        onNavigate(Screen.OrderDetail(saved.id))
                     } catch (e: Exception) {
                         error = e.message ?: "Помилка збереження"
                     } finally {
@@ -402,13 +408,13 @@ fun OrderFormScreen(
                 }
             },
             enabled = !saving,
-            colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             modifier = Modifier.fillMaxWidth()
         ) {
             if (saving) {
-                CircularProgressIndicator(color = AppColors.White, strokeWidth = 2.dp)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
             } else {
-                Text("Зберегти замовлення", color = AppColors.White)
+                Text("Зберегти замовлення", color = MaterialTheme.colorScheme.onPrimary)
             }
         }
     }
@@ -421,13 +427,19 @@ private fun OrderLineRow(
     onRowChange: (LineRow) -> Unit,
     onRemove: () -> Unit
 ) {
+    // Only suggest while the user is typing; picking a suggestion or dismissing hides it.
     var showSuggestions by remember { mutableStateOf(false) }
 
-    val suggestions = if (row.name.isNotEmpty() && showSuggestions) {
-        savedItems
-            .filter { it.name.lowercase().contains(row.name.lowercase()) }
-            .take(8)
-    } else emptyList()
+    val suggestions = remember(row.name, savedItems, showSuggestions) {
+        val query = row.name.trim().lowercase()
+        if (!showSuggestions || query.isEmpty()) {
+            emptyList()
+        } else {
+            savedItems
+                .filter { it.name.lowercase().contains(query) && it.name.lowercase() != query }
+                .take(8)
+        }
+    }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -439,6 +451,7 @@ private fun OrderLineRow(
             OutlinedTextField(
                 value = row.name,
                 onValueChange = { newName ->
+                    showSuggestions = true
                     onRowChange(row.copy(name = newName))
                 },
                 label = { Text("Назва") },
@@ -447,7 +460,9 @@ private fun OrderLineRow(
             )
             DropdownMenu(
                 expanded = suggestions.isNotEmpty(),
-                onDismissRequest = { }
+                onDismissRequest = { showSuggestions = false },
+                // Non-focusable so the text field keeps keyboard focus while typing.
+                properties = PopupProperties(focusable = false)
             ) {
                 suggestions.forEach { item ->
                     DropdownMenuItem(
@@ -457,11 +472,12 @@ private fun OrderLineRow(
                                 Text(
                                     "${item.unit} · ${FormatUtils.formatCurrency(item.defaultPrice)}",
                                     fontSize = 11.sp,
-                                    color = AppColors.MediumGray
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         },
                         onClick = {
+                            showSuggestions = false
                             onRowChange(
                                 row.copy(
                                     name = item.name,
@@ -485,7 +501,7 @@ private fun OrderLineRow(
 
         OutlinedTextField(
             value = row.quantity,
-            onValueChange = { onRowChange(row.copy(quantity = it)) },
+            onValueChange = { input -> onRowChange(row.copy(quantity = input.filter { it.isDigit() })) },
             label = { Text("К-сть") },
             modifier = Modifier.weight(0.8f),
             singleLine = true
@@ -513,7 +529,7 @@ private fun OrderLineRow(
             onClick = onRemove,
             modifier = Modifier.align(Alignment.CenterVertically)
         ) {
-            Text("✕", color = AppColors.Error)
+            Text("✕", color = MaterialTheme.colorScheme.error)
         }
     }
 }

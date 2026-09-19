@@ -33,3 +33,6 @@ client_secret_*.json
 *.mv.db
 *.lock.db
 *.trace.db
+
+# IDE (VS Code / Eclipse) compiled output
+/desktopApp/bin/

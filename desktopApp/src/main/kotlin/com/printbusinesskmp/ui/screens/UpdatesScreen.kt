@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -26,7 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.desktop.update.UpdateUiState
-import com.printbusinesskmp.theme.AppColors
+import com.printbusinesskmp.ui.theme.DesktopColors
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -49,11 +50,11 @@ fun UpdatesScreen(
             text = "Оновлення",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
-            color = AppColors.DarkSlate
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         Card(
-            colors = CardDefaults.cardColors(containerColor = AppColors.White),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -73,9 +74,9 @@ fun UpdatesScreen(
                     Button(
                         onClick = onCheckForUpdates,
                         enabled = !state.isChecking && !state.isDownloading,
-                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("Перевірити оновлення", color = AppColors.White)
+                        Text("Перевірити оновлення", color = MaterialTheme.colorScheme.onPrimary)
                     }
 
                     if (state.isChecking) {
@@ -91,7 +92,7 @@ fun UpdatesScreen(
                     }
                     Text(
                         text = statusText,
-                        color = AppColors.DarkSlate,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -99,18 +100,18 @@ fun UpdatesScreen(
                 if (state.releaseNotes.isNotBlank()) {
                     Text(
                         text = "Що нового",
-                        color = AppColors.DarkGrayText,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold
                     )
-                    Text(text = state.releaseNotes, color = AppColors.MediumGray)
+                    Text(text = state.releaseNotes, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 if (state.updateAvailable && state.downloadedInstaller == null && !state.isDownloading) {
                     Button(
                         onClick = onDownloadUpdate,
-                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.Success)
+                        colors = ButtonDefaults.buttonColors(containerColor = DesktopColors.success)
                     ) {
-                        Text("Оновити", color = AppColors.White)
+                        Text("Оновити", color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
 
@@ -127,7 +128,7 @@ fun UpdatesScreen(
 
                     Text(
                         text = buildProgressText(state),
-                        color = AppColors.MediumGray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
 
@@ -139,13 +140,13 @@ fun UpdatesScreen(
                 if (state.downloadedInstaller != null) {
                     Text(
                         text = "Оновлення завантажено: ${state.downloadedInstaller.fileName}",
-                        color = AppColors.Success
+                        color = DesktopColors.success
                     )
                     Button(
                         onClick = { showInstallDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("Встановити оновлення", color = AppColors.White)
+                        Text("Встановити оновлення", color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }
@@ -153,12 +154,12 @@ fun UpdatesScreen(
 
         if (state.warningMessage != null) {
             Card(
-                colors = CardDefaults.cardColors(containerColor = AppColors.CardItemBg),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = state.warningMessage,
-                    color = AppColors.DarkGrayText,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -173,7 +174,7 @@ fun UpdatesScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(text = state.errorMessage, color = AppColors.Error)
+                    Text(text = state.errorMessage, color = MaterialTheme.colorScheme.error)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = onDismissError) {
                             Text("Закрити")
@@ -198,9 +199,9 @@ fun UpdatesScreen(
                         showInstallDialog = false
                         onInstallUpdate()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryBlue)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Встановити", color = AppColors.White)
+                    Text("Встановити", color = MaterialTheme.colorScheme.onPrimary)
                 }
             },
             dismissButton = {
@@ -217,12 +218,12 @@ private fun LabeledValue(label: String, value: String) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             text = label,
-            color = AppColors.MediumGray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp
         )
         Text(
             text = value,
-            color = AppColors.DarkSlate,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Medium
         )
     }

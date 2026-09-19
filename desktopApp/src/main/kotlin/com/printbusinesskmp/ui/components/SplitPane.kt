@@ -13,7 +13,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -33,8 +34,8 @@ fun SplitPane(
     leftContent: @Composable () -> Unit,
     rightContent: @Composable () -> Unit
 ) {
-    var splitRatio by remember { mutableStateOf(initialRatio) }
-    var totalWidth by remember { mutableStateOf(0) }
+    var splitRatio by remember { mutableFloatStateOf(initialRatio) }
+    var totalWidth by remember { mutableIntStateOf(0) }
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
 
@@ -66,7 +67,7 @@ fun SplitPane(
                 .background(dividerColor)
                 .hoverable(interactionSource)
                 .pointerHoverIcon(PointerIcon(Cursor(Cursor.W_RESIZE_CURSOR)))
-                .pointerInput(Unit) {
+                .pointerInput(minLeftFraction, maxLeftFraction) {
                     detectDragGestures { _, dragAmount ->
                         if (totalWidth > 0) {
                             val delta = dragAmount.x / totalWidth

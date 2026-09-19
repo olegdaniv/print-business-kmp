@@ -1,10 +1,10 @@
 package com.printbusinesskmp.ui.components
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
@@ -94,8 +94,8 @@ fun PhoneField(
         isError = showError,
         supportingText = {
             when {
-                isError && errorMessage != null -> Text(errorMessage, color = Color.Red)
-                inlineError -> Text("Номер має починатися з 0", color = Color.Red)
+                isError && errorMessage != null -> Text(errorMessage, color = MaterialTheme.colorScheme.error)
+                inlineError -> Text("Номер має починатися з 0", color = MaterialTheme.colorScheme.error)
                 else -> Text("${value.length}/$maxLen")
             }
         },
@@ -149,8 +149,8 @@ fun IbanField(
         isError = showError,
         supportingText = {
             when {
-                isError && errorMessage != null -> Text(errorMessage, color = Color.Red)
-                inlineError -> Text("Має починатися з UA", color = Color.Red)
+                isError && errorMessage != null -> Text(errorMessage, color = MaterialTheme.colorScheme.error)
+                inlineError -> Text("Має починатися з UA", color = MaterialTheme.colorScheme.error)
                 else -> Text("${value.length}/$maxLen")
             }
         },
@@ -183,7 +183,7 @@ fun CardNumberField(
         isError = isError,
         supportingText = {
             when {
-                isError && errorMessage != null -> Text(errorMessage, color = Color.Red)
+                isError && errorMessage != null -> Text(errorMessage, color = MaterialTheme.colorScheme.error)
                 else -> Text("${value.length}/$maxLen")
             }
         },
@@ -222,7 +222,7 @@ fun EdrpouField(
         isError = isError,
         supportingText = {
             when {
-                isError && errorMessage != null -> Text(errorMessage, color = Color.Red)
+                isError && errorMessage != null -> Text(errorMessage, color = MaterialTheme.colorScheme.error)
                 else -> Text("${value.length}/$maxLen")
             }
         },
@@ -254,7 +254,7 @@ fun IpnField(
         isError = isError,
         supportingText = {
             when {
-                isError && errorMessage != null -> Text(errorMessage, color = Color.Red)
+                isError && errorMessage != null -> Text(errorMessage, color = MaterialTheme.colorScheme.error)
                 else -> Text("${value.length}/$maxLen")
             }
         },
@@ -286,7 +286,7 @@ fun MfoField(
         isError = isError,
         supportingText = {
             when {
-                isError && errorMessage != null -> Text(errorMessage, color = Color.Red)
+                isError && errorMessage != null -> Text(errorMessage, color = MaterialTheme.colorScheme.error)
                 else -> Text("${value.length}/$maxLen")
             }
         },

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,15 +26,6 @@ fun DesktopLayoutsPlaceholder(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen)
         icon = Icons.Default.GridView,
         title = "Макети",
         subtitle = "Розділ макетів буде доступний незабаром"
-    )
-}
-
-@Composable
-fun DesktopInvoicesPlaceholder(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> Unit) {
-    PlaceholderContent(
-        icon = Icons.Default.Receipt,
-        title = "Рахунки",
-        subtitle = "Розділ рахунків буде доступний незабаром"
     )
 }
 

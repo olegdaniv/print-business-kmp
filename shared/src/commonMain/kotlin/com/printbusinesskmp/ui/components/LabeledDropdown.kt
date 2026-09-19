@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -21,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.printbusinesskmp.theme.AppColors
 
 /**
  * A clearly tappable dropdown selector: a small caption label above an outlined,
@@ -47,19 +47,19 @@ fun <T> LabeledDropdown(
             text = label,
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
-            color = AppColors.MediumGray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 4.dp)
         )
         Box {
             OutlinedButton(
                 onClick = { expanded = true },
                 shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.5.dp, AppColors.PrimaryBlue),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.DarkSlate)
+                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
             ) {
                 Text(selectedText, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.width(8.dp))
-                Text("▾", color = AppColors.PrimaryBlue, fontWeight = FontWeight.Bold)
+                Text("▾", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 options.forEach { option ->
