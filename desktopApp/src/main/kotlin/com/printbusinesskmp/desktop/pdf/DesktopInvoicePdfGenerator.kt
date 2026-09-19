@@ -234,7 +234,7 @@ object DesktopInvoicePdfGenerator {
         if (invoice.discountAmount > 0.0) totalRow("Знижка:", "${fmt(invoice.discountAmount)} грн")
         totalRow("Разом без ПДВ:", "${fmt(invoice.subtotal)} грн")
         totalRow("ПДВ:", "0.00 грн")
-        totalRow("Всього з ПДВ:", "${fmt(invoice.totalAmount)} грн", emphasized = true)
+        totalRow("Всього без ПДВ:", "${fmt(invoice.totalAmount)} грн", emphasized = true)
 
         document.add(totalsTable)
 

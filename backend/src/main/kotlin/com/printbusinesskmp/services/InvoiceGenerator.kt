@@ -147,7 +147,7 @@ class InvoiceGenerator {
         }
         totalsTable.addCell(totalCell("ПДВ:"))
         totalsTable.addCell(totalCell("0.00 грн", right = true))
-        totalsTable.addCell(totalCell("Всього з ПДВ:", bold = true))
+        totalsTable.addCell(totalCell("Всього без ПДВ:", bold = true))
         totalsTable.addCell(totalCell("${fmt(invoice.totalAmount)} грн", bold = true, right = true))
 
         document.add(totalsTable)

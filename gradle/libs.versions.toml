@@ -1,11 +1,11 @@
 [versions]
 androidx-lifecycle = "2.9.6"
-composeMultiplatform = "1.11.1"
+composeMultiplatform = "1.12.0"
 exposed = "0.58.0"
 h2 = "2.3.232"
 hikari = "5.1.0"
 flyway = "11.15.0"
-kotlin = "2.3.0"
+kotlin = "2.3.20"
 kotlinx-serialization = "1.10.0-RC"
 kotlinx-datetime = "0.7.1"
 ktor = "3.3.3"
