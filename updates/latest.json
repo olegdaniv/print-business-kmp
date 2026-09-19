@@ -1,8 +1,8 @@
 {
-  "version": "1.0.19",
+  "version": "1.0.20",
+  "notes": "refactor: introduce SectionKit component and update screens to use standardized UI elements",
   "windows": {
-    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.19/PrintBusiness-1.0.19.msi",
-    "sha256": "9c03c76487eec673803099a251562b3e8f9d8afb853ac0224f5b9d6c2cd20180"
-  },
-  "notes": "update dependencies and navigation` -> No, keep it clean.\r\n    `refactor: upgrade Gradle and dependencies, update invoice total label, and add settings screen handler`\r\n\r\n    Let'"
+    "sha256": "27e8122589f065faae26c697dc46106d1c85a5bab3683be80c2c8e11bef987b0",
+    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.20/PrintBusiness-1.0.20.msi"
+  }
 }
