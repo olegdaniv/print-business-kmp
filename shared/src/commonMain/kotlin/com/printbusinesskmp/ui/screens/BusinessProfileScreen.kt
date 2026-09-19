@@ -1,5 +1,13 @@
 package com.printbusinesskmp.ui.screens
 
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import com.printbusinesskmp.ui.components.InfoRow
+import com.printbusinesskmp.ui.components.ScreenHeader
+import com.printbusinesskmp.ui.components.SectionCard
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -95,142 +103,214 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
         }
     }
 
+    fun save() {
+        var valid = true
+
+        if (ownerName.isBlank()) {
+            ownerNameError = "Обов'язкове поле"
+            valid = false
+        }
+        if (edrpou.length != 8 && edrpou.length != 10) {
+            edrpouError = "8 цифр (юр. особа) або 10 (ФОП)"
+            valid = false
+        }
+        if (ipn.isNotBlank() && ipn.length != 10) {
+            ipnError = "Має бути рівно 10 цифр"
+            valid = false
+        }
+        if (phone.length != 10 || !phone.startsWith("0")) {
+            phoneError = "Рівно 10 цифр, починається з 0"
+            valid = false
+        }
+        if (address.isBlank()) {
+            addressError = "Обов'язкове поле"
+            valid = false
+        }
+        if (!iban.startsWith("UA") || iban.length != 29) {
+            ibanError = "Формат: UA + 27 цифр (29 символів)"
+            valid = false
+        }
+        if (mfo.isNotBlank() && mfo.length != 6) {
+            mfoError = "Має бути рівно 6 цифр"
+            valid = false
+        }
+
+        if (!valid) {
+            globalError = "Перевірте поля, позначені червоним"
+            return
+        }
+
+        saving = true
+        globalError = null
+        message = null
+
+        scope.launch {
+            try {
+                ApiClient.upsertBusinessProfile(
+                    BusinessProfileUpsertRequest(
+                        ownerName = ownerName.trim(),
+                        phone = phone.ifBlank { null },
+                        edrpou = edrpou,
+                        ipn = ipn.ifBlank { null },
+                        address = address.trim(),
+                        iban = iban,
+                        bankName = bankName.ifBlank { null },
+                        bankEdrpou = bankEdrpou.ifBlank { null },
+                        mfo = mfo.ifBlank { null },
+                        taxNote = taxNote.ifBlank { null },
+                        certificateNumber = certificateNumber.ifBlank { null },
+                    )
+                )
+                message = "Профіль ФОП збережено"
+            } catch (e: Exception) {
+                globalError = e.message ?: "Помилка збереження"
+            } finally {
+                saving = false
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
-            .padding(24.dp)
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "Профіль ФОП",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 20.dp)
-        )
+        ScreenHeader(
+            title = "Профіль ФОП",
+            subtitle = "Ці дані потрапляють у рахунки та видаткові накладні"
+        ) {
+            message?.let { Text(it, color = AppColors.Success, fontSize = 13.sp) }
+            Button(
+                onClick = { save() },
+                enabled = !saving && !loading,
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                if (saving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Зберегти")
+                }
+            }
+        }
 
         if (loading) {
             CircularProgressIndicator()
             return@Column
         }
 
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier.widthIn(max = 1200.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                SectionTitle("Основна інформація")
-
-                OutlinedTextField(
-                    value = ownerName,
-                    onValueChange = { ownerName = it; ownerNameError = null; message = null },
-                    label = { Text("ПІБ *") },
-                    isError = ownerNameError != null,
-                    supportingText = ownerNameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    EdrpouField(
-                        value = edrpou,
-                        onValueChange = { edrpou = it; edrpouError = null; message = null },
-                        label = "ЄДРПОУ *",
-                        isError = edrpouError != null,
-                        errorMessage = edrpouError,
-                        allowFop = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    IpnField(
-                        value = ipn,
-                        onValueChange = { ipn = it; ipnError = null; message = null },
-                        label = "ІПН",
-                        isError = ipnError != null,
-                        errorMessage = ipnError,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    PhoneField(
-                        value = phone,
-                        onValueChange = { phone = it; phoneError = null; message = null },
-                        label = "Телефон *",
-                        isError = phoneError != null,
-                        errorMessage = phoneError,
-                        modifier = Modifier.weight(1f)
-                    )
-                    OutlinedTextField(
-                        value = certificateNumber,
-                        onValueChange = { certificateNumber = it; message = null },
-                        label = { Text("Номер свідоцтва") },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                OutlinedTextField(
-                    value = address,
-                    onValueChange = { address = it; addressError = null; message = null },
-                    label = { Text("Адреса *") },
-                    isError = addressError != null,
-                    supportingText = addressError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
-                )
-
-                Spacer(Modifier.height(4.dp))
-                HorizontalDivider()
-                Spacer(Modifier.height(4.dp))
-                SectionTitle("Банківські реквізити")
-
-                IbanField(
-                    value = iban,
-                    onValueChange = { iban = it; ibanError = null; message = null },
-                    label = "IBAN *",
-                    isError = ibanError != null,
-                    errorMessage = ibanError,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                SectionCard(
+                    title = "Основна інформація",
+                    modifier = Modifier.weight(1f).fillMaxHeight()
                 ) {
                     OutlinedTextField(
-                        value = bankName,
-                        onValueChange = { bankName = it; message = null },
-                        label = { Text("Назва банку") },
-                        modifier = Modifier.weight(1f)
+                        value = ownerName,
+                        onValueChange = { ownerName = it; ownerNameError = null; message = null },
+                        label = { Text("ПІБ *") },
+                        isError = ownerNameError != null,
+                        supportingText = ownerNameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    MfoField(
-                        value = mfo,
-                        onValueChange = { mfo = it; mfoError = null; message = null },
-                        label = "МФО",
-                        isError = mfoError != null,
-                        errorMessage = mfoError,
-                        modifier = Modifier.weight(1f)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+                        EdrpouField(
+                            value = edrpou,
+                            onValueChange = { edrpou = it; edrpouError = null; message = null },
+                            label = "ЄДРПОУ *",
+                            isError = edrpouError != null,
+                            errorMessage = edrpouError,
+                            allowFop = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IpnField(
+                            value = ipn,
+                            onValueChange = { ipn = it; ipnError = null; message = null },
+                            label = "ІПН",
+                            isError = ipnError != null,
+                            errorMessage = ipnError,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+                        PhoneField(
+                            value = phone,
+                            onValueChange = { phone = it; phoneError = null; message = null },
+                            label = "Телефон *",
+                            isError = phoneError != null,
+                            errorMessage = phoneError,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = certificateNumber,
+                            onValueChange = { certificateNumber = it; message = null },
+                            label = { Text("Номер свідоцтва") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    OutlinedTextField(
+                        value = address,
+                        onValueChange = { address = it; addressError = null; message = null },
+                        label = { Text("Адреса *") },
+                        isError = addressError != null,
+                        supportingText = addressError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2
                     )
                 }
 
-                OutlinedTextField(
-                    value = bankEdrpou,
-                    onValueChange = { bankEdrpou = it.filter { c -> c.isDigit() }.take(10); message = null },
-                    label = { Text("ЄДРПОУ банку") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                SectionCard(
+                    title = "Банківські реквізити",
+                    modifier = Modifier.weight(1f).fillMaxHeight()
+                ) {
+                    IbanField(
+                        value = iban,
+                        onValueChange = { iban = it; ibanError = null; message = null },
+                        label = "IBAN *",
+                        isError = ibanError != null,
+                        errorMessage = ibanError,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+                        OutlinedTextField(
+                            value = bankName,
+                            onValueChange = { bankName = it; message = null },
+                            label = { Text("Назва банку") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MfoField(
+                            value = mfo,
+                            onValueChange = { mfo = it; mfoError = null; message = null },
+                            label = "МФО",
+                            isError = mfoError != null,
+                            errorMessage = mfoError,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    OutlinedTextField(
+                        value = bankEdrpou,
+                        onValueChange = { bankEdrpou = it.filter { c -> c.isDigit() }.take(10); message = null },
+                        label = { Text("ЄДРПОУ банку") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
 
-                Spacer(Modifier.height(4.dp))
-                HorizontalDivider()
-                Spacer(Modifier.height(4.dp))
-                SectionTitle("Податкова інформація")
-
+            SectionCard(title = "Податкова інформація", subtitle = "Друкується внизу рахунку") {
                 OutlinedTextField(
                     value = taxNote,
                     onValueChange = { taxNote = it; message = null },
@@ -238,107 +318,24 @@ fun BusinessProfileScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2
                 )
+            }
 
-                Spacer(Modifier.height(8.dp))
+            SectionCard(title = "Як це виглядатиме в рахунку", subtitle = "Блок «Постачальник»") {
+                InfoRow("Постачальник", ownerName.ifBlank { "—" })
+                InfoRow("ЄДРПОУ", edrpou.ifBlank { "—" })
+                if (ipn.isNotBlank()) InfoRow("ІПН", ipn)
+                InfoRow("Адреса", address.ifBlank { "—" })
+                InfoRow("IBAN", iban.ifBlank { "—" })
+                InfoRow(
+                    "Банк",
+                    listOfNotNull(bankName.ifBlank { null }, mfo.ifBlank { null }?.let { "МФО $it" })
+                        .joinToString(", ").ifBlank { "—" }
+                )
+            }
 
-                if (globalError != null) {
-                    Text(globalError ?: "", color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
-                }
-                if (message != null) {
-                    Text(message ?: "", color = AppColors.Success, fontSize = 13.sp)
-                }
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    Button(
-                        onClick = {
-                            var valid = true
-
-                            if (ownerName.isBlank()) {
-                                ownerNameError = "Обов'язкове поле"
-                                valid = false
-                            }
-                            if (edrpou.length != 8 && edrpou.length != 10) {
-                                edrpouError = "8 цифр (юр. особа) або 10 (ФОП)"
-                                valid = false
-                            }
-                            if (ipn.isNotBlank() && ipn.length != 10) {
-                                ipnError = "Має бути рівно 10 цифр"
-                                valid = false
-                            }
-                            if (phone.length != 10 || !phone.startsWith("0")) {
-                                phoneError = "Рівно 10 цифр, починається з 0"
-                                valid = false
-                            }
-                            if (address.isBlank()) {
-                                addressError = "Обов'язкове поле"
-                                valid = false
-                            }
-                            if (!iban.startsWith("UA") || iban.length != 29) {
-                                ibanError = "Формат: UA + 27 цифр (29 символів)"
-                                valid = false
-                            }
-                            if (mfo.isNotBlank() && mfo.length != 6) {
-                                mfoError = "Має бути рівно 6 цифр"
-                                valid = false
-                            }
-
-                            if (!valid) return@Button
-
-                            saving = true
-                            globalError = null
-                            message = null
-
-                            scope.launch {
-                                try {
-                                    ApiClient.upsertBusinessProfile(
-                                        BusinessProfileUpsertRequest(
-                                            ownerName = ownerName.trim(),
-                                            phone = phone.ifBlank { null },
-                                            edrpou = edrpou,
-                                            ipn = ipn.ifBlank { null },
-                                            address = address.trim(),
-                                            iban = iban,
-                                            bankName = bankName.ifBlank { null },
-                                            bankEdrpou = bankEdrpou.ifBlank { null },
-                                            mfo = mfo.ifBlank { null },
-                                            taxNote = taxNote.ifBlank { null },
-                                            certificateNumber = certificateNumber.ifBlank { null },
-                                        )
-                                    )
-                                    message = "Профіль ФОП збережено"
-                                } catch (e: Exception) {
-                                    globalError = e.message ?: "Помилка збереження"
-                                } finally {
-                                    saving = false
-                                }
-                            }
-                        },
-                        enabled = !saving,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    ) {
-                        if (saving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text("Зберегти", color = MaterialTheme.colorScheme.onPrimary)
-                        }
-                    }
-                }
+            if (globalError != null) {
+                Text(globalError ?: "", color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
             }
         }
     }
-}
-
-@Composable
-private fun SectionTitle(text: String) {
-    Text(
-        text = text,
-        fontSize = 13.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(bottom = 2.dp)
-    )
 }

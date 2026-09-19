@@ -2,6 +2,12 @@
 
 package com.printbusinesskmp.ui.screens
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.OutlinedButton
+import com.printbusinesskmp.ui.components.ScreenHeader
+import com.printbusinesskmp.ui.components.SectionCard
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -147,18 +153,14 @@ fun OrderFormScreen(
 
     val totalPrice = rows.sumOf { lineTotal(it) }
 
-    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()).widthIn(max = 1200.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        ScreenHeader(
+            title = if (editMode) "Редагування замовлення" else "Нове замовлення",
+            subtitle = "Клієнт, позиції та примітки. Оплати вносяться у вкладці «Оплати»."
         ) {
-            Text(
-                text = if (editMode) "Редагування замовлення" else "Нове замовлення",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
             TextButton(onClick = { onNavigate(orderId?.let(Screen::OrderDetail) ?: Screen.Orders) }) {
                 Text("Скасувати")
             }
@@ -169,12 +171,8 @@ fun OrderFormScreen(
             return@Column
         }
 
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
-        ) {
+        SectionCard(title = "Замовлення") {
             FlowRow(
-                modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
@@ -205,111 +203,103 @@ fun OrderFormScreen(
                 }
                 }
 
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text("Примітки") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+            OutlinedTextField(
+                value = notes,
+                onValueChange = { notes = it },
+                label = { Text("Примітки") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2
+            )
         }
 
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+        SectionCard(
+            title = "Позиції (${rows.size})",
+            trailing = {
+                OutlinedButton(onClick = { rows = rows + LineRow() }, shape = RoundedCornerShape(8.dp)) {
+                    Text("+ Додати рядок")
+                }
+            }
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+
+            // Column headers
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Позиції (${rows.size})", fontWeight = FontWeight.SemiBold)
-                    Button(
-                        onClick = { rows = rows + LineRow() },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    ) {
-                        Text("+ Додати рядок", color = MaterialTheme.colorScheme.onPrimary)
-                    }
-                }
+                Text(
+                    "Назва",
+                    modifier = Modifier.weight(3f),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "Од.",
+                    modifier = Modifier.weight(0.7f),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "К-сть",
+                    modifier = Modifier.weight(0.8f),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "Ціна",
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "Сума",
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.width(36.dp))
+            }
 
-                // Column headers
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        "Назва",
-                        modifier = Modifier.weight(3f),
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "Од.",
-                        modifier = Modifier.weight(0.7f),
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "К-сть",
-                        modifier = Modifier.weight(0.8f),
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "Ціна",
-                        modifier = Modifier.weight(1f),
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "Сума",
-                        modifier = Modifier.weight(1f),
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.width(36.dp))
-                }
+            HorizontalDivider()
 
-                HorizontalDivider()
-
-                rows.forEach { row ->
-                    key(row.id) {
-                        OrderLineRow(
-                            row = row,
-                            savedItems = savedItems,
-                            onRowChange = { updated ->
-                                rows = rows.map { if (it.id == updated.id) updated else it }
-                            },
-                            onRemove = {
-                                if (rows.size > 1) {
-                                    rows = rows.filterNot { it.id == row.id }
-                                }
+            rows.forEach { row ->
+                key(row.id) {
+                    OrderLineRow(
+                        row = row,
+                        savedItems = savedItems,
+                        onRowChange = { updated ->
+                            rows = rows.map { if (it.id == updated.id) updated else it }
+                        },
+                        onRemove = {
+                            if (rows.size > 1) {
+                                rows = rows.filterNot { it.id == row.id }
                             }
-                        )
-                    }
-                }
-
-                HorizontalDivider()
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Text(
-                        "Разом: ${FormatUtils.formatCurrency(totalPrice)}",
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        }
                     )
                 }
+            }
+
+            HorizontalDivider()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    "Разом: ${FormatUtils.formatCurrency(totalPrice)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
 
         if (error != null) {
-            Text(error ?: "", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
+            Text(error ?: "", color = MaterialTheme.colorScheme.error)
         }
 
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+        TextButton(onClick = { onNavigate(orderId?.let(Screen::OrderDetail) ?: Screen.Orders) }) {
+            Text("Скасувати")
+        }
         Button(
             onClick = {
                 val clientId = selectedClientId
@@ -412,14 +402,18 @@ fun OrderFormScreen(
                 }
             },
             enabled = !saving,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            modifier = Modifier.fillMaxWidth()
+            shape = RoundedCornerShape(8.dp)
         ) {
             if (saving) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
             } else {
-                Text("Зберегти замовлення", color = MaterialTheme.colorScheme.onPrimary)
+                Text(if (editMode) "Зберегти зміни" else "Створити замовлення")
             }
+        }
         }
     }
 }

@@ -1,6 +1,14 @@
 package com.printbusinesskmp.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.draw.clip
+import com.printbusinesskmp.ui.components.MetricTile
+import com.printbusinesskmp.ui.components.PaymentBadge
+import com.printbusinesskmp.ui.components.ScreenHeader
+import com.printbusinesskmp.ui.components.SectionCard
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.clickable
@@ -99,19 +107,20 @@ fun DesktopDashboardScreen(
         return
     }
 
+    val now = kotlin.time.Clock.System.now()
     val activeOrders = orders.count { !it.status.isFinal }
-    val totalRevenue = orders.filter { it.status == OrderStatus.COMPLETED }.sumOf { it.totalPrice }
-    val totalProfit = orders.filter { it.status == OrderStatus.COMPLETED }.sumOf { it.profit }
     val invoicedOrderIds = invoices.mapNotNull { it.orderId }.toSet()
     val receivables = orders.filter { it.isReceivable(hasInvoice = it.id in invoicedOrderIds) }
+    val receivableIds = receivables.map { it.id }.toSet()
     val receivableTotal = receivables.sumOf { it.balanceDue }
-    val receivedThisMonth = payments.filter { PaymentPeriod.THIS_MONTH.contains(it.paidAt) }.sumOf { it.amount }
+    val monthPayments = payments.filter { PaymentPeriod.THIS_MONTH.contains(it.paidAt) }
+    val monthOrders = orders.filter { it.status != OrderStatus.CANCELLED && PaymentPeriod.THIS_MONTH.contains(it.createdAt) }
+    val notSentInvoices = invoices.count { it.orderId in receivableIds && it.sentAt == null }
     // Invoices sent over a week ago whose order is still not fully paid.
-    val overdueSent = run {
-        val weekAgo = kotlin.time.Clock.System.now() - 7.days
-        val receivableIds = receivables.map { it.id }.toSet()
-        invoices.count { inv -> inv.orderId in receivableIds && inv.sentAt?.let { it < weekAgo } == true }
+    val overdueSent = invoices.count { inv ->
+        inv.orderId in receivableIds && inv.sentAt?.let { it < now - 7.days } == true
     }
+    val clientById = clients.associateBy { it.id }
 
     Column(
         modifier = Modifier
@@ -119,26 +128,18 @@ fun DesktopDashboardScreen(
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Огляд",
-                style = MaterialTheme.typography.displaySmall
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = { onNavigate(Screen.OrderForm(null)) },
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
-                    Text(" Нове замовлення")
-                }
+        ScreenHeader(title = "Огляд", subtitle = "Сьогодні ${FormatUtils.formatDate(now)}") {
+            OutlinedButton(onClick = { onNavigate(Screen.Payments) }, shape = RoundedCornerShape(8.dp)) {
+                Text("Оплати")
+            }
+            Button(
+                onClick = { onNavigate(Screen.OrderForm(null)) },
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                Text(" Нове замовлення")
             }
         }
 
@@ -239,106 +240,96 @@ fun DesktopDashboardScreen(
             }
         }
 
-        // Stats row
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            StatCard(
-                title = "Активні замовлення",
+            MetricTile(
+                label = "Активні замовлення",
                 value = activeOrders.toString(),
+                hint = "з ${orders.size} усього",
+                onClick = { onNavigate(Screen.Orders) },
                 modifier = Modifier.weight(1f)
             )
-            StatCard(
-                title = "Клієнти",
-                value = clients.size.toString(),
+            MetricTile(
+                label = "Продажі цього місяця",
+                value = FormatUtils.formatCurrency(monthOrders.sumOf { it.totalPrice }),
+                hint = FormatUtils.countUa(monthOrders.size, "замовлення", "замовлення", "замовлень"),
                 modifier = Modifier.weight(1f)
             )
-            StatCard(
-                title = "Виручка",
-                value = FormatUtils.formatCurrency(totalRevenue),
+            MetricTile(
+                label = "Дебіторка",
+                value = FormatUtils.formatCurrency(receivableTotal),
+                hint = FormatUtils.countUa(receivables.size, "замовлення", "замовлення", "замовлень") + " чекають оплати",
+                valueColor = if (receivables.isNotEmpty()) DesktopColors.warning else DesktopColors.success,
+                onClick = { onNavigate(Screen.Payments) },
                 modifier = Modifier.weight(1f)
             )
-            StatCard(
-                title = "Прибуток",
-                value = FormatUtils.formatCurrency(totalProfit),
-                valueColor = if (totalProfit >= 0) DesktopColors.success else MaterialTheme.colorScheme.error,
+            MetricTile(
+                label = "Надійшло цього місяця",
+                value = FormatUtils.formatCurrency(monthPayments.sumOf { it.amount }),
+                hint = FormatUtils.countUa(monthPayments.size, "надходження", "надходження", "надходжень"),
+                valueColor = DesktopColors.success,
+                onClick = { onNavigate(Screen.Payments) },
                 modifier = Modifier.weight(1f)
             )
         }
 
-        // Two-column layout: recent orders + quick stats
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Recent orders
-            Card(
+            SectionCard(
+                title = "Останні замовлення",
                 modifier = Modifier.weight(2f),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                shape = RoundedCornerShape(10.dp)
+                trailing = {
+                    TextButton(onClick = { onNavigate(Screen.Orders) }) { Text("Дивитись всі") }
+                }
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Останні замовлення",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        TextButton(onClick = { onNavigate(Screen.Orders) }) {
-                            Text("Дивитись всі")
-                        }
+                val recent = orders.sortedByDescending { it.updatedAt }.take(8)
+                if (recent.isEmpty()) {
+                    Text(
+                        "Замовлень ще немає",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                recent.forEachIndexed { index, order ->
+                    if (index > 0) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    val clientById = clients.associateBy { it.id }
-                    val recent = orders.sortedByDescending { it.updatedAt }.take(8)
-
-                    recent.forEachIndexed { index, order ->
-                        if (index > 0) {
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                modifier = Modifier.padding(vertical = 2.dp)
-                            )
-                        }
-                        HoverableRow(
-                            onClick = { onNavigate(Screen.OrderDetail(order.id)) }
+                    HoverableRow(onClick = { onNavigate(Screen.OrderDetail(order.id)) }) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Text(
+                                    order.itemsSummary(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    "${clientById[order.clientId]?.displayName ?: "—"} · ${FormatUtils.formatDate(order.updatedAt)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.End,
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        order.itemsSummary(),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Text(
-                                        clientById[order.clientId]?.displayName ?: "—",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    FormatUtils.formatCurrency(order.totalPrice),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     StatusBadge(order.status)
-                                    Spacer(Modifier.height(2.dp))
-                                    Text(
-                                        FormatUtils.formatCurrency(order.totalPrice),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Medium
-                                    )
+                                    PaymentBadge(order.paymentStatus)
                                 }
                             }
                         }
@@ -346,89 +337,112 @@ fun DesktopDashboardScreen(
                 }
             }
 
-            // Status breakdown
-            Card(
+            Column(
                 modifier = Modifier.weight(1f),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                shape = RoundedCornerShape(10.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        "По статусах",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                val attention = buildList {
+                    if (overdueSent > 0) add(
+                        Triple("$overdueSent рах. надіслано понад 7 днів тому й не оплачено", MaterialTheme.colorScheme.error, Screen.Payments as Screen)
                     )
-                    Spacer(Modifier.height(12.dp))
+                    if (notSentInvoices > 0) add(
+                        Triple("$notSentInvoices рах. ще не надіслано клієнтам", DesktopColors.warning, Screen.Payments as Screen)
+                    )
+                    val ready = orders.count { it.status == OrderStatus.READY }
+                    if (ready > 0) add(
+                        Triple(FormatUtils.countUa(ready, "замовлення", "замовлення", "замовлень") + " готові до видачі", MaterialTheme.colorScheme.primary, Screen.Orders as Screen)
+                    )
+                    val drafts = orders.count { it.status == OrderStatus.DRAFT }
+                    if (drafts > 0) add(
+                        Triple("Чернетки замовлень: $drafts", MaterialTheme.colorScheme.onSurfaceVariant, Screen.Orders as Screen)
+                    )
+                }
+                SectionCard(title = "Потребує уваги") {
+                    if (attention.isEmpty()) {
+                        Text(
+                            "Все під контролем",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = DesktopColors.success
+                        )
+                    }
+                    attention.forEach { (text, color, target) ->
+                        HoverableRow(onClick = { onNavigate(target) }) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+                                Spacer(Modifier.width(10.dp))
+                                Text(text, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                }
 
+                val debtors = receivables
+                    .groupBy { it.clientId }
+                    .map { (clientId, list) -> clientId to list.sumOf { it.balanceDue } }
+                    .sortedByDescending { it.second }
+                    .take(5)
+                if (debtors.isNotEmpty()) {
+                    SectionCard(title = "Хто винен") {
+                        debtors.forEach { (clientId, amount) ->
+                            HoverableRow(onClick = { onNavigate(Screen.Payments) }) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        clientById[clientId]?.displayName ?: "—",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f).padding(end = 8.dp)
+                                    )
+                                    Text(
+                                        FormatUtils.formatCurrency(amount),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = DesktopColors.warning
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                SectionCard(title = "По статусах") {
                     @Suppress("DEPRECATION")
                     val statusCounts = orders
                         .groupBy { it.status }
                         .toSortedMap(compareBy { it.ordinal })
-
                     statusCounts.forEach { (status, statusOrders) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            StatusBadge(status)
-                            Text(
-                                statusOrders.size.toString(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                StatusBadge(status)
+                                Text(
+                                    statusOrders.size.toString(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            LinearProgressIndicator(
+                                progress = { statusOrders.size.toFloat() / orders.size },
+                                modifier = Modifier.fillMaxWidth().height(4.dp),
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                drawStopIndicator = {}
                             )
                         }
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    Spacer(Modifier.height(12.dp))
-
-                    Column(
-                        modifier = Modifier.fillMaxWidth().clickable { onNavigate(Screen.Payments) },
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            "Дебіторка",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            FormatUtils.formatCurrency(receivableTotal),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = if (receivables.isNotEmpty()) DesktopColors.warning else MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            FormatUtils.countUa(receivables.size, "замовлення", "замовлення", "замовлень") + " очікують оплати",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        if (overdueSent > 0) {
-                            Text(
-                                "Надіслано понад 7 днів тому й не оплачено: $overdueSent",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "Надійшло цього місяця",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            FormatUtils.formatCurrency(receivedThisMonth),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = DesktopColors.success
-                        )
                     }
                 }
             }
         }
     }
+
 
     if (showInstallDialog) {
         AlertDialog(

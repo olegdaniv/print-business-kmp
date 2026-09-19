@@ -3,6 +3,8 @@ package com.printbusinesskmp.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -35,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -55,13 +58,25 @@ import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.ClientType
 import com.printbusinesskmp.models.DeliveryType
+import com.printbusinesskmp.models.MONEY_EPSILON
+import com.printbusinesskmp.models.Order
+import com.printbusinesskmp.models.OrderStatus
+import com.printbusinesskmp.models.Payment
 import com.printbusinesskmp.navigation.Screen
+import com.printbusinesskmp.ui.components.DangerZone
 import com.printbusinesskmp.ui.components.HoverableRow
+import com.printbusinesskmp.ui.components.InfoRow
+import com.printbusinesskmp.ui.components.MetricTile
+import com.printbusinesskmp.ui.components.PaymentBadge
+import com.printbusinesskmp.ui.components.ScreenHeader
+import com.printbusinesskmp.ui.components.SectionCard
 import com.printbusinesskmp.ui.components.SearchField
 import com.printbusinesskmp.ui.components.SplitPane
 import com.printbusinesskmp.ui.components.StatusFilterChips
 import com.printbusinesskmp.ui.theme.DesktopColors
 import com.printbusinesskmp.utils.FormatUtils
+import com.printbusinesskmp.utils.itemsSummary
+import com.printbusinesskmp.utils.labelUa
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -77,6 +92,9 @@ fun DesktopClientsScreen(onNavigate: (Screen) -> Unit) {
     val scope = rememberCoroutineScope()
 
     var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
+    var orders by remember { mutableStateOf<List<Order>>(emptyList()) }
+    var payments by remember { mutableStateOf<List<Payment>>(emptyList()) }
+    var invoicedOrderIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     // Full-screen spinner/error only until the first successful load; refreshes keep
     // the split pane on screen (see DesktopOrdersScreen for the same pattern).
     var loaded by remember { mutableStateOf(false) }
@@ -94,6 +112,11 @@ fun DesktopClientsScreen(onNavigate: (Screen) -> Unit) {
             error = null
             try {
                 clients = ApiClient.getClients()
+                orders = runCatching { ApiClient.getOrders() }.getOrDefault(orders)
+                payments = runCatching { ApiClient.getPayments() }.getOrDefault(payments)
+                invoicedOrderIds = runCatching { ApiClient.getAllInvoices() }
+                    .map { list -> list.mapNotNull { it.orderId }.toSet() }
+                    .getOrDefault(invoicedOrderIds)
                 if (clients.none { it.id == selectedClientId }) {
                     selectedClientId = clients.firstOrNull()?.id
                 }
@@ -144,6 +167,12 @@ fun DesktopClientsScreen(onNavigate: (Screen) -> Unit) {
     }
 
     val selectedClient = selectedClientId?.let { id -> clients.find { it.id == id } }
+    val ordersByClient = remember(orders) { orders.groupBy { it.clientId } }
+    val debtByClient = remember(orders, invoicedOrderIds) {
+        orders.filter { it.isReceivable(hasInvoice = it.id in invoicedOrderIds) }
+            .groupBy { it.clientId }
+            .mapValues { (_, list) -> list.sumOf { it.balanceDue } }
+    }
 
     SplitPane(
         initialRatio = 0.35f,
@@ -152,6 +181,7 @@ fun DesktopClientsScreen(onNavigate: (Screen) -> Unit) {
         leftContent = {
             ClientListPanel(
                 clients = filtered,
+                debtByClient = debtByClient,
                 search = search,
                 onSearchChange = { search = it },
                 typeFilter = typeFilter,
@@ -169,6 +199,10 @@ fun DesktopClientsScreen(onNavigate: (Screen) -> Unit) {
                 key(selectedClient.id) {
                     ClientDetailPanel(
                         client = selectedClient,
+                        orders = ordersByClient[selectedClient.id].orEmpty(),
+                        payments = payments.filter { it.clientId == selectedClient.id },
+                        debt = debtByClient[selectedClient.id] ?: 0.0,
+                        onOpenOrder = { onNavigate(Screen.OrderDetail(it)) },
                         onEdit = { onNavigate(Screen.ClientForm(selectedClient.id)) },
                         onDelete = {
                             scope.launch {
@@ -193,6 +227,7 @@ fun DesktopClientsScreen(onNavigate: (Screen) -> Unit) {
 @Composable
 private fun ClientListPanel(
     clients: List<Client>,
+    debtByClient: Map<String, Double>,
     search: String,
     onSearchChange: (String) -> Unit,
     typeFilter: ClientType?,
@@ -306,6 +341,7 @@ private fun ClientListPanel(
                 items(clients, key = { it.id }) { client ->
                     ClientListItem(
                         client = client,
+                        debt = debtByClient[client.id] ?: 0.0,
                         selected = client.id == selectedClientId,
                         onClick = { onSelectClient(client.id) }
                     )
@@ -318,6 +354,7 @@ private fun ClientListPanel(
 @Composable
 private fun ClientListItem(
     client: Client,
+    debt: Double,
     selected: Boolean,
     onClick: () -> Unit
 ) {
@@ -354,19 +391,32 @@ private fun ClientListItem(
             )
             client.delivery?.let { d ->
                 Text(
-                    text = "🚚 ${d.type.displayName()}: ${d.label()}",
+                    text = "${d.type.displayName()}: ${d.label()}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            if (client.orderCount > 0) {
-                Text(
-                    text = FormatUtils.countUa(client.orderCount, "замовлення", "замовлення", "замовлень"),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
+            if (client.orderCount > 0 || debt > MONEY_EPSILON) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = FormatUtils.countUa(client.orderCount, "замовлення", "замовлення", "замовлень"),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (debt > MONEY_EPSILON) {
+                        Text(
+                            text = "борг ${FormatUtils.formatCurrency(debt)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = DesktopColors.warning
+                        )
+                    }
+                }
             }
         }
     }
@@ -379,210 +429,164 @@ private fun ClientListItem(
 @Composable
 private fun ClientDetailPanel(
     client: Client,
+    orders: List<Order>,
+    payments: List<Payment>,
+    debt: Double,
+    onOpenOrder: (String) -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
+    val activeOrders = orders.filter { it.status != OrderStatus.CANCELLED }
+    val paid = activeOrders.sumOf { it.paidAmount }
+    val advance = payments.sumOf { it.unallocatedAmount }
 
-    FlowRow(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Header
+        ScreenHeader(
+            title = client.displayName,
+            subtitle = (if (client.type == ClientType.PERSON) "Фізична особа" else "Юридична особа") +
+                " · клієнт з ${FormatUtils.formatDate(client.createdAt)}"
+        ) {
+            OutlinedButton(onClick = onEdit, shape = RoundedCornerShape(8.dp)) {
+                Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Редагувати")
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            MetricTile(
+                label = "Замовлень",
+                value = activeOrders.size.toString(),
+                hint = "на ${FormatUtils.formatCurrency(activeOrders.sumOf { it.totalPrice })}",
+                modifier = Modifier.weight(1f)
+            )
+            MetricTile(
+                label = "Сплачено",
+                value = FormatUtils.formatCurrency(paid),
+                hint = FormatUtils.countUa(payments.size, "надходження", "надходження", "надходжень"),
+                valueColor = DesktopColors.success,
+                modifier = Modifier.weight(1f)
+            )
+            MetricTile(
+                label = if (advance > MONEY_EPSILON) "Борг / аванс" else "Борг",
+                value = FormatUtils.formatCurrency(debt),
+                hint = if (advance > MONEY_EPSILON) "аванс ${FormatUtils.formatCurrency(advance)}"
+                else if (debt > MONEY_EPSILON) "очікується оплата" else "боргів немає",
+                valueColor = if (debt > MONEY_EPSILON) DesktopColors.warning else DesktopColors.success,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column {
-                Text(
-                    text = client.displayName,
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                Text(
-                    text = if (client.type == ClientType.PERSON) "Фізична особа" else "Юридична особа",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            SectionCard(title = "Контакти", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                InfoRow("Телефон", FormatUtils.formatPhone(client.phone), labelWidth = 120.dp)
+                client.email?.let { InfoRow("Email", it, labelWidth = 120.dp) }
+                InfoRow("Адреса", client.address, labelWidth = 120.dp)
+                client.contactName?.let { InfoRow("Контактна особа", it, labelWidth = 120.dp) }
             }
-            IconButton(onClick = onEdit) {
-                Icon(Icons.Default.Edit, "Редагувати")
-            }
-        }
-
-        // Contact info
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text("Контактна інформація", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-
-                DetailField("Телефон", FormatUtils.formatPhone(client.phone))
-                client.email?.let { DetailField("Email", it) }
-                DetailField("Адреса", client.address)
-                client.contactName?.let { DetailField("Контактна особа", it) }
-            }
-        }
-
-        // Delivery info
-        client.delivery?.let { d ->
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text("Доставка", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    DetailField("Тип", d.type.displayName())
+            client.delivery?.let { d ->
+                SectionCard(title = "Доставка", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    InfoRow("Спосіб", d.type.displayName(), labelWidth = 120.dp)
                     when (d.type) {
                         DeliveryType.NOVA_POSHTA_BRANCH -> {
-                            d.city?.let { DetailField("Місто", it) }
-                            d.branch?.let { DetailField("Відділення", it) }
+                            d.city?.let { InfoRow("Місто", it, labelWidth = 120.dp) }
+                            d.branch?.let { InfoRow("Відділення", it, labelWidth = 120.dp) }
                         }
                         DeliveryType.NOVA_POSHTA_ADDRESS -> {
-                            d.city?.let { DetailField("Місто", it) }
+                            d.city?.let { InfoRow("Місто", it, labelWidth = 120.dp) }
                             d.street?.let { street ->
                                 val full = if (d.building != null) "$street, ${d.building}" else street
-                                DetailField("Вулиця / будинок", full)
+                                InfoRow("Вулиця / буд.", full, labelWidth = 120.dp)
                             }
                         }
                         DeliveryType.DIRECT_ADDRESS -> {
-                            d.freeAddress?.let { DetailField("Адреса", it) }
+                            d.freeAddress?.let { InfoRow("Адреса", it, labelWidth = 120.dp) }
                         }
                     }
                 }
             }
         }
 
-        // Business info
-        if (client.taxId != null || client.iban != null || client.bankName != null) {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text("Реквізити", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    client.taxId?.let { DetailField("ЄДРПОУ / РНОКПП", it) }
-                    client.iban?.let { DetailField("IBAN", it) }
-                    client.bankName?.let { DetailField("Банк", it) }
+        if (client.taxId != null || client.iban != null || client.bankName != null || client.discountPercent != null) {
+            SectionCard(title = "Реквізити") {
+                client.taxId?.let { InfoRow("ЄДРПОУ / РНОКПП", it) }
+                client.iban?.let { InfoRow("IBAN", it) }
+                client.bankName?.let { InfoRow("Банк", it) }
+                client.discountPercent?.let {
+                    InfoRow("Знижка", "${FormatUtils.formatDecimal(it)}%", valueColor = DesktopColors.success, bold = true)
                 }
             }
         }
 
-        // Discount
-        client.discountPercent?.let { discount ->
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Знижка", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text(
-                        "${FormatUtils.formatDecimal(discount)}%",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = DesktopColors.success
-                    )
-                }
-            }
-        }
-
-        // Stats
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        SectionCard(
+            title = "Замовлення",
+            subtitle = if (orders.isEmpty()) null else "Натисніть, щоб відкрити"
         ) {
-            com.printbusinesskmp.ui.components.StatCard(
-                title = "Замовлень",
-                value = client.orderCount.toString(),
-                modifier = Modifier.weight(1f)
-            )
-            com.printbusinesskmp.ui.components.StatCard(
-                title = "Клієнт з",
-                value = FormatUtils.formatDate(client.createdAt),
-                modifier = Modifier.weight(1f)
-            )
+            if (orders.isEmpty()) {
+                Text(
+                    "Замовлень ще немає",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            orders.sortedByDescending { it.createdAt }.forEachIndexed { index, order ->
+                if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HoverableRow(onClick = { onOpenOrder(order.id) }) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                            Text(
+                                order.itemsSummary(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                "${FormatUtils.formatDate(order.createdAt)} · ${order.status.labelUa()}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                FormatUtils.formatCurrency(order.totalPrice),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            PaymentBadge(order.paymentStatus)
+                        }
+                    }
+                }
+            }
         }
 
-        // Notes
         client.notes?.takeIf { it.isNotBlank() }?.let { note ->
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Примітки", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(4.dp))
-                    Text(note, style = MaterialTheme.typography.bodyMedium)
-                }
+            SectionCard(title = "Примітки") {
+                Text(note, style = MaterialTheme.typography.bodyMedium)
             }
         }
 
-        // Dates
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Створено", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(FormatUtils.formatDateTime(client.createdAt), style = MaterialTheme.typography.bodyMedium)
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Оновлено", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(FormatUtils.formatDateTime(client.updatedAt), style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        }
+        Text(
+            "Створено ${FormatUtils.formatDateTime(client.createdAt)} · оновлено ${FormatUtils.formatDateTime(client.updatedAt)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
-        // Delete
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text("Видалити клієнта", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
-                    Text("Ця дія незворотна", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Button(
-                    onClick = { confirmDelete = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Видалити", color = MaterialTheme.colorScheme.onError)
-                }
-            }
-        }
+        DangerZone(title = "Видалити клієнта", buttonLabel = "Видалити", onClick = { confirmDelete = true })
     }
 
     if (confirmDelete) {
@@ -606,22 +610,6 @@ private fun ClientDetailPanel(
                     Text("Скасувати")
                 }
             }
-        )
-    }
-}
-
-@Composable
-private fun DetailField(label: String, value: String) {
-    Column {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

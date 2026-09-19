@@ -1,5 +1,11 @@
 package com.printbusinesskmp.ui.screens
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import com.printbusinesskmp.ui.components.ScreenHeader
+import com.printbusinesskmp.ui.components.SectionCard
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -128,29 +134,113 @@ fun ClientFormScreen(
         )
     }
 
-    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Text(
-            text = if (editMode) "Редагування клієнта" else "Новий клієнт",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 20.dp)
-        )
+    fun save() {
+        var valid = true
+        if (displayName.isBlank() || address.isBlank()) {
+            error = "Заповніть обов'язкові поля: назва, адреса"
+            valid = false
+        }
+        if (phone.isBlank() || phone.length != 10 || !phone.startsWith("0")) {
+            phoneError = "Рівно 10 цифр, починається з 0"
+            valid = false
+        }
+        if (iban.isNotBlank() && (!iban.startsWith("UA") || iban.length != 29)) {
+            ibanError = "Формат: UA + 27 цифр (29 символів)"
+            valid = false
+        }
+        if (taxId.isNotBlank()) {
+            if (type == ClientType.COMPANY && taxId.length != 8) {
+                taxIdError = "ЄДРПОУ: рівно 8 цифр"
+                valid = false
+            } else if (type == ClientType.PERSON && taxId.length != 10) {
+                taxIdError = "РНОКПП: рівно 10 цифр"
+                valid = false
+            }
+        }
+        if (!valid) return
+
+        saving = true
+        error = null
+
+        scope.launch {
+            try {
+                val delivery = buildDelivery()
+                if (clientId != null) {
+                    ApiClient.updateClient(
+                        clientId,
+                        ClientUpdateRequest(
+                            type = type,
+                            displayName = displayName,
+                            contactName = contactName.ifBlank { null },
+                            phone = phone,
+                            email = email.ifBlank { null },
+                            taxId = taxId.ifBlank { null },
+                            address = address,
+                            iban = iban.ifBlank { null },
+                            bankName = bankName.ifBlank { null },
+                            notes = notes.ifBlank { null },
+                            delivery = delivery
+                        )
+                    )
+                } else {
+                    ApiClient.createClient(
+                        ClientCreateRequest(
+                            type = type,
+                            displayName = displayName,
+                            contactName = contactName.ifBlank { null },
+                            phone = phone,
+                            email = email.ifBlank { null },
+                            taxId = taxId.ifBlank { null },
+                            address = address,
+                            iban = iban.ifBlank { null },
+                            bankName = bankName.ifBlank { null },
+                            notes = notes.ifBlank { null },
+                            delivery = delivery
+                        )
+                    )
+                }
+                onNavigate(Screen.Clients)
+            } catch (e: Exception) {
+                error = e.message ?: "Помилка збереження"
+            } finally {
+                saving = false
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()).widthIn(max = 1000.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        ScreenHeader(
+            title = if (editMode) "Редагування клієнта" else "Новий клієнт",
+            subtitle = if (editMode) displayName.ifBlank { null } else "Поля з * обов'язкові"
+        ) {
+            TextButton(onClick = { onNavigate(Screen.Clients) }) { Text("Скасувати") }
+            Button(
+                onClick = { save() },
+                enabled = !saving && !loading,
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                if (saving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Зберегти")
+                }
+            }
+        }
 
         if (loading) {
             CircularProgressIndicator()
             return@Column
         }
 
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // ── Client type ───────────────────────────────────────────
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            SectionCard(title = "Основне") {
                 LabeledDropdown(
                     label = "Тип клієнта",
                     selectedText = if (type == ClientType.PERSON) "Фізособа" else "Компанія",
@@ -162,58 +252,79 @@ fun ClientFormScreen(
                         taxIdError = null
                     }
                 )
-
-                OutlinedTextField(
-                    value = displayName,
-                    onValueChange = { displayName = it },
-                    label = { Text("Назва / Ім'я") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = contactName,
-                    onValueChange = { contactName = it },
-                    label = { Text("Контактна особа (опціонально)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                PhoneField(
-                    value = phone,
-                    onValueChange = { phone = it; phoneError = null },
-                    label = "Телефон",
-                    isError = phoneError != null,
-                    errorMessage = phoneError,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                if (type == ClientType.COMPANY) {
-                    EdrpouField(
-                        value = taxId,
-                        onValueChange = { taxId = it; taxIdError = null },
-                        label = "ЄДРПОУ",
-                        isError = taxIdError != null,
-                        errorMessage = taxIdError,
-                        modifier = Modifier.fillMaxWidth()
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = displayName,
+                        onValueChange = { displayName = it },
+                        label = { Text(if (type == ClientType.COMPANY) "Назва компанії *" else "Ім'я *") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
                     )
-                } else {
-                    IpnField(
-                        value = taxId,
-                        onValueChange = { taxId = it; taxIdError = null },
-                        label = "РНОКПП",
-                        isError = taxIdError != null,
-                        errorMessage = taxIdError,
-                        modifier = Modifier.fillMaxWidth()
+                    OutlinedTextField(
+                        value = contactName,
+                        onValueChange = { contactName = it },
+                        label = { Text("Контактна особа") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            SectionCard(title = "Контакти") {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+                    PhoneField(
+                        value = phone,
+                        onValueChange = { phone = it; phoneError = null },
+                        label = "Телефон *",
+                        isError = phoneError != null,
+                        errorMessage = phoneError,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
                     )
                 }
                 OutlinedTextField(
                     value = address,
                     onValueChange = { address = it },
-                    label = { Text("Адреса") },
+                    label = { Text("Адреса *") },
                     modifier = Modifier.fillMaxWidth()
                 )
+            }
+
+            SectionCard(title = "Реквізити", subtitle = "Потрібні для рахунків і накладних") {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+                    if (type == ClientType.COMPANY) {
+                        EdrpouField(
+                            value = taxId,
+                            onValueChange = { taxId = it; taxIdError = null },
+                            label = "ЄДРПОУ",
+                            isError = taxIdError != null,
+                            errorMessage = taxIdError,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        IpnField(
+                            value = taxId,
+                            onValueChange = { taxId = it; taxIdError = null },
+                            label = "РНОКПП",
+                            isError = taxIdError != null,
+                            errorMessage = taxIdError,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    OutlinedTextField(
+                        value = bankName,
+                        onValueChange = { bankName = it },
+                        label = { Text("Банк") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
                 IbanField(
                     value = iban,
                     onValueChange = { iban = it; ibanError = null },
@@ -222,33 +333,11 @@ fun ClientFormScreen(
                     errorMessage = ibanError,
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = bankName,
-                    onValueChange = { bankName = it },
-                    label = { Text("Банк") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text("Примітки") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+            }
 
-                // ── Delivery section ──────────────────────────────────────
-                Spacer(Modifier.height(4.dp))
-                HorizontalDivider()
-                Spacer(Modifier.height(4.dp))
-
-                Text(
-                    text = "Доставка",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
+            SectionCard(title = "Доставка") {
                 LabeledDropdown(
-                    label = "Тип доставки",
+                    label = "Спосіб доставки",
                     selectedText = deliveryType?.displayName() ?: "Не вказано",
                     options = listOf<DeliveryType?>(null) + DeliveryType.entries,
                     optionLabel = { it?.displayName() ?: "Не вказано" },
@@ -264,42 +353,46 @@ fun ClientFormScreen(
 
                 when (deliveryType) {
                     DeliveryType.NOVA_POSHTA_BRANCH -> {
-                        OutlinedTextField(
-                            value = deliveryCity,
-                            onValueChange = { deliveryCity = it },
-                            label = { Text("Місто") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = deliveryBranch,
-                            onValueChange = { deliveryBranch = it },
-                            label = { Text("Відділення (напр. Відділення №5)") },
-                            placeholder = { Text("Відділення №5") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlinedTextField(
+                                value = deliveryCity,
+                                onValueChange = { deliveryCity = it },
+                                label = { Text("Місто") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                            OutlinedTextField(
+                                value = deliveryBranch,
+                                onValueChange = { deliveryBranch = it },
+                                label = { Text("Відділення") },
+                                placeholder = { Text("Відділення №5") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                     DeliveryType.NOVA_POSHTA_ADDRESS -> {
-                        OutlinedTextField(
-                            value = deliveryCity,
-                            onValueChange = { deliveryCity = it },
-                            label = { Text("Місто") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlinedTextField(
+                                value = deliveryCity,
+                                onValueChange = { deliveryCity = it },
+                                label = { Text("Місто") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
                             OutlinedTextField(
                                 value = deliveryStreet,
                                 onValueChange = { deliveryStreet = it },
                                 label = { Text("Вулиця") },
-                                modifier = Modifier.weight(2f)
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
                             )
                             OutlinedTextField(
                                 value = deliveryBuilding,
                                 onValueChange = { deliveryBuilding = it },
                                 label = { Text("Будинок") },
-                                modifier = Modifier.weight(1f)
+                                singleLine = true,
+                                modifier = Modifier.width(140.dp)
                             )
                         }
                     }
@@ -314,107 +407,29 @@ fun ClientFormScreen(
                     }
                     null -> Unit
                 }
+            }
 
-                // ── Error + actions ───────────────────────────────────────
-                if (error != null) {
-                    Text(error ?: "", color = MaterialTheme.colorScheme.error)
-                }
-
-                Row(
+            SectionCard(title = "Примітки") {
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    placeholder = { Text("Будь-що корисне про клієнта") },
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    TextButton(onClick = { onNavigate(Screen.Clients) }, modifier = Modifier.weight(1f)) {
-                        Text("Скасувати")
-                    }
-                    Button(
-                        onClick = {
-                            var valid = true
-                            if (displayName.isBlank() || address.isBlank()) {
-                                error = "Заповніть обов'язкові поля: назва, адреса"
-                                valid = false
-                            }
-                            if (phone.isBlank() || phone.length != 10 || !phone.startsWith("0")) {
-                                phoneError = "Рівно 10 цифр, починається з 0"
-                                valid = false
-                            }
-                            if (iban.isNotBlank() && (!iban.startsWith("UA") || iban.length != 29)) {
-                                ibanError = "Формат: UA + 27 цифр (29 символів)"
-                                valid = false
-                            }
-                            if (taxId.isNotBlank()) {
-                                if (type == ClientType.COMPANY && taxId.length != 8) {
-                                    taxIdError = "ЄДРПОУ: рівно 8 цифр"
-                                    valid = false
-                                } else if (type == ClientType.PERSON && taxId.length != 10) {
-                                    taxIdError = "РНОКПП: рівно 10 цифр"
-                                    valid = false
-                                }
-                            }
-                            if (!valid) return@Button
+                    minLines = 2
+                )
+            }
 
-                            saving = true
-                            error = null
+            if (error != null) {
+                Text(error ?: "", color = MaterialTheme.colorScheme.error)
+            }
 
-                            scope.launch {
-                                try {
-                                    val delivery = buildDelivery()
-                                    if (editMode) {
-                                        ApiClient.updateClient(
-                                            clientId,
-                                            ClientUpdateRequest(
-                                                type = type,
-                                                displayName = displayName,
-                                                contactName = contactName.ifBlank { null },
-                                                phone = phone,
-                                                email = email.ifBlank { null },
-                                                taxId = taxId.ifBlank { null },
-                                                address = address,
-                                                iban = iban.ifBlank { null },
-                                                bankName = bankName.ifBlank { null },
-                                                notes = notes.ifBlank { null },
-                                                delivery = delivery
-                                            )
-                                        )
-                                    } else {
-                                        ApiClient.createClient(
-                                            ClientCreateRequest(
-                                                type = type,
-                                                displayName = displayName,
-                                                contactName = contactName.ifBlank { null },
-                                                phone = phone,
-                                                email = email.ifBlank { null },
-                                                taxId = taxId.ifBlank { null },
-                                                address = address,
-                                                iban = iban.ifBlank { null },
-                                                bankName = bankName.ifBlank { null },
-                                                notes = notes.ifBlank { null },
-                                                delivery = delivery
-                                            )
-                                        )
-                                    }
-                                    onNavigate(Screen.Clients)
-                                } catch (e: Exception) {
-                                    error = e.message ?: "Помилка збереження"
-                                } finally {
-                                    saving = false
-                                }
-                            }
-                        },
-                        enabled = !saving,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    ) {
-                        if (saving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text("Зберегти", color = MaterialTheme.colorScheme.onPrimary)
-                        }
-                    }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+            ) {
+                TextButton(onClick = { onNavigate(Screen.Clients) }) { Text("Скасувати") }
+                Button(onClick = { save() }, enabled = !saving, shape = RoundedCornerShape(8.dp)) {
+                    Text(if (editMode) "Зберегти зміни" else "Створити клієнта")
                 }
             }
         }

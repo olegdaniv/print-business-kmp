@@ -36,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,7 +59,10 @@ import com.printbusinesskmp.models.Client
 import com.printbusinesskmp.models.Order
 import com.printbusinesskmp.models.OrderStatus
 import com.printbusinesskmp.navigation.Screen
+import com.printbusinesskmp.ui.components.DangerZone
 import com.printbusinesskmp.ui.components.HoverableRow
+import com.printbusinesskmp.ui.components.ScreenHeader
+import com.printbusinesskmp.ui.components.SectionCard
 import com.printbusinesskmp.ui.components.PaymentBadge
 import com.printbusinesskmp.ui.components.SearchField
 import com.printbusinesskmp.ui.components.SplitPane
@@ -402,7 +407,9 @@ private fun OrderListItem(
                     PaymentBadge(order.paymentStatus)
                 }
                 Text(
-                    text = FormatUtils.formatDate(order.updatedAt),
+                    text = if (order.paymentStatus == com.printbusinesskmp.models.PaymentStatus.PARTIAL)
+                        "сплачено ${FormatUtils.formatCurrency(order.paidAmount)}"
+                    else FormatUtils.formatDate(order.updatedAt),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -464,173 +471,57 @@ private fun OrderDetailPanel(
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        ScreenHeader(
+            title = order.itemsSummary(),
+            subtitle = "${client?.displayName ?: "Невідомий клієнт"} · #${order.id.take(8)}"
         ) {
-            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                Text(
-                    text = order.itemsSummary(),
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                Text(
-                    text = client?.displayName ?: "Невідомий клієнт",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "#${order.id.take(8)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, "Редагувати")
-                }
+            OutlinedButton(onClick = onEdit, shape = RoundedCornerShape(8.dp)) {
+                Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Редагувати")
             }
         }
 
-        // Status row
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             StatusBadge(order.status)
-            PaymentBadge(order.paymentStatus)
         }
 
-        // Dates
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Створено", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(FormatUtils.formatDateTime(order.createdAt), style = MaterialTheme.typography.bodyMedium)
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Оновлено", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(FormatUtils.formatDateTime(order.updatedAt), style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        }
-
-        // Notes
         order.notes?.takeIf { it.isNotBlank() }?.let { note ->
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Примітки", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(4.dp))
-                    Text(note, style = MaterialTheme.typography.bodyMedium)
-                }
+            SectionCard(title = "Примітки") {
+                Text(note, style = MaterialTheme.typography.bodyMedium)
             }
         }
 
-        // Order items
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Позиції (${order.items.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.height(12.dp))
-
-                order.items.forEachIndexed { index, item ->
-                    if (index > 0) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 8.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = item.name?.takeIf { it.isNotBlank() }
-                                    ?: "${item.serviceType.labelUa()} / ${item.productType.labelUa()}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "К-сть: ${item.quantity}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-//                            item.size?.let { size ->
-//                                Text(
-//                                    text = "Розмір: $size",
-//                                    style = MaterialTheme.typography.bodySmall,
-//                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-//                                )
-//                            }
-//                            item.color?.let { color ->
-//                                Text(
-//                                    text = "Колір: $color",
-//                                    style = MaterialTheme.typography.bodySmall,
-//                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-//                                )
-//                            }
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = FormatUtils.formatCurrency(item.price),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-//                            Text(
-//                                text = "Собівартість: ${FormatUtils.formatCurrency(item.cost)}",
-//                                style = MaterialTheme.typography.bodySmall,
-//                                color = MaterialTheme.colorScheme.onSurfaceVariant
-//                            )
-                            Text(
-                                text = FormatUtils.formatCurrency(item.profit),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (item.profit >= 0) DesktopColors.success else MaterialTheme.colorScheme.error,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
+        SectionCard(title = "Позиції (${order.items.size})") {
+            ItemsTableRow(
+                name = "Найменування",
+                quantity = "К-сть",
+                unitPrice = "Ціна",
+                total = "Сума",
+                header = true
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            order.items.forEachIndexed { index, item ->
+                if (index > 0) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 }
+                val unitPrice = if (item.quantity > 0) item.price / item.quantity else item.price
+                ItemsTableRow(
+                    name = item.name?.takeIf { it.isNotBlank() }
+                        ?: "${item.serviceType.labelUa()} / ${item.productType.labelUa()}",
+                    quantity = "${item.quantity} ${item.unit}",
+                    unitPrice = FormatUtils.formatCurrency(unitPrice),
+                    total = FormatUtils.formatCurrency(item.price)
+                )
             }
-        }
-
-        // Cost summary
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-//                SummaryRow("Собівартість", FormatUtils.formatCurrency(order.totalCost))
-                if (order.discountAmount > 0) {
-                    SummaryRow("Знижка", "-${FormatUtils.formatCurrency(order.discountAmount)}")
-                }
-//                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                SummaryRow(
-                    "Ціна",
-                    FormatUtils.formatCurrency(order.totalPrice),
-                    bold = true
-                )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            if (order.discountAmount > 0) {
+                SummaryRow("Знижка", "-${FormatUtils.formatCurrency(order.discountAmount)}")
+            }
+            SummaryRow("Разом", FormatUtils.formatCurrency(order.totalPrice), bold = true)
+            // Profit only says something when a cost was entered; otherwise it equals the price.
+            if (order.totalCost > 0.0) {
+                SummaryRow("Собівартість", FormatUtils.formatCurrency(order.totalCost))
                 SummaryRow(
                     label = "Прибуток",
                     value = FormatUtils.formatCurrency(order.profit),
@@ -837,31 +728,13 @@ private fun OrderDetailPanel(
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
 
-        // Delete
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text("Видалити замовлення", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
-                    Text("Ця дія незворотна", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Button(
-                    onClick = { confirmDelete = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Видалити", color = MaterialTheme.colorScheme.onError)
-                }
-            }
-        }
+        Text(
+            "Створено ${FormatUtils.formatDateTime(order.createdAt)} · оновлено ${FormatUtils.formatDateTime(order.updatedAt)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        DangerZone(title = "Видалити замовлення", buttonLabel = "Видалити", onClick = { confirmDelete = true })
     }
 
     if (confirmDelete) {
@@ -1091,6 +964,43 @@ private fun DocumentSection(
         ) {
             actions()
         }
+    }
+}
+
+/** One line of the order items table; [header] renders the column captions. */
+@Composable
+private fun ItemsTableRow(
+    name: String,
+    quantity: String,
+    unitPrice: String,
+    total: String,
+    header: Boolean = false
+) {
+    val style = if (header) MaterialTheme.typography.labelMedium else MaterialTheme.typography.bodyMedium
+    val color = if (header) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = if (header) 0.dp else 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            name,
+            style = style,
+            color = color,
+            fontWeight = if (header) null else FontWeight.Medium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).padding(end = 8.dp)
+        )
+        Text(quantity, style = style, color = color, textAlign = TextAlign.End, modifier = Modifier.width(80.dp))
+        Text(unitPrice, style = style, color = color, textAlign = TextAlign.End, modifier = Modifier.width(120.dp))
+        Text(
+            total,
+            style = style,
+            color = color,
+            fontWeight = if (header) null else FontWeight.SemiBold,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(130.dp)
+        )
     }
 }
 

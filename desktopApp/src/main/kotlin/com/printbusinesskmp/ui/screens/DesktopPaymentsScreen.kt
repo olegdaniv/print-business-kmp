@@ -66,8 +66,10 @@ import com.printbusinesskmp.models.Payment
 import com.printbusinesskmp.models.PaymentStatus
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.ui.components.HoverableRow
+import com.printbusinesskmp.ui.components.InfoRow
 import com.printbusinesskmp.ui.components.PaymentBadge
 import com.printbusinesskmp.ui.components.SearchField
+import com.printbusinesskmp.ui.components.SectionCard
 import com.printbusinesskmp.ui.components.SplitPane
 import com.printbusinesskmp.ui.components.StatusFilterChips
 import com.printbusinesskmp.ui.theme.DesktopColors
@@ -726,7 +728,7 @@ private fun RegistryDetailPanel(
             }
         }.sortedBy { it.at }
 
-        DetailCard(title = "Хронологія") {
+        SectionCard(title = "Хронологія") {
             events.forEach { event ->
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
                     Box(
@@ -767,7 +769,7 @@ private fun RegistryDetailPanel(
             }
         }
 
-        DetailCard(title = "Рахунки") {
+        SectionCard(title = "Рахунки") {
             if (row.invoices.isEmpty()) {
                 Text(
                     "Рахунок ще не виставлено — його можна створити в картці замовлення.",
@@ -885,16 +887,16 @@ private fun PaymentDetailPanel(
             }
         }
 
-        DetailCard(title = "Надходження") {
-            DetailLine("Дата", FormatUtils.formatDate(payment.paidAt))
-            DetailLine("Спосіб", payment.method.labelUa())
-            payment.reference?.let { DetailLine("№ платіжки", it) }
-            payment.purpose?.let { DetailLine("Призначення", it) }
-            payment.notes?.let { DetailLine("Примітка", it) }
-            DetailLine("Внесено", FormatUtils.formatDateTime(payment.createdAt))
+        SectionCard(title = "Надходження") {
+            InfoRow("Дата", FormatUtils.formatDate(payment.paidAt))
+            InfoRow("Спосіб", payment.method.labelUa())
+            payment.reference?.let { InfoRow("№ платіжки", it) }
+            payment.purpose?.let { InfoRow("Призначення", it) }
+            payment.notes?.let { InfoRow("Примітка", it) }
+            InfoRow("Внесено", FormatUtils.formatDateTime(payment.createdAt))
         }
 
-        DetailCard(title = "Розподіл") {
+        SectionCard(title = "Розподіл") {
             if (payment.allocations.isEmpty()) {
                 Text(
                     "Не прив'язано до жодного замовлення",
@@ -979,33 +981,6 @@ private fun PaymentDetailPanel(
                 }
             }
         )
-    }
-}
-
-@Composable
-private fun DetailCard(title: String, content: @Composable () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = RoundedCornerShape(10.dp)
-    ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            content()
-        }
-    }
-}
-
-@Composable
-private fun DetailLine(label: String, value: String) {
-    Row(Modifier.fillMaxWidth()) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(120.dp)
-        )
-        Text(value, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
