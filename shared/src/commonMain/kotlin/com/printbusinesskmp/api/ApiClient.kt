@@ -7,6 +7,7 @@ import com.printbusinesskmp.models.ClientCreateRequest
 import com.printbusinesskmp.models.ClientUpdateRequest
 import com.printbusinesskmp.models.Invoice
 import com.printbusinesskmp.models.InvoiceCreateRequest
+import com.printbusinesskmp.models.InvoiceDateOverrideRequest
 import com.printbusinesskmp.models.InvoiceNumberFormatInfo
 import com.printbusinesskmp.models.InvoiceNumberFormatUpdateRequest
 import com.printbusinesskmp.models.InvoiceNumberOverrideRequest
@@ -282,6 +283,13 @@ object  ApiClient {
         return client.put("$baseUrl/api/invoices/$id/number") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             setBody(InvoiceNumberOverrideRequest(number))
+        }.body()
+    }
+
+    suspend fun updateInvoiceDate(id: String, issuedAtEpochMs: Long): Invoice {
+        return client.put("$baseUrl/api/invoices/$id/date") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(InvoiceDateOverrideRequest(issuedAtEpochMs))
         }.body()
     }
 

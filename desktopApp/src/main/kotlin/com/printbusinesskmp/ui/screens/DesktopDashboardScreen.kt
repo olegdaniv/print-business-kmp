@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.printbusinesskmp.api.ApiClient
 import com.printbusinesskmp.desktop.update.UpdateUiState
@@ -49,6 +50,7 @@ import com.printbusinesskmp.ui.components.StatCard
 import com.printbusinesskmp.ui.components.StatusBadge
 import com.printbusinesskmp.ui.theme.DesktopColors
 import com.printbusinesskmp.utils.FormatUtils
+import com.printbusinesskmp.utils.itemsSummary
 
 @Composable
 fun DesktopDashboardScreen(
@@ -304,9 +306,11 @@ fun DesktopDashboardScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        "#${order.id.take(8)}",
+                                        order.itemsSummary(),
                                         style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
                                         clientById[order.clientId]?.displayName ?: "—",

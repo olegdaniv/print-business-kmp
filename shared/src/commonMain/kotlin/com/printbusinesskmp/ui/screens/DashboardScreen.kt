@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.printbusinesskmp.api.ApiClient
@@ -32,6 +33,7 @@ import com.printbusinesskmp.models.OrderStatus
 import com.printbusinesskmp.navigation.Screen
 import com.printbusinesskmp.theme.AppColors
 import com.printbusinesskmp.utils.FormatUtils
+import com.printbusinesskmp.utils.itemsSummary
 import com.printbusinesskmp.utils.labelUa
 
 @Composable
@@ -113,11 +115,13 @@ fun DashboardScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> Unit) 
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                             Text(
-                                text = "#${order.id.take(8)}",
+                                text = order.itemsSummary(),
                                 fontWeight = FontWeight.SemiBold,
-                                color = AppColors.DarkSlate
+                                color = AppColors.DarkSlate,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = clientById[order.clientId]?.displayName ?: "Невідомий клієнт",

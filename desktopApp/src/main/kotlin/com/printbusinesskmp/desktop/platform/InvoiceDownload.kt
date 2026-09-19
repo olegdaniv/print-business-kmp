@@ -55,7 +55,16 @@ suspend fun openInvoiceFromFolder(invoice: Invoice): Boolean {
 
 /** Deterministic destination of a delivery-note PDF inside the configured folder. */
 fun deliveryNoteFilePath(invoice: Invoice): Path =
-    AppSettingsStore.invoicesDir.resolve(buildDeliveryNoteFileName(invoice))
+    AppSettingsStore.deliveryNotesDir.resolve(buildDeliveryNoteFileName(invoice))
+
+/**
+ * Effective date printed on (and used in the filename of) the delivery note: the
+ * per-invoice override if the user set one, otherwise the invoice's issue date.
+ */
+fun deliveryNoteIssuedDate(invoice: Invoice): kotlin.time.Instant =
+    AppSettingsStore.deliveryNoteDateMillis(invoice.id)
+        ?.let { kotlin.time.Instant.fromEpochMilliseconds(it) }
+        ?: invoice.issuedAt
 
 /**
  * Generates (or regenerates) the delivery-note (видаткова накладна) PDF, allocating
@@ -65,11 +74,37 @@ suspend fun generateDeliveryNoteToFolder(invoice: Invoice): Path {
     val destination = deliveryNoteFilePath(invoice)
     val enriched = enrichSellerFromProfile(invoice)
     val number = AppSettingsStore.deliveryNoteNumber(invoice.id)
+    val issuedDate = deliveryNoteIssuedDate(invoice)
     withContext(Dispatchers.IO) {
         Files.createDirectories(destination.parent)
-        DesktopDeliveryNotePdfGenerator.generate(enriched, number, destination)
+        DesktopDeliveryNotePdfGenerator.generate(enriched, number, destination, issuedDate)
     }
     return destination
+}
+
+/** Deletes the delivery-note PDF and forgets its number/date for the invoice. */
+suspend fun deleteDeliveryNote(invoice: Invoice) {
+    val path = deliveryNoteFilePath(invoice)
+    withContext(Dispatchers.IO) { Files.deleteIfExists(path) }
+    AppSettingsStore.removeDeliveryNote(invoice.id)
+}
+
+/**
+ * Deletes the desktop PDF files associated with an invoice (the invoice itself and
+ * its delivery note) and forgets the delivery-note mapping. The invoice record is
+ * removed separately via the API.
+ */
+suspend fun deleteInvoiceDocuments(invoice: Invoice) {
+    val invoicePath = invoiceFilePath(invoice)
+    // Only resolve the note path if a ВН was actually issued — otherwise the
+    // filename builder would allocate a fresh ВН number for nothing.
+    val notePath = AppSettingsStore.existingDeliveryNoteNumber(invoice.id)
+        ?.let { deliveryNoteFilePath(invoice) }
+    withContext(Dispatchers.IO) {
+        Files.deleteIfExists(invoicePath)
+        notePath?.let { Files.deleteIfExists(it) }
+    }
+    AppSettingsStore.removeDeliveryNote(invoice.id)
 }
 
 /**
@@ -105,7 +140,7 @@ fun buildDeliveryNoteFileName(invoice: Invoice): String {
         .replace(Regex("[^A-Za-zА-Яа-яёЁіІїЇєЄ0-9]"), "_")
         .trimEnd('_')
         .take(40)
-    val dt = invoice.issuedAt.toLocalDateTime(TimeZone.currentSystemDefault())
+    val dt = deliveryNoteIssuedDate(invoice).toLocalDateTime(TimeZone.currentSystemDefault())
     val date = "${dt.year}-${dt.month.number.toString().padStart(2, '0')}-${
         dt.day.toString().padStart(2, '0')
     }"

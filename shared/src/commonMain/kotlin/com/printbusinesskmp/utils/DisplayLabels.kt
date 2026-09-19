@@ -2,6 +2,17 @@ package com.printbusinesskmp.utils
 
 import com.printbusinesskmp.models.*
 
+/**
+ * Human-readable composition (комплектація) of an order: its items as
+ * "Назва К-сть од., …". Falls back to a short order id when there are no items.
+ * Used everywhere an order would otherwise be shown by its raw number/id.
+ */
+fun Order.itemsSummary(): String =
+    items.joinToString(", ") { item ->
+        val itemName = item.name?.takeIf { it.isNotBlank() } ?: item.productType.labelUa()
+        "$itemName ${item.quantity} ${item.unit}"
+    }.ifBlank { "#${id.take(8)}" }
+
 @Suppress("DEPRECATION")
 fun OrderStatus.labelUa(): String = when (this) {
     OrderStatus.DRAFT, OrderStatus.NEW -> "Чернетка"

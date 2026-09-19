@@ -3,6 +3,7 @@ package com.printbusinesskmp.routes
 import com.printbusinesskmp.models.Invoice
 import com.printbusinesskmp.models.InvoiceClientSnapshot
 import com.printbusinesskmp.models.InvoiceCreateRequest
+import com.printbusinesskmp.models.InvoiceDateOverrideRequest
 import com.printbusinesskmp.models.InvoiceLine
 import com.printbusinesskmp.models.InvoiceNumberFormatInfo
 import com.printbusinesskmp.models.InvoiceNumberFormatUpdateRequest
@@ -473,6 +474,42 @@ fun Route.configureInvoiceRoutes() {
                     call.respond(
                         HttpStatusCode.InternalServerError,
                         mapOf("error" to "Invoice number update failed", "details" to (e.message ?: "unknown error"))
+                    )
+                }
+            }
+
+            put("{id}/date") {
+                try {
+                    val id = call.parameters["id"]
+                        ?: return@put call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing invoice ID"))
+
+                    val existing = invoiceRepository.invoiceById(id)
+                        ?: return@put call.respond(HttpStatusCode.NotFound, mapOf("error" to "Invoice not found"))
+
+                    val request = call.receive<InvoiceDateOverrideRequest>()
+                    val newIssuedAt = kotlin.time.Instant.fromEpochMilliseconds(request.issuedAtEpochMs)
+
+                    // Preserve the validity window (validUntil − issuedAt) around the new date.
+                    val newValidUntil = existing.validUntil?.let { until ->
+                        val window = until - existing.issuedAt
+                        newIssuedAt + window
+                    }
+
+                    val updated = invoiceRepository.updateInvoiceIssuedAt(
+                        id = id,
+                        issuedAtEpochMs = newIssuedAt.toEpochMilliseconds(),
+                        validUntilEpochMs = newValidUntil?.toEpochMilliseconds()
+                    ) ?: return@put call.respond(HttpStatusCode.NotFound, mapOf("error" to "Invoice not found"))
+
+                    existing.filePath?.let { File(it).takeIf { f -> f.exists() }?.delete() }
+                    val filePath = invoiceGenerator.generateInvoicePdf(updated)
+                    val withFile = invoiceRepository.updateInvoiceFilePath(updated.id, filePath) ?: updated
+
+                    call.respond(HttpStatusCode.OK, withFile)
+                } catch (e: Exception) {
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        mapOf("error" to "Invoice date update failed", "details" to (e.message ?: "unknown error"))
                     )
                 }
             }

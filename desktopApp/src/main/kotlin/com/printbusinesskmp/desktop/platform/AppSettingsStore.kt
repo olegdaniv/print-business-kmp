@@ -18,9 +18,12 @@ object AppSettingsStore {
     @Serializable
     private data class PersistedSettings(
         val invoicesDir: String? = null,
+        val deliveryNotesDir: String? = null,
         val darkTheme: Boolean? = null,
         val deliveryNoteSeq: Int = 0,
-        val deliveryNoteByInvoice: Map<String, String> = emptyMap()
+        val deliveryNoteByInvoice: Map<String, String> = emptyMap(),
+        // Per-invoice delivery-note date override, stored as epoch milliseconds.
+        val deliveryNoteDateByInvoice: Map<String, Long> = emptyMap()
     )
 
     @Volatile
@@ -63,6 +66,20 @@ object AppSettingsStore {
             persist(load().copy(invoicesDir = normalized.toString()))
         }
 
+    /** Folder where delivery-note (видаткова накладна) PDFs are stored. */
+    var deliveryNotesDir: Path
+        get() {
+            val stored = load().deliveryNotesDir?.trim()?.takeIf { it.isNotEmpty() }
+            val dir = stored?.let { Paths.get(it) } ?: DesktopPaths.deliveryNoteDownloadsDir
+            runCatching { Files.createDirectories(dir) }
+            return dir
+        }
+        set(value) {
+            val normalized = value.toAbsolutePath().normalize()
+            runCatching { Files.createDirectories(normalized) }
+            persist(load().copy(deliveryNotesDir = normalized.toString()))
+        }
+
     /** UI theme choice; persists across restarts. Defaults to light. */
     var isDarkTheme: Boolean
         get() = load().darkTheme ?: false
@@ -92,5 +109,27 @@ object AppSettingsStore {
             )
         )
         return number
+    }
+
+    /** Delivery-note date override (epoch ms) for an invoice, or null to use the invoice date. */
+    fun deliveryNoteDateMillis(invoiceId: String): Long? =
+        load().deliveryNoteDateByInvoice[invoiceId]
+
+    @Synchronized
+    fun setDeliveryNoteDateMillis(invoiceId: String, epochMs: Long) {
+        persist(load().let { it.copy(deliveryNoteDateByInvoice = it.deliveryNoteDateByInvoice + (invoiceId to epochMs)) })
+    }
+
+    /** Forgets the delivery-note number and date for an invoice (used when deleting the ВН). */
+    @Synchronized
+    fun removeDeliveryNote(invoiceId: String) {
+        persist(
+            load().let {
+                it.copy(
+                    deliveryNoteByInvoice = it.deliveryNoteByInvoice - invoiceId,
+                    deliveryNoteDateByInvoice = it.deliveryNoteDateByInvoice - invoiceId
+                )
+            }
+        )
     }
 }

@@ -34,4 +34,10 @@ object DesktopPaths {
             Files.createDirectories(path)
         }
     }
+
+    val deliveryNoteDownloadsDir: Path by lazy {
+        appDataDir.resolve("delivery-notes").also { path ->
+            Files.createDirectories(path)
+        }
+    }
 }

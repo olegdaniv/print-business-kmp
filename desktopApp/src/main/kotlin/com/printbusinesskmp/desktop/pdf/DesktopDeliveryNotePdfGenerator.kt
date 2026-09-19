@@ -38,7 +38,12 @@ object DesktopDeliveryNotePdfGenerator {
     private val lineColor = DeviceRgb(226, 232, 240)
     private val accent = DeviceRgb(48, 213, 200)
 
-    fun generate(invoice: Invoice, deliveryNoteNumber: String, destination: Path) {
+    fun generate(
+        invoice: Invoice,
+        deliveryNoteNumber: String,
+        destination: Path,
+        issuedDate: kotlin.time.Instant = invoice.issuedAt
+    ) {
         val writer = PdfWriter(destination.toString())
         val pdfDoc = PdfDocument(writer)
         val document = Document(pdfDoc, PageSize.A4)
@@ -137,7 +142,7 @@ object DesktopDeliveryNotePdfGenerator {
         )
 
         document.add(docTitle("Видаткова накладна № $deliveryNoteNumber"))
-        document.add(docSubtitle("від ${formatLongDate(invoice.issuedAt)} р.  ·  до рахунку № ${invoice.number}"))
+        document.add(docSubtitle("від ${formatLongDate(issuedDate)} р.  ·  до рахунку № ${invoice.number}"))
 
         // ── 3. Items table ───────────────────────────────────────────────────────
         val itemsTable = Table(

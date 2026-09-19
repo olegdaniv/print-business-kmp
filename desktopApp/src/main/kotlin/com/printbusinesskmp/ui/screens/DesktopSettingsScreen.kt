@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun DesktopSettingsScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> Unit) {
     var invoicesDir by remember { mutableStateOf(AppSettingsStore.invoicesDir.toString()) }
+    var deliveryNotesDir by remember { mutableStateOf(AppSettingsStore.deliveryNotesDir.toString()) }
 
     Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(
@@ -83,6 +84,52 @@ fun DesktopSettingsScreen(@Suppress("UNUSED_PARAMETER") onNavigate: (Screen) -> 
                     }
                     OutlinedButton(onClick = {
                         runCatching { openFile(AppSettingsStore.invoicesDir) }
+                    }) {
+                        Text("Відкрити папку")
+                    }
+                }
+            }
+        }
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Папка для видаткових накладних",
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = deliveryNotesDir,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Сюди зберігаються PDF видаткових накладних (ВН) — окремо від інвойсів.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(onClick = {
+                        val chosen = chooseDirectory("Оберіть папку для видаткових накладних")
+                        if (chosen != null) {
+                            AppSettingsStore.deliveryNotesDir = chosen
+                            deliveryNotesDir = AppSettingsStore.deliveryNotesDir.toString()
+                        }
+                    }) {
+                        Text("Змінити папку")
+                    }
+                    OutlinedButton(onClick = {
+                        runCatching { openFile(AppSettingsStore.deliveryNotesDir) }
                     }) {
                         Text("Відкрити папку")
                     }

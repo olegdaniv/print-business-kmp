@@ -58,7 +58,16 @@
       "Bash(git credential *)",
       "Bash(./gradlew :shared:compileKotlinJvm -q --console=plain)",
       "Bash(./gradlew :desktopApp:help -q --console=plain)",
-      "Bash(./gradlew :desktopApp:compileKotlin -q --console=plain)"
+      "Bash(./gradlew :desktopApp:compileKotlin -q --console=plain)",
+      "Bash(gh run *)",
+      "Bash(git fetch *)",
+      "Bash(git ls-tree *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" https://olegdaniv.github.io/print-business-kmp/updates/latest.json)",
+      "Bash(curl -s https://olegdaniv.github.io/print-business-kmp/updates/latest.json)",
+      "Bash(curl -s -o /dev/null -w \"root: HTTP %{http_code}\\\\n\" https://olegdaniv.github.io/print-business-kmp/)",
+      "Bash(curl -s -o /dev/null -w \"user root: HTTP %{http_code}\\\\n\" https://olegdaniv.github.io/)",
+      "Bash(curl -s -o /dev/null -w \".nojekyll: HTTP %{http_code}\\\\n\" https://olegdaniv.github.io/print-business-kmp/.nojekyll)",
+      "Bash(python3 *)"
     ]
   },
   "enableAllProjectMcpServers": true,
