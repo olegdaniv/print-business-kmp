@@ -1,8 +1,8 @@
 {
+  "version": "1.0.19",
   "windows": {
-    "sha256": "f20f08ce59b8713795ae71fdd1cd0442ab699554e2084b9cc5b4c58f3fbc9d2b",
-    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.18/PrintBusiness-1.0.18.msi"
+    "url": "https://github.com/olegdaniv/print-business-kmp/releases/download/v1.0.19/PrintBusiness-1.0.19.msi",
+    "sha256": "9c03c76487eec673803099a251562b3e8f9d8afb853ac0224f5b9d6c2cd20180"
   },
-  "notes": "refactor: optimize desktop orders screen loading state, use primitive state delegates, and remove unused placeholder screen",
-  "version": "1.0.18"
+  "notes": "update dependencies and navigation` -> No, keep it clean.\r\n    `refactor: upgrade Gradle and dependencies, update invoice total label, and add settings screen handler`\r\n\r\n    Let'"
 }
